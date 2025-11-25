@@ -1,0 +1,16 @@
+{
+  "name": "wukong-gitlog-cli",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "Advanced Git commit log exporter with Excel/JSON/TXT output, grouping, stats and CLI.",
+  "bin": {
+    "wukong-gitlog-cli": "./bin/wukong-gitlog-cli"
+  },
+  "dependencies": {
+    "zx": "^7.2.3",
+    "exceljs": "^4.4.0",
+    "commander": "^12.0.0",
+    "chalk": "^5.3.0",
+    "dayjs": "^1.11.10"
+  }
+}

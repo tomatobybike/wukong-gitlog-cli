@@ -1,0 +1,13 @@
+# Dependencies
+node_modules
+
+
+build
+
+# Lock files
+package-lock.json
+
+# Misc
+dist
+public
+src/lib

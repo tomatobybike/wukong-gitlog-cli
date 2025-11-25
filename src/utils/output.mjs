@@ -1,8 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 
-export function ensureOutputDir() {
-  const dir = path.resolve(process.cwd(), 'output');
+export function ensureOutputDir(customDir) {
+  // If a custom absolute/relative path is provided, resolve relative to cwd as-is
+  // Otherwise default to `output` inside current working directory.
+  const dir = customDir
+    ? path.resolve(process.cwd(), customDir)
+    : path.resolve(process.cwd(), 'output');
 
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -11,7 +15,7 @@ export function ensureOutputDir() {
   return dir;
 }
 
-export function outputFilePath(filename) {
-  const dir = ensureOutputDir();
+export function outputFilePath(filename, customDir) {
+  const dir = ensureOutputDir(customDir);
   return path.join(dir, filename);
 }

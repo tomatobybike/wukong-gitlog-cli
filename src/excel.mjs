@@ -2,12 +2,12 @@ import ExcelJS from 'exceljs';
 import dayjs from 'dayjs';
 
 export async function exportExcel(records, groups, options = {}) {
-  const { file, stats } = options;
+  const { file, stats, gerrit } = options;
 
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Commits');
 
-  ws.columns = [
+  const cols = [
     { header: 'Hash', key: 'hash', width: 12 },
     { header: 'Author', key: 'author', width: 20 },
     { header: 'Email', key: 'email', width: 30 },
@@ -15,11 +15,17 @@ export async function exportExcel(records, groups, options = {}) {
     { header: 'Message', key: 'message', width: 80 }
   ];
 
+  if (gerrit) {
+    cols.push({ header: 'Gerrit', key: 'gerrit', width: 50 });
+  }
+
+  ws.columns = cols;
+
   (groups ? Object.values(groups).flat() : records).forEach(r =>
     ws.addRow(r)
   );
 
-  ws.autoFilter = 'A1:E1';
+  ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: cols.length } };
 
   // --- stats sheet ---
   if (stats) {

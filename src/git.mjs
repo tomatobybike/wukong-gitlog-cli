@@ -4,7 +4,8 @@ import 'zx/globals';
 export async function getGitLogs(opts) {
   const { author, email, since, until, limit, merges } = opts;
 
-  const pretty = '%H%x1f%an%x1f%ae%x1f%ad%x1f%s%x1e';
+  // include subject and full body so we can extract Change-Id from commit message
+  const pretty = '%H%x1f%an%x1f%ae%x1f%ad%x1f%s%x1f%B%x1e';
 
   const args = [
     'log',
@@ -26,13 +27,28 @@ export async function getGitLogs(opts) {
     .split('\x1e')
     .filter(Boolean)
     .map(r => {
-      const f = r.split('\x1f');
+      const f = r.split('\x1f').map(s => (s || '').trim());
+
+      const hash = f[0];
+      const authorName = f[1];
+      const emailAddr = f[2];
+      const date = f[3];
+      const subject = f[4];
+      const body = f[5] || '';
+
+      // extract Change-Id from commit body (line like "Change-Id: Iabc123...")
+      let changeId = null;
+      const changeMatch = body.match(/Change-Id:\s*(I[0-9a-fA-F]+)/);
+      if (changeMatch) changeId = changeMatch[1];
+
       return {
-        hash: f[0],
-        author: f[1],
-        email: f[2],
-        date: f[3],
-        message: f[4]
+        hash,
+        author: authorName,
+        email: emailAddr,
+        date,
+        message: subject,
+        body,
+        changeId
       };
     });
 }

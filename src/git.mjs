@@ -7,7 +7,6 @@ export async function getGitLogs(opts) {
   const pretty = '%H%x1f%an%x1f%ae%x1f%ad%x1f%s%x1e';
 
   const args = [
-    'git',
     'log',
     `--pretty=format:${pretty}`,
     '--date=iso'
@@ -18,13 +17,12 @@ export async function getGitLogs(opts) {
   if (since) args.push(`--since=${since}`);
   if (until) args.push(`--until=${until}`);
   if (merges === false) args.push(`--no-merges`);
-  if (limit) args.push(`-n`, limit);
+  if (limit) args.push(`-n`, `${limit}`);
 
-  const cmd = args.join(' ');
+  // 使用 spread 形式传参，ZX 才会正确处理
+  const { stdout } = await $`git ${args}`.quiet();
 
-  const result = await $`${cmd}`.quiet();
-
-  return result.stdout
+  return stdout
     .split('\x1e')
     .filter(Boolean)
     .map(r => {

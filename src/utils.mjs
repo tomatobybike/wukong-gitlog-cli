@@ -1,6 +1,7 @@
 import fs from 'fs';
 import dayjs from 'dayjs';
 
+
 export function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
 }

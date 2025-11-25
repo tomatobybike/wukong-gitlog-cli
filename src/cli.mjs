@@ -1,11 +1,12 @@
-import { Command } from 'commander'
-import chalk from 'chalk'
-import { getGitLogs } from './git.mjs'
-import { renderText } from './text.mjs'
-import { exportExcel } from './excel.mjs'
-import { groupRecords, writeJSON, writeTextFile } from './utils.mjs'
+import { Command } from 'commander';
+import chalk from 'chalk';
+import { getGitLogs } from './git.mjs';
+import { renderText } from './text.mjs';
+import { exportExcel } from './excel.mjs';
+import { groupRecords, writeJSON, writeTextFile } from './utils.mjs';
+import { outputFilePath } from './utils/output.mjs';
 
-const program = new Command()
+const program = new Command();
 
 program
   .name('git-commits')
@@ -20,54 +21,63 @@ program
   .option('--format <type>', '输出格式: text | excel | json', 'text')
   .option('--group-by <type>', '按日期分组: day | month')
   .option('--stats', '输出每日统计数据')
-  .option('--out <file>', '输出文件名')
-  .parse()
+  .option('--out <file>', '输出文件名（不含路径）')
+  .parse();
 
-const opts = program.opts()
+const opts = program.opts();
 
-;(async () => {
-  const records = await getGitLogs(opts)
-
-  let final = records
+(async () => {
+  const records = await getGitLogs(opts);
 
   // --- 分组 ---
-  let groups = null
-  if (opts.groupBy) {
-    groups = groupRecords(records, opts.groupBy)
-  }
+  const groups = opts.groupBy ? groupRecords(records, opts.groupBy) : null;
 
   // --- JSON ---
-  if (opts.json) {
-    const file = opts.out || 'commits.json'
-    writeJSON(file, groups || records)
-    console.log(chalk.green(`JSON 已导出: ${file}`))
-    return
+  if (opts.json || opts.format === 'json') {
+    const file = opts.out || 'commits.json';
+    const filepath = outputFilePath(file);
+
+    writeJSON(filepath, groups || records);
+    console.log(chalk.green(`JSON 已导出: ${filepath}`));
+    return;
   }
 
-  // --- text ---
+  // --- TEXT ---
   if (opts.format === 'text') {
-    const file = opts.out || 'commits.txt'
-    const text = renderText(records, groups)
-    writeTextFile(file, text)
-    console.log(text)
-    console.log(chalk.green(`已导出文本: ${file}`))
-    return
+    const file = opts.out || 'commits.txt';
+    const filepath = outputFilePath(file);
+
+    const text = renderText(records, groups);
+    writeTextFile(filepath, text);
+
+    console.log(text);
+    console.log(chalk.green(`文本已导出: ${filepath}`));
+    return;
   }
 
-  // --- EXCEL（默认也输出TXT） ---
+  // --- EXCEL（强制同时输出 TXT） ---
   if (opts.format === 'excel') {
-    const excelFile = opts.out || 'commits.xlsx'
-    const txtFile = excelFile.replace(/\.xlsx$/, '.txt')
+    // Excel
+    const excelFile = opts.out || 'commits.xlsx';
+    const excelPath = outputFilePath(excelFile);
 
+    // TXT（自动附带）
+    const txtFile = excelFile.replace(/\.xlsx$/, '.txt');
+    const txtPath = outputFilePath(txtFile);
+
+    // 导出 Excel 文件
     await exportExcel(records, groups, {
-      file: excelFile,
-      stats: opts.stats
-    })
+      file: excelPath,
+      stats: opts.stats,
+    });
 
-    const text = renderText(records, groups)
-    writeTextFile(txtFile, text)
+    // 导出文本
+    const text = renderText(records, groups);
+    writeTextFile(txtPath, text);
 
-    console.log(chalk.green(`Excel 已导出: ${excelFile}`))
-    console.log(chalk.green(`文本已自动导出: ${txtFile}`))
+    console.log(chalk.green(`Excel 已导出: ${excelPath}`));
+    console.log(chalk.green(`文本已自动导出: ${txtPath}`));
+
+    return;
   }
-})()
+})();

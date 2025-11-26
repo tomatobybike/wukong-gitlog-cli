@@ -33,17 +33,15 @@ cd wukong-gitlog-cli
 npm install
 ```
 
-Run from the repo using Node:
+Install globally to run with a short command (recommended for CLI consumers):
 
 ```bash
-node ./src/cli.mjs --help
-```
-
-(Optional) Install globally to run with a short command:
-
-```bash
+# Install globally from the repo (for development):
 npm link
-# then you can run
+# Or install via npm when published:
+npm i -g wukong-gitlog-cli
+
+# Then you can run the CLI globally:
 wukong-gitlog-cli --help
 ```
 
@@ -52,7 +50,7 @@ wukong-gitlog-cli --help
 ## Usage
 
 ```bash
-node ./src/cli.mjs [options]
+wukong-gitlog-cli [options]
 ```
 
 Command-line options:
@@ -83,7 +81,7 @@ Command-line options:
 Use the `--gerrit` option to include a Gerrit link for each commit. You can provide a template containing `{{hash}}` to place the full commit hash into the URL, for example:
 
 ```bash
-node ./src/cli.mjs --gerrit "https://gerrit.example.com/c/project/+/{{hash}}" --limit 5 --format text
+wukong-gitlog-cli --gerrit "https://gerrit.example.com/c/project/+/{{hash}}" --limit 5 --format text
 ```
 
 If `{{hash}}` is not present, the CLI will append the commit hash to the prefix with a `/` separator.
@@ -124,19 +122,19 @@ node ./src/cli.mjs --format text --group-by month --gerrit "https://gerrit.examp
 Export to Excel with stats and Gerrit URLs:
 
 ```bash
-node ./src/cli.mjs --format excel --stats --gerrit "https://gerrit.example.com/c/project/+/{{hash}}"
+wukong-gitlog-cli --format excel --stats --gerrit "https://gerrit.example.com/c/project/+/{{hash}}"
 ```
 
 Export raw JSON:
 
 ```bash
-node ./src/cli.mjs --json --out commits.json
+wukong-gitlog-cli --json --out commits.json
 ```
 
 Export text to a custom directory (parent output folder):
 
 ```bash
-node ./src/cli.mjs --out-dir ../output --format text --limit 5 --out custom1.txt
+wukong-gitlog-cli --out-dir ../output --format text --limit 5 --out custom1.txt
 ```
 
 ---

@@ -1,27 +1,98 @@
 {
   "name": "wukong-gitlog-cli",
-  "version": "2.0.0",
-  "type": "module",
+  "version": "0.0.1",
   "description": "Advanced Git commit log exporter with Excel/JSON/TXT output, grouping, stats and CLI.",
+  "keywords": [
+    "git",
+    "gitlog",
+    "commit-log",
+    "commits",
+    "gerrit",
+    "excel",
+    "json",
+    "text",
+    "cli",
+    "export",
+    "commit-logs",
+    "wukong-gitlog",
+    "提交",
+    "提交记录",
+    "提交日志",
+    "导出",
+    "命令行工具",
+    "Excel导出",
+    "JSON导出",
+    "文本导出",
+    "Gerrit链接"
+  ],
+  "homepage": "https://tomatobybike.github.io/wukong-gitlog-cli/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tomatobybike/wukong-gitlog-cli"
+  },
+  "license": "MIT",
+  "author": "Tom <tomatobybike@gmail.com>",
+  "type": "module",
   "bin": {
     "wukong-gitlog-cli": "./bin/wukong-gitlog-cli"
   },
-  "dependencies": {
-    "zx": "^7.2.3",
-    "exceljs": "^4.4.0",
-    "commander": "^12.0.0",
-    "chalk": "^5.3.0",
-    "dayjs": "^1.11.10"
-  }
-  ,
   "scripts": {
-    "cli:help": "node ./src/cli.mjs --help",
-    "cli:text-demo": "node ./src/cli.mjs --format text --limit 5 --out commits.txt",
-    "cli:text-demo-parent": "node ./src/cli.mjs --out-parent --format text --limit 5 --out commits-parent.txt",
     "cli:excel-demo": "node ./src/cli.mjs --format excel --stats --limit 5 --out commits.xlsx",
     "cli:excel-demo-parent": "node ./src/cli.mjs --out-parent --format excel --stats --limit 5 --out commits-parent.xlsx",
+    "cli:gerrit-changeid-demo": "node ./src/cli.mjs --format text --gerrit \"https://gerrit.example.com/c/project/+/{{changeId}}\" --limit 5 --out commits-gerrit-changeid.txt",
+    "cli:gerrit-demo": "node ./src/cli.mjs --format text --gerrit \"https://gerrit.example.com/c/project/+/{{hash}}\" --limit 5 --out commits-gerrit.txt",
+    "cli:help": "node ./src/cli.mjs --help",
     "cli:json-demo": "node ./src/cli.mjs --json --limit 5 --out commits.json",
-    "cli:gerrit-demo": "node ./src/cli.mjs --format text --gerrit \"https://gerrit.example.com/c/project/+/{{hash}}\" --limit 5 --out commits-gerrit.txt"
-    ,"cli:gerrit-changeid-demo": "node ./src/cli.mjs --format text --gerrit \"https://gerrit.example.com/c/project/+/{{changeId}}\" --limit 5 --out commits-gerrit-changeid.txt"
+    "cli:text-demo": "node ./src/cli.mjs --format text --limit 5 --out commits.txt",
+    "cli:text-demo-parent": "node ./src/cli.mjs --out-parent --format text --limit 5 --out commits-parent.txt",
+    "format": "prettier --write \"src/**/*.{js,mjs}\"",
+    "lint": "eslint src --ext .js,.mjs src",
+    "lint:fix": "eslint src --ext .js,.mjs --fix",
+    "prepare": "husky install",
+    "prettierall": "npx prettier --write 'src/**/*.{js,jsx}'",
+    "prepublishOnly": "yarn lint && yarn build",
+    "release": "yarn release:patch && yarn push:tags && npm publish",
+    "push:tags": "git push origin main --follow-tags",
+    "release:major": "yarn lint && standard-version --release-as major",
+    "release:minor": "yarn lint && standard-version --release-as minor",
+    "release:patch": "yarn lint && standard-version --release-as patch",
+    "sort": "sort-package-json"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "package.json": [
+      "sort-package-json"
+    ],
+    "src/**/*.js": [
+      "prettier --write",
+      "eslint --fix"
+    ]
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "dayjs": "^1.11.10",
+    "exceljs": "^4.4.0",
+    "zx": "^7.2.3"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "5.2.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "eslint": "8.57.1",
+    "eslint-config-airbnb-base": "15.0.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-import-resolver-alias": "1.1.2",
+    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-prettier": "5.5.4",
+    "eslint-plugin-simple-import-sort": "12.1.1",
+    "prettier": "3.6.2",
+    "prettier-plugin-packagejson": "2.5.19",
+    "sort-package-json": "3.4.0",
+    "standard-version": "9.5.0"
   }
 }

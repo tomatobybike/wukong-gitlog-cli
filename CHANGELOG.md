@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.3](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v0.0.2...v0.0.3) (2025-11-26)
+
+
+### Features
+
+* 🎸 gerrit ([76f71b8](https://github.com/tomatobybike/wukong-gitlog-cli/commit/76f71b8ab7b1636bee4c243fd670383268e1f771))
+
 ### [0.0.2](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v0.0.1...v0.0.2) (2025-11-26)
 
 ### 0.0.1 (2025-11-26)

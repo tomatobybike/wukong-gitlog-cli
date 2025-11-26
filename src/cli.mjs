@@ -30,7 +30,7 @@ program
 const opts = program.opts();
 
 (async () => {
-  const records = await getGitLogs(opts);
+  let records = await getGitLogs(opts);
 
   // compute output directory root if user provided one or wants parent
   const outDir = opts.outParent
@@ -40,17 +40,20 @@ const opts = program.opts();
   // --- Gerrit 地址处理（若提供） ---
   if (opts.gerrit) {
     const prefix = opts.gerrit;
-    records.forEach(r => {
+    // create new array to avoid mutating function parameters (eslint: no-param-reassign)
+    records = records.map(r => {
+      let gerritUrl;
       if (prefix.includes('{{changeId}}')) {
         const changeId = r.changeId || r.hash;
-        r.gerrit = prefix.replace('{{changeId}}', changeId);
+        gerritUrl = prefix.replace('{{changeId}}', changeId);
       } else if (prefix.includes('{{hash}}')) {
-        r.gerrit = prefix.replace('{{hash}}', r.hash);
+        gerritUrl = prefix.replace('{{hash}}', r.hash);
       } else {
         // append hash to prefix, ensure slash handling
-        if (prefix.endsWith('/')) r.gerrit = `${prefix}${r.hash}`;
-        else r.gerrit = `${prefix}/${r.hash}`;
+        gerritUrl = prefix.endsWith('/') ? `${prefix}${r.hash}` : `${prefix}/${r.hash}`;
       }
+
+      return { ...r, gerrit: gerritUrl };
     });
   }
 
@@ -104,6 +107,6 @@ const opts = program.opts();
     console.log(chalk.green(`Excel 已导出: ${excelPath}`));
     console.log(chalk.green(`文本已自动导出: ${txtPath}`));
 
-    return;
+
   }
 })();

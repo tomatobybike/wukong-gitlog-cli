@@ -48,6 +48,8 @@
     "format": "prettier --write \"src/**/*.{js,mjs}\"",
     "lint": "eslint src --ext .js,.mjs src",
     "lint:fix": "eslint src --ext .js,.mjs --fix",
+    "pack": "npm pack",
+    "build": "node scripts/esbuild.config.mjs",
     "prepare": "husky install",
     "prettierall": "npx prettier --write 'src/**/*.{js,jsx}'",
     "prepublishOnly": "yarn lint && yarn build",

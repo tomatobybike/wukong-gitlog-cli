@@ -65,7 +65,9 @@ Command-line options:
 - `--format <type>`        Output format: `text` | `excel` | `json` (default: `text`)
 - `--group-by <type>`      Group commits by date: `day` | `month`
 - `--stats`                Include a `Stats` sheet in the Excel export
-- `--gerrit <prefix>`      Show Gerrit URL for each commit (supports templates `{{hash}}` and `{{changeId}}`; `{{changeId}}` falls back to `hash` when absent)
+- `--gerrit-api <url>`    Optional: Gerrit REST API base URL for resolving `{{changeNumber}}` (e.g. `https://gerrit.example.com/gerrit`)
+- `--gerrit-auth <token>` Optional: Authorization for Gerrit REST API (either `user:pass` for Basic or token string for Bearer)
+- `--gerrit <prefix>`      Show Gerrit URL for each commit (supports templates `{{hash}}`, `{{changeId}}` and `{{changeNumber}}`; `{{changeId}}` falls back to `hash` when absent; `{{changeNumber}}` requires `--gerrit-api` and falls back to `changeId` or `hash`)
 - `--out <file>`           Output file name (without path). Defaults: `commits.json` / `commits.txt` / `commits.xlsx`
 - `--out-dir <dir>`      Output directory path — supports relative or absolute path, e.g., `--out-dir ../output`
 - `--out-parent`         Place output in the parent directory's `output/` folder (same as `--out-dir ../output`)
@@ -105,8 +107,9 @@ Note: `--out <file>` is the filename only and the directory used to store that f
 For example:
 
 ```bash
-node ./src/cli.mjs --out parent.json --out-parent
-node ./src/cli.mjs --out demo.txt --out-dir ../temp
+# using globally installed CLI
+wukong-gitlog-cli --out parent.json --out-parent
+wukong-gitlog-cli --out demo.txt --out-dir ../temp
 ```
 
 ---
@@ -116,7 +119,20 @@ node ./src/cli.mjs --out demo.txt --out-dir ../temp
 Export as text, grouped by month, with Gerrit links:
 
 ```bash
-node ./src/cli.mjs --format text --group-by month --gerrit "https://gerrit.example.com/c/project/+/{{hash}}"
+wukong-gitlog-cli --format text --group-by month --gerrit "https://gerrit.example.com/c/project/+/{{hash}}"
+```
+
+// Resolve numeric change ID using Gerrit API (if available)
+wukong-gitlog-cli --format text --group-by month --gerrit "https://gerrit.example.com/c/project/+/{{changeNumber}}" --gerrit-api <GERRIT_API_BASE_URL>
+
+If your Gerrit requires authentication (HTTP Basic or token), use `--gerrit-auth`:
+
+```bash
+# HTTP Basic: username:password
+wukong-gitlog-cli --format text --gerrit "https://gerrit.example.com/c/project/+/{{changeNumber}}" --gerrit-api <GERRIT_API_BASE_URL> --gerrit-auth "username:password"
+
+# Token (Bearer)
+wukong-gitlog-cli --format text --gerrit "https://gerrit.example.com/c/project/+/{{changeNumber}}" --gerrit-api <GERRIT_API_BASE_URL> --gerrit-auth "MYTOKEN"
 ```
 
 Export to Excel with stats and Gerrit URLs:

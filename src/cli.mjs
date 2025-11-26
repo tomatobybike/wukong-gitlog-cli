@@ -22,6 +22,8 @@ program
   .option('--group-by <type>', '按日期分组: day | month')
   .option('--stats', '输出每日统计数据')
   .option('--gerrit <prefix>', '显示 Gerrit 地址，支持在 prefix 中使用 {{hash}} 占位符')
+  .option('--gerrit-api <url>', '可选：Gerrit REST API 基础地址，用于解析 changeNumber，例如 `https://gerrit.example.com`')
+  .option('--gerrit-auth <tokenOrUserPass>', '可选：Gerrit API 授权，格式为 `user:pass` 或 `TOKEN`（表示 Bearer token）')
   .option('--out <file>', '输出文件名（不含路径）')
   .option('--out-dir <dir>', '自定义输出目录，支持相对路径或绝对路径，例如 `--out-dir ../output`')
   .option('--out-parent', '将输出目录放到当前工程的父目录的 `output/`（等同于 `--out-dir ../output`）')
@@ -40,8 +42,78 @@ const opts = program.opts();
   // --- Gerrit 地址处理（若提供） ---
   if (opts.gerrit) {
     const prefix = opts.gerrit;
+    // support optional changeNumber resolution via Gerrit REST API
+    const { gerritApi, gerritAuth } = opts;
     // create new array to avoid mutating function parameters (eslint: no-param-reassign)
-    records = records.map(r => {
+    if (prefix.includes('{{changeNumber}}') && gerritApi) {
+      // async mapping to resolve changeNumber using Gerrit API
+      const cache = new Map();
+      const headers = {};
+      if (gerritAuth) {
+        if (gerritAuth.includes(':')) {
+          headers.Authorization = `Basic ${Buffer.from(gerritAuth).toString('base64')}`;
+        } else {
+          headers.Authorization = `Bearer ${gerritAuth}`;
+        }
+      }
+
+      const fetchGerritJson = async (url) => {
+        try {
+          const res = await fetch(url, { headers });
+          const txt = await res.text();
+          // Gerrit prepends )]}' to JSON responses — strip it
+          const jsonText = txt.replace(/^\)\]\}'\n/, '');
+          return JSON.parse(jsonText);
+        } catch (err) {
+          return null;
+        }
+      };
+
+      const resolveChangeNumber = async (r) => {
+        // try changeId first
+        if (r.changeId) {
+          if (cache.has(r.changeId)) return cache.get(r.changeId);
+          // try `changes/{changeId}/detail`
+          const url = `${gerritApi.replace(/\/$/, '')}/changes/${encodeURIComponent(r.changeId)}/detail`;
+          let j = await fetchGerritJson(url);
+          if (j && j._number) {
+            cache.set(r.changeId, j._number);
+            return j._number;
+          }
+          // fallback: query search
+          const url2 = `${gerritApi.replace(/\/$/, '')}/changes/?q=change:${encodeURIComponent(r.changeId)}`;
+          j = await fetchGerritJson(url2);
+          if (Array.isArray(j) && j.length > 0 && j[0]._number) {
+            cache.set(r.changeId, j[0]._number);
+            return j[0]._number;
+          }
+        }
+        // try commit hash
+        if (r.hash) {
+          if (cache.has(r.hash)) return cache.get(r.hash);
+          const url3 = `${gerritApi.replace(/\/$/, '')}/changes/?q=commit:${encodeURIComponent(r.hash)}`;
+          const j = await fetchGerritJson(url3);
+          if (Array.isArray(j) && j.length > 0 && j[0]._number) {
+            cache.set(r.hash, j[0]._number);
+            return j[0]._number;
+          }
+        }
+        return null;
+      };
+
+      records = await Promise.all(
+        records.map(async (r) => {
+          const changeNumber = await resolveChangeNumber(r);
+          const changeNumberOrFallback = changeNumber || r.changeId || r.hash;
+          const gerritUrl = prefix.replace('{{changeNumber}}', changeNumberOrFallback);
+          return { ...r, gerrit: gerritUrl };
+        })
+      );
+    } else if (prefix.includes('{{changeNumber}}') && !gerritApi) {
+        console.warn('prefix contains {{changeNumber}} but no --gerrit-api provided — falling back to changeId/hash');
+        records = records.map((r) => ({ ...r, gerrit: prefix.replace('{{changeNumber}}', r.changeId || r.hash) }));
+      } else {
+      records = records.map((r) => {
       let gerritUrl;
       if (prefix.includes('{{changeId}}')) {
         const changeId = r.changeId || r.hash;
@@ -54,7 +126,8 @@ const opts = program.opts();
       }
 
       return { ...r, gerrit: gerritUrl };
-    });
+      });
+      }
   }
 
   // --- 分组 ---

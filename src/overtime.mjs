@@ -72,7 +72,13 @@ export function analyzeOvertime(records, opts = {}) {
     const isHoliday = !!hd.isHoliday(dt.toDate());
     const isNonWork = isWeekend(dt) || isHoliday;
 
-    if (outside) outsideWorkCount++;
+    if (outside) {
+      outsideWorkCount++;
+      // 记录最新的加班提交
+      if (!latestOutsideCommit || dt.isAfter(parseCommitDate(latestOutsideCommit.date))) {
+        latestOutsideCommit = r;
+      }
+    }
     if (isNonWork) nonWorkdayCount++;
     if (isHoliday) holidayCount++;
 
@@ -152,7 +158,7 @@ export function analyzeOvertime(records, opts = {}) {
 
 export function renderOvertimeText(stats) {
   const { total, outsideWorkCount, nonWorkdayCount, holidayCount, outsideWorkRate, nonWorkdayRate, holidayRate, perAuthor, startHour, endHour, lunchStart, lunchEnd, country } = stats;
-  const { startCommit, endCommit, latestCommit } = stats;
+  const { startCommit, endCommit, latestCommit, latestOutsideCommit } = stats;
   const lines = [];
 
   const formatPercent = (v) => `${(v * 100).toFixed(1)}%`;
@@ -187,6 +193,13 @@ export function renderOvertimeText(stats) {
     lines.push(`  Date   : ${formatDateForCountry(latestCommit.date, country)}`);
     lines.push(`  Message: ${latestCommit.message}`);
   }
+  if (latestOutsideCommit) {
+    lines.push('加班最晚的一次提交：');
+    lines.push(`  Hash   : ${latestOutsideCommit.hash}`);
+    lines.push(`  Author : ${latestOutsideCommit.author}`);
+    lines.push(`  Date   : ${formatDateForCountry(latestOutsideCommit.date, country)}`);
+    lines.push(`  Message: ${latestOutsideCommit.message}`);
+  }
   // country: holiday region, lunchStart/lunchEnd define midday break
   lines.push(`下班时间定义：${startHour}:00 - ${endHour}:00 (午休 ${lunchStart}:00 - ${lunchEnd}:00)`);
   lines.push(`国家假期参考：${String(country).toUpperCase()}，节假日提交数：${holidayCount}，占比：${(holidayRate * 100).toFixed(1)}%`);
@@ -212,11 +225,12 @@ export function renderOvertimeText(stats) {
 
 export function renderOvertimeTab(stats) {
   const { total, outsideWorkCount, nonWorkdayCount, holidayCount, outsideWorkRate, nonWorkdayRate, holidayRate, perAuthor, startHour, endHour, lunchStart, lunchEnd, country } = stats;
-  const { startCommit, endCommit, latestCommit } = stats;
+  const { startCommit, endCommit, latestCommit, latestOutsideCommit } = stats;
   const rows = [];
   rows.push(`总提交数:\t${total}`);
   if (startCommit && endCommit) rows.push(`统计区间:\t${formatDateForCountry(startCommit.date, country)} — ${formatDateForCountry(endCommit.date, country)}`);
   if (latestCommit) rows.push(`最晚一次提交:\t${latestCommit.hash}\t${latestCommit.author}\t${formatDateForCountry(latestCommit.date, country)}\t${latestCommit.message}`);
+  if (latestOutsideCommit) rows.push(`加班最晚的一次提交:\t${latestOutsideCommit.hash}\t${latestOutsideCommit.author}\t${formatDateForCountry(latestOutsideCommit.date, country)}\t${latestOutsideCommit.message}`);
   rows.push(`下班时间定义:\t${startHour}:00 - ${endHour}:00 (午休 ${lunchStart}:00 - ${lunchEnd}:00)`);
   rows.push(`国家假期参考:\t${String(country).toUpperCase()}\t节假日提交数:\t${holidayCount}\t节假日占比:\t${(holidayRate * 100).toFixed(1)}%`);
   rows.push(`下班时间（工作时间外）提交数:\t${outsideWorkCount}\t占比:\t${(outsideWorkRate * 100).toFixed(1)}%`);
@@ -238,8 +252,12 @@ function escapeCsv(v) {
 }
 
 export function renderOvertimeCsv(stats) {
-  const { perAuthor } = stats;
+  const { perAuthor, latestOutsideCommit, country } = stats;
   const rows = [];
+  if (latestOutsideCommit) {
+    rows.push(`# 加班最晚的一次提交,Hash,Author,Date,Message`);
+    rows.push(`# ,${escapeCsv(latestOutsideCommit.hash)},${escapeCsv(latestOutsideCommit.author)},${escapeCsv(formatDateForCountry(latestOutsideCommit.date, country))},${escapeCsv(latestOutsideCommit.message)}`);
+  }
   rows.push('Name,Total,OutsideCount,OutsideRate,NonWorkdayCount,NonWorkdayRate,HolidayCount,HolidayRate');
   perAuthor.forEach((p) => {
     rows.push(`${escapeCsv(p.name)},${p.total},${p.outsideWorkCount},${(p.outsideWorkRate * 100).toFixed(1)}%,${p.nonWorkdayCount},${(p.nonWorkdayRate * 100).toFixed(1)}%,${p.holidayCount || 0},${((p.holidayCount || 0) / p.total * 100).toFixed(1)}%`);

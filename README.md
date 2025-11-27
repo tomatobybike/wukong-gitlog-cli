@@ -37,21 +37,15 @@ Advanced Git commit log exporter with Excel/JSON/TXT output, grouping, stats and
 
 ## Installation
 
-Clone and install dependencies:
 
-```bash
-git clone https://github.com/tomatoboy/wukong-gitlog-cli.git
-cd wukong-gitlog-cli
-npm install
-```
 
 Install globally to run with a short command (recommended for CLI consumers):
 
 ```bash
-# Install globally from the repo (for development):
-npm link
 # Or install via npm when published:
 npm i -g wukong-gitlog-cli
+
+yarn global add wukong-gitlog-cli
 
 # Then you can run the CLI globally:
 wukong-gitlog-cli --help

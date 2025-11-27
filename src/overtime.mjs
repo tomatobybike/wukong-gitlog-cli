@@ -14,6 +14,20 @@ export function parseCommitDate(d) {
   return dt;
 }
 
+function formatDateForCountry(dateStr, country) {
+  try {
+    const dt = parseCommitDate(dateStr);
+    if (!dt || !dt.isValid()) return dateStr;
+    if (String(country).toUpperCase() === 'CN') {
+      // Force display in +08:00 timezone
+      return dt.utcOffset(8 * 60).format('YYYY-MM-DD HH:mm:ss ZZ');
+    }
+    return dt.format('YYYY-MM-DD HH:mm:ss ZZ');
+  } catch (err) {
+    return dateStr;
+  }
+}
+
 function isWeekend(dt) {
   const day = dt.day();
   return day === 0 || day === 6; // Sunday=0, Saturday=6
@@ -162,13 +176,13 @@ export function renderOvertimeText(stats) {
   };
   lines.push(`总提交数：${total}`);
   if (startCommit && endCommit) {
-    lines.push(`统计区间：${startCommit.date} — ${endCommit.date}`);
+    lines.push(`统计区间：${formatDateForCountry(startCommit.date, country)} — ${formatDateForCountry(endCommit.date, country)}`);
   }
   if (latestCommit) {
     lines.push('最晚一次提交：');
     lines.push(`  Hash   : ${latestCommit.hash}`);
     lines.push(`  Author : ${latestCommit.author}`);
-    lines.push(`  Date   : ${latestCommit.date}`);
+    lines.push(`  Date   : ${formatDateForCountry(latestCommit.date, country)}`);
     lines.push(`  Message: ${latestCommit.message}`);
   }
   // country: holiday region, lunchStart/lunchEnd define midday break
@@ -199,8 +213,8 @@ export function renderOvertimeTab(stats) {
   const { startCommit, endCommit, latestCommit } = stats;
   const rows = [];
   rows.push(`总提交数:\t${total}`);
-  if (startCommit && endCommit) rows.push(`统计区间:\t${startCommit.date} — ${endCommit.date}`);
-  if (latestCommit) rows.push(`最晚一次提交:\t${latestCommit.hash}\t${latestCommit.author}\t${latestCommit.date}\t${latestCommit.message}`);
+  if (startCommit && endCommit) rows.push(`统计区间:\t${formatDateForCountry(startCommit.date, country)} — ${formatDateForCountry(endCommit.date, country)}`);
+  if (latestCommit) rows.push(`最晚一次提交:\t${latestCommit.hash}\t${latestCommit.author}\t${formatDateForCountry(latestCommit.date, country)}\t${latestCommit.message}`);
   rows.push(`下班时间定义:\t${startHour}:00 - ${endHour}:00 (午休 ${lunchStart}:00 - ${lunchEnd}:00)`);
   rows.push(`国家假期参考:\t${String(country).toUpperCase()}\t节假日提交数:\t${holidayCount}\t节假日占比:\t${(holidayRate * 100).toFixed(1)}%`);
   rows.push(`下班时间（工作时间外）提交数:\t${outsideWorkCount}\t占比:\t${(outsideWorkRate * 100).toFixed(1)}%`);

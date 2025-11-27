@@ -77,6 +77,11 @@ Command-line options:
 - `--format <type>`        Output format: `text` | `excel` | `json` (default: `text`)
 - `--group-by <type>`      Group commits by date: `day` | `month`
 - `--overtime`              Analyze overtime culture: output counts/percentages for commits outside work hours and on non-workdays (per-person breakdown)
+  - `--country <code>`       Country/region for holidays (CN|US). Default: `CN`.
+  - `--work-start <hour>`    Workday start hour. Default: `9`.
+  - `--work-end <hour>`      Workday end hour. Default: `18`.
+  - `--lunch-start <hour>`   Lunch break start hour. Default: `12`.
+  - `--lunch-end <hour>`     Lunch break end hour. Default: `14`.
 - `--stats`                Include a `Stats` sheet in the Excel export
 - `--gerrit-api <url>`    Optional: Gerrit REST API base URL for resolving `{{changeNumber}}` (e.g. `https://gerrit.example.com/gerrit`)
 - `--gerrit-auth <token>` Optional: Authorization for Gerrit REST API (either `user:pass` for Basic or token string for Bearer)
@@ -218,6 +223,35 @@ You can also analyze overtime culture with the `--overtime` flag to get overall 
 ```bash
 wukong-gitlog-cli --overtime --limit 500
 ```
+
+## Overtime demo scripts (npm)
+
+Below are helpful npm scripts added for quickly running the overtime analysis with commonly used configurations. They are already present in `package.json` and can be run from the project root.
+
+```bash
+# Run a US-focused overtime text report using 10:00-19:00 work hours and a 12:00-13:00 lunch break
+npm run cli:overtime-text-us
+
+# Run a US-focused overtime text report and write the outputs into the project parent's output folder
+npm run cli:overtime-text-us-parent
+
+# Run a US-focused overtime text report and write the output into ../output (explicit --out-dir)
+npm run cli:overtime-text-us-outdir
+
+# Run a CN-focused overtime Excel report (default 9:00-18:00 work hours and 12:00-14:00 lunch)
+npm run cli:overtime-excel-cn
+
+# Run a CN-focused overtime Excel report and write outputs to parent output folder
+npm run cli:overtime-excel-cn-parent
+
+# Run a CN-focused overtime Excel report and write outputs to ../output via --out-dir
+npm run cli:overtime-excel-cn-outdir
+```
+
+Notes:
+
+- Output files are written into `output/` by default. Use `--out-dir` or `--out-parent` to change output location.
+- If you prefer different working hours or country codes, either modify the script in `package.json` or run the CLI manually with flags (e.g. `--work-start`, `--work-end`, `--lunch-start`, `--lunch-end`, `--country`).
 
 Example JSON output (from `npm run cli:json-demo`):
 

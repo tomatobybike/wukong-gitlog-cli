@@ -26,6 +26,11 @@ program
   .option('--gerrit-api <url>', '可选：Gerrit REST API 基础地址，用于解析 changeNumber，例如 `https://gerrit.example.com`')
   .option('--gerrit-auth <tokenOrUserPass>', '可选：Gerrit API 授权，格式为 `user:pass` 或 `TOKEN`（表示 Bearer token）')
   .option('--overtime', '分析公司加班文化（输出下班时间与非工作日提交占比）')
+  .option('--country <code>', '节假日国家：CN 或 US，默认为 CN', 'CN')
+  .option('--work-start <hour>', '上班开始小时，默认 9', (v) => parseInt(v, 10), 9)
+  .option('--work-end <hour>', '下班小时，默认 18', (v) => parseInt(v, 10), 18)
+  .option('--lunch-start <hour>', '午休开始小时，默认 12', (v) => parseInt(v, 10), 12)
+  .option('--lunch-end <hour>', '午休结束小时，默认 14', (v) => parseInt(v, 10), 14)
   .option('--out <file>', '输出文件名（不含路径）')
   .option('--out-dir <dir>', '自定义输出目录，支持相对路径或绝对路径，例如 `--out-dir ../output`')
   .option('--out-parent', '将输出目录放到当前工程的父目录的 `output/`（等同于 `--out-dir ../output`）')
@@ -137,7 +142,13 @@ const opts = program.opts();
 
   // --- Overtime analysis ---
   if (opts.overtime) {
-    const stats = analyzeOvertime(records, { startHour: 9, endHour: 18 });
+    const stats = analyzeOvertime(records, {
+      startHour: opts.workStart || opts.workStart === 0 ? opts.workStart : 9,
+      endHour: opts.workEnd || opts.workEnd === 0 ? opts.workEnd : 18,
+      lunchStart: opts.lunchStart || opts.lunchStart === 0 ? opts.lunchStart : 12,
+      lunchEnd: opts.lunchEnd || opts.lunchEnd === 0 ? opts.lunchEnd : 14,
+      country: opts.country || 'CN',
+    });
     // Output to console
     console.log('\n--- Overtime analysis ---\n');
     console.log(renderOvertimeText(stats));

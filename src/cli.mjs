@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import path from 'path';
 import { getGitLogs } from './git.mjs';
 import { renderText } from './text.mjs';
-import { analyzeOvertime, renderOvertimeText } from './overtime.mjs';
+import { analyzeOvertime, renderOvertimeText, renderOvertimeTab, renderOvertimeCsv } from './overtime.mjs';
 import { exportExcel } from './excel.mjs';
 import { groupRecords, writeJSON, writeTextFile, outputFilePath } from './utils/index.mjs';
 
@@ -164,7 +164,17 @@ const opts = program.opts();
     const overtimeFileName = `overtime_${outBase}.txt`;
     const overtimeFile = outputFilePath(overtimeFileName, outDir);
     writeTextFile(overtimeFile, renderOvertimeText(stats));
+    // write tab-separated text file for better alignment in editors that use proportional fonts
+    const overtimeTabFileName = `overtime_${outBase}.tab.txt`;
+    const overtimeTabFile = outputFilePath(overtimeTabFileName, outDir);
+    writeTextFile(overtimeTabFile, renderOvertimeTab(stats));
+    // write CSV for structured data consumption
+    const overtimeCsvFileName = `overtime_${outBase}.csv`;
+    const overtimeCsvFile = outputFilePath(overtimeCsvFileName, outDir);
+    writeTextFile(overtimeCsvFile, renderOvertimeCsv(stats));
     console.log(chalk.green(`Overtime text 已导出: ${overtimeFile}`));
+    console.log(chalk.green(`Overtime table (tabs) 已导出: ${overtimeTabFile}`));
+    console.log(chalk.green(`Overtime CSV 已导出: ${overtimeCsvFile}`));
     // don't return — allow other outputs to proceed
   }
 

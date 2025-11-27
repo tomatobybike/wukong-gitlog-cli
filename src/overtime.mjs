@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import DateHolidays from 'date-holidays';
+import stringWidth from 'string-width';
 
 export function parseCommitDate(d) {
   // d examples: '2025-11-14 23:53:04 +0800' or ISO format
@@ -137,12 +138,38 @@ export function renderOvertimeText(stats) {
   const { total, outsideWorkCount, nonWorkdayCount, holidayCount, outsideWorkRate, nonWorkdayRate, holidayRate, perAuthor, startHour, endHour, lunchStart, lunchEnd, country } = stats;
   const { startCommit, endCommit, latestCommit } = stats;
   const lines = [];
+
+  const formatPercent = (v) => `${(v * 100).toFixed(1)}%`;
+  const padDisplayEnd = (s, width) => {
+    const t = String(s ?? '');
+    const w = stringWidth(t);
+    return t + ' '.repeat(Math.max(0, width - w));
+  };
+  const padDisplayStart = (s, width) => {
+    const t = String(s ?? '');
+    const w = stringWidth(t);
+    return ' '.repeat(Math.max(0, width - w)) + t;
+  };
+  const cols = {
+    name: 22,
+    total: 6,
+    outside: 9,
+    outsideRate: 10,
+    nonWork: 10,
+    nonWorkRate: 12,
+    holiday: 8,
+    holidayRate: 10,
+  };
   lines.push(`总提交数：${total}`);
   if (startCommit && endCommit) {
     lines.push(`统计区间：${startCommit.date} — ${endCommit.date}`);
   }
   if (latestCommit) {
-    lines.push(`最晚一次提交：${latestCommit.hash} ${latestCommit.author} ${latestCommit.date} ${latestCommit.message}`);
+    lines.push('最晚一次提交：');
+    lines.push(`  Hash   : ${latestCommit.hash}`);
+    lines.push(`  Author : ${latestCommit.author}`);
+    lines.push(`  Date   : ${latestCommit.date}`);
+    lines.push(`  Message: ${latestCommit.message}`);
   }
   // country: holiday region, lunchStart/lunchEnd define midday break
   lines.push(`下班时间定义：${startHour}:00 - ${endHour}:00 (午休 ${lunchStart}:00 - ${lunchEnd}:00)`);
@@ -151,14 +178,56 @@ export function renderOvertimeText(stats) {
   lines.push(`非工作日（周末）提交数：${nonWorkdayCount}，占比：${(nonWorkdayRate * 100).toFixed(1)}%`);
   lines.push('');
   lines.push('按人员统计：');
-  lines.push(`  ${'Name'.padEnd(20)} | 总数 | 下班外数 | 下班外占比 | 非工作日数 | 非工作日占比 | 假日数 | 假日占比`);
-  lines.push('-'.repeat(80));
+  // header
+  const header = `  ${padDisplayEnd('Name', cols.name)} | ${padDisplayStart('总数', cols.total)} | ${padDisplayStart('下班外数', cols.outside)} | ${padDisplayStart('下班外占比', cols.outsideRate)} | ${padDisplayStart('非工作日数', cols.nonWork)} | ${padDisplayStart('非工作日占比', cols.nonWorkRate)} | ${padDisplayStart('假日数', cols.holiday)} | ${padDisplayStart('假日占比', cols.holidayRate)}`;
+  lines.push(header);
+  const totalWidth = cols.name + cols.total + cols.outside + cols.outsideRate + cols.nonWork + cols.nonWorkRate + cols.holiday + cols.holidayRate + 3 * 7; // approximate separator widths
+  lines.push('-'.repeat(Math.max(80, totalWidth)));
 
   perAuthor.forEach((p) => {
-    lines.push(
-      `  ${p.name.padEnd(20)} | ${String(p.total).padStart(3)}  | ${String(p.outsideWorkCount).padStart(8)}  | ${String((p.outsideWorkRate * 100).toFixed(1)).padStart(8)}%  | ${String(p.nonWorkdayCount).padStart(8)}  | ${String((p.nonWorkdayRate * 100).toFixed(1)).padStart(8)}%  | ${String(p.holidayCount).padStart(6)}  | ${String((p.holidayRate * 100).toFixed(1)).padStart(6)}%`
-    );
+    const name = (p.name || '-').toString();
+    const row = `  ${padDisplayEnd(name, cols.name)} | ${padDisplayStart(String(p.total), cols.total)} | ${padDisplayStart(String(p.outsideWorkCount), cols.outside)} | ${padDisplayStart(formatPercent(p.outsideWorkRate), cols.outsideRate)} | ${padDisplayStart(String(p.nonWorkdayCount), cols.nonWork)} | ${padDisplayStart(formatPercent(p.nonWorkdayRate), cols.nonWorkRate)} | ${padDisplayStart(String(p.holidayCount), cols.holiday)} | ${padDisplayStart(formatPercent(p.holidayRate), cols.holidayRate)}`;
+    lines.push(row);
   });
+  lines.push('');
 
   return lines.join('\n');
 }
+
+export function renderOvertimeTab(stats) {
+  const { total, outsideWorkCount, nonWorkdayCount, holidayCount, outsideWorkRate, nonWorkdayRate, holidayRate, perAuthor, startHour, endHour, lunchStart, lunchEnd, country } = stats;
+  const { startCommit, endCommit, latestCommit } = stats;
+  const rows = [];
+  rows.push(`总提交数:\t${total}`);
+  if (startCommit && endCommit) rows.push(`统计区间:\t${startCommit.date} — ${endCommit.date}`);
+  if (latestCommit) rows.push(`最晚一次提交:\t${latestCommit.hash}\t${latestCommit.author}\t${latestCommit.date}\t${latestCommit.message}`);
+  rows.push(`下班时间定义:\t${startHour}:00 - ${endHour}:00 (午休 ${lunchStart}:00 - ${lunchEnd}:00)`);
+  rows.push(`国家假期参考:\t${String(country).toUpperCase()}\t节假日提交数:\t${holidayCount}\t节假日占比:\t${(holidayRate * 100).toFixed(1)}%`);
+  rows.push(`下班时间（工作时间外）提交数:\t${outsideWorkCount}\t占比:\t${(outsideWorkRate * 100).toFixed(1)}%`);
+  rows.push(`非工作日（周末）提交数:\t${nonWorkdayCount}\t占比:\t${(nonWorkdayRate * 100).toFixed(1)}%`);
+  rows.push('');
+  rows.push(['Name', '总数', '下班外数', '下班外占比', '非工作日数', '非工作日占比', '假日数', '假日占比'].join('\t'));
+  perAuthor.forEach((p) => {
+    rows.push([p.name || '-', p.total, p.outsideWorkCount, `${(p.outsideWorkRate * 100).toFixed(1)}%`, p.nonWorkdayCount, `${(p.nonWorkdayRate * 100).toFixed(1)}%`, p.holidayCount || 0, `${((p.holidayCount || 0) / p.total * 100).toFixed(1)}%`].join('\t'));
+  });
+  return rows.join('\n');
+}
+
+function escapeCsv(v) {
+  const s = String(v ?? '');
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+export function renderOvertimeCsv(stats) {
+  const { perAuthor } = stats;
+  const rows = [];
+  rows.push('Name,Total,OutsideCount,OutsideRate,NonWorkdayCount,NonWorkdayRate,HolidayCount,HolidayRate');
+  perAuthor.forEach((p) => {
+    rows.push(`${escapeCsv(p.name)},${p.total},${p.outsideWorkCount},${(p.outsideWorkRate * 100).toFixed(1)}%,${p.nonWorkdayCount},${(p.nonWorkdayRate * 100).toFixed(1)}%,${p.holidayCount || 0},${((p.holidayCount || 0) / p.total * 100).toFixed(1)}%`);
+  });
+  return rows.join('\n');
+}
+

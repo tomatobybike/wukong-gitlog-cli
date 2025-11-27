@@ -253,6 +253,10 @@ Notes:
 - Output files are written into `output/` by default. Use `--out-dir` or `--out-parent` to change output location.
 - If you prefer different working hours or country codes, either modify the script in `package.json` or run the CLI manually with flags (e.g. `--work-start`, `--work-end`, `--lunch-start`, `--lunch-end`, `--country`).
 
+Formatting note:
+
+- The text report is formatted to align columns correctly even when commit messages or author names contain mixed Chinese and English characters (uses `string-width` for display-aware padding).
+
 Example JSON output (from `npm run cli:json-demo`):
 
 ```json

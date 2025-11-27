@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import path from 'path';
 import { getGitLogs } from './git.mjs';
 import { renderText } from './text.mjs';
+import { analyzeOvertime, renderOvertimeText } from './overtime.mjs';
 import { exportExcel } from './excel.mjs';
 import { groupRecords, writeJSON, writeTextFile, outputFilePath } from './utils/index.mjs';
 
@@ -24,6 +25,7 @@ program
   .option('--gerrit <prefix>', '显示 Gerrit 地址，支持在 prefix 中使用 {{hash}} 占位符')
   .option('--gerrit-api <url>', '可选：Gerrit REST API 基础地址，用于解析 changeNumber，例如 `https://gerrit.example.com`')
   .option('--gerrit-auth <tokenOrUserPass>', '可选：Gerrit API 授权，格式为 `user:pass` 或 `TOKEN`（表示 Bearer token）')
+  .option('--overtime', '分析公司加班文化（输出下班时间与非工作日提交占比）')
   .option('--out <file>', '输出文件名（不含路径）')
   .option('--out-dir <dir>', '自定义输出目录，支持相对路径或绝对路径，例如 `--out-dir ../output`')
   .option('--out-parent', '将输出目录放到当前工程的父目录的 `output/`（等同于 `--out-dir ../output`）')
@@ -132,6 +134,28 @@ const opts = program.opts();
 
   // --- 分组 ---
   const groups = opts.groupBy ? groupRecords(records, opts.groupBy) : null;
+
+  // --- Overtime analysis ---
+  if (opts.overtime) {
+    const stats = analyzeOvertime(records, { startHour: 9, endHour: 18 });
+    // Output to console
+    console.log('\n--- Overtime analysis ---\n');
+    console.log(renderOvertimeText(stats));
+    // if user requested json format, write stats to file
+    if (opts.json || opts.format === 'json') {
+      const file = opts.out || 'overtime.json';
+      const filepath = outputFilePath(file, outDir);
+      writeJSON(filepath, stats);
+      console.log(chalk.green(`overtime JSON 已导出: ${filepath}`));
+    }
+    // Always write human readable overtime text to file (default: overtime.txt)
+    const outBase = opts.out ? path.basename(opts.out, path.extname(opts.out)) : 'commits';
+    const overtimeFileName = `overtime_${outBase}.txt`;
+    const overtimeFile = outputFilePath(overtimeFileName, outDir);
+    writeTextFile(overtimeFile, renderOvertimeText(stats));
+    console.log(chalk.green(`Overtime text 已导出: ${overtimeFile}`));
+    // don't return — allow other outputs to proceed
+  }
 
   // --- JSON ---
   if (opts.json || opts.format === 'json') {

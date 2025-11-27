@@ -76,6 +76,7 @@ Command-line options:
 - `--json`                 Output JSON
 - `--format <type>`        Output format: `text` | `excel` | `json` (default: `text`)
 - `--group-by <type>`      Group commits by date: `day` | `month`
+- `--overtime`              Analyze overtime culture: output counts/percentages for commits outside work hours and on non-workdays (per-person breakdown)
 - `--stats`                Include a `Stats` sheet in the Excel export
 - `--gerrit-api <url>`    Optional: Gerrit REST API base URL for resolving `{{changeNumber}}` (e.g. `https://gerrit.example.com/gerrit`)
 - `--gerrit-auth <token>` Optional: Authorization for Gerrit REST API (either `user:pass` for Basic or token string for Bearer)
@@ -210,6 +211,12 @@ c5bdf9d4   | tom                | 2025-11-25           | feat: 🎸 增加output
 ea82531   | tom                | 2025-11-25           | feat: 🎸 init
 
 741de50   | tom                | 2025-11-25           | first commit
+```
+
+You can also analyze overtime culture with the `--overtime` flag to get overall and per-person overtime submission rates (default work window is 09:00-18:00). Example:
+
+```bash
+wukong-gitlog-cli --overtime --limit 500
 ```
 
 Example JSON output (from `npm run cli:json-demo`):

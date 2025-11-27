@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.6](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v0.0.5...v0.0.6) (2025-11-27)
+
+
+### Features
+
+* 🎸 统计非工作时间提交量 ([7b8b0e7](https://github.com/tomatobybike/wukong-gitlog-cli/commit/7b8b0e7f2f85f2cd9e597d9bfd48cb4445937a09))
+* 🎸 lock package.json ([ae94dc7](https://github.com/tomatobybike/wukong-gitlog-cli/commit/ae94dc7c4445347ef0f06141176c9cb7f429ecf0))
+* 🎸 Statistical overtime culture ([c6841bb](https://github.com/tomatobybike/wukong-gitlog-cli/commit/c6841bbff1656e72a5a0129c1cc08f1ee457c768))
+* 🎸 Statistical overtime culture 统计加班文化 ([65ac7ca](https://github.com/tomatobybike/wukong-gitlog-cli/commit/65ac7ca3772ad018dc57623796859ad1f87df861))
+
 ### [0.0.5](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v0.0.4...v0.0.5) (2025-11-27)
 
 ### [0.0.4](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v0.0.3...v0.0.4) (2025-11-27)

@@ -53,6 +53,7 @@ export function analyzeOvertime(records, opts = {}) {
   let startCommit = null;
   let endCommit = null;
   let latestCommit = null;
+  let latestOutsideCommit = null;
 
   // init holiday checker for country
   const hd = new DateHolidays();
@@ -138,6 +139,7 @@ export function analyzeOvertime(records, opts = {}) {
     startCommit: startCommit || null,
     endCommit: endCommit || null,
     latestCommit: latestCommit || null,
+    latestOutsideCommit: latestOutsideCommit || null,
     startHour,
     endHour,
       lunchStart,

@@ -36,6 +36,7 @@ program
   .option('--out-parent', '将输出目录放到当前工程的父目录的 `output/`（等同于 `--out-dir ../output`）')
   .option('--per-period-formats <formats>', '每个周期单独输出的格式，逗号分隔：text,csv,tab,xlsx。默认为空（不输出 CSV/Tab/XLSX）', '')
   .option('--per-period-excel-mode <mode>', 'per-period Excel 模式：sheets|files（默认：sheets）', 'sheets')
+  .option('--per-period-only', '仅输出 per-period（month/week）文件，不输出合并的 monthly/weekly 汇总文件')
   .parse();
 
 const opts = program.opts();
@@ -225,8 +226,10 @@ const opts = program.opts();
           console.warn(`Write monthly file for ${k} failed:`, err && err.message ? err.message : err);
         }
       });
-      writeTextFile(monthlyFile, monthlyContent);
-      console.log(chalk.green(`Overtime 月度汇总 已导出: ${monthlyFile}`));
+      if (!opts.perPeriodOnly) {
+        writeTextFile(monthlyFile, monthlyContent);
+        console.log(chalk.green(`Overtime 月度汇总 已导出: ${monthlyFile}`));
+      }
       // per-period Excel (sheets or files)
       if (perPeriodFormats.includes('xlsx')) {
         const perPeriodExcelMode = String(opts.perPeriodExcelMode || 'sheets');
@@ -304,8 +307,10 @@ const opts = program.opts();
           console.warn(`Write weekly file for ${k} failed:`, err && err.message ? err.message : err);
         }
       });
-      writeTextFile(weeklyFile, weeklyContent);
-      console.log(chalk.green(`Overtime 周度汇总 已导出: ${weeklyFile}`));
+      if (!opts.perPeriodOnly) {
+        writeTextFile(weeklyFile, weeklyContent);
+        console.log(chalk.green(`Overtime 周度汇总 已导出: ${weeklyFile}`));
+      }
       // per-period Excel (sheets or files)
       if (perPeriodFormats.includes('xlsx')) {
         const perPeriodExcelMode = String(opts.perPeriodExcelMode || 'sheets');

@@ -37,7 +37,7 @@
     "wukong-gitlog-cli": "./bin/wukong-gitlog-cli"
   },
   "scripts": {
-    "cli:excel-demo": "node ./src/cli.mjs --format excel --stats --limit 5 --out commits.xlsx",
+    "cli:excel-demo": "node ./src/cli.mjs --overtime --format excel --stats --limit 5 --out commits.xlsx",
     "cli:excel-demo-parent": "node ./src/cli.mjs --out-parent --format excel --stats --limit 5 --out commits-parent.xlsx",
     "cli:gerrit-changeid-demo": "node ./src/cli.mjs --format text --gerrit \"https://gerrit.example.com/c/project/+/{{changeId}}\" --limit 5 --out commits-gerrit-changeid.txt",
     "cli:gerrit-demo": "node ./src/cli.mjs --format text --gerrit \"https://gerrit.example.com/c/project/+/{{hash}}\" --limit 5 --out commits-gerrit.txt",
@@ -54,6 +54,10 @@
     "cli:overtime-excel-cn": "node ./src/cli.mjs --overtime --limit 50 --format excel --out commits.xlsx --country CN",
     "cli:overtime-excel-cn-parent": "node ./src/cli.mjs --out-parent --overtime --limit 50 --format excel --out commits.xlsx --country CN",
     "cli:overtime-excel-cn-outdir": "node ./src/cli.mjs --out-dir ../output --overtime --limit 50 --format excel --out commits.xlsx --country CN",
+    "cli:overtime-per-period-csv-tab": "node ./src/cli.mjs --overtime --limit 200 --format text --out commits.txt --per-period-formats csv,tab",
+    "cli:overtime-per-period-xlsx-sheets": "node ./src/cli.mjs --overtime --limit 200 --format text --out commits.txt --per-period-formats csv,tab,xlsx --per-period-excel-mode sheets",
+    "cli:overtime-per-period-xlsx-files": "node ./src/cli.mjs --overtime --limit 200 --format text --out commits.txt --per-period-formats xlsx --per-period-excel-mode files",
+    "cli:overtime-per-period-only": "node ./src/cli.mjs --overtime --limit 200 --format text --out commits.txt --per-period-formats csv,tab,xlsx --per-period-only",
     "format": "prettier --write \"src/**/*.{js,mjs}\"",
     "lint": "eslint src --ext .js,.mjs src",
     "lint:fix": "eslint src --ext .js,.mjs --fix",

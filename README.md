@@ -88,6 +88,27 @@ Command-line options:
 >
 > Tip: Use `--out-parent` or `--out-dir ../output` to write outputs into the parent folder's `output/` to avoid accidentally committing generated files to your repository.
 
+### Per-period outputs
+You can generate per-month and per-week outputs under `output/month/` and `output/week/` using the `--per-period-formats` option. Example:
+
+```bash
+node ./src/cli.mjs --overtime --limit 200 --format text --out commits.txt --per-period-formats csv,tab
+```
+
+Want per-period Excel outputs? Use `xlsx` along with `--per-period-excel-mode` for `sheets` or `files`:
+
+```bash
+node ./src/cli.mjs --overtime --limit 200 --format text --out commits.txt --per-period-formats csv,tab,xlsx --per-period-excel-mode sheets
+node ./src/cli.mjs --overtime --limit 200 --format text --out commits.txt --per-period-formats xlsx --per-period-excel-mode files
+```
+
+If you'd like only per-period outputs and not the combined monthly/weekly summary files, add `--per-period-only`:
+
+```bash
+node ./src/cli.mjs --overtime --limit 200 --format text --out commits.txt --per-period-formats csv,tab,xlsx --per-period-only
+```
+
+
 ---
 
 ## Gerrit support
@@ -240,6 +261,14 @@ npm run cli:overtime-excel-cn-parent
 
 # Run a CN-focused overtime Excel report and write outputs to ../output via --out-dir
 npm run cli:overtime-excel-cn-outdir
+# Per-period CSV/Tab export: write per-period files to output/month/ and output/week/
+npm run cli:overtime-per-period-csv-tab
+# Per-period Excel export with sheet-per-period workbook
+npm run cli:overtime-per-period-xlsx-sheets
+# Per-period Excel export with one file per period
+npm run cli:overtime-per-period-xlsx-files
+# Per-period only (no consolidated monthly/weekly files)
+npm run cli:overtime-per-period-only
 ```
 
 Notes:

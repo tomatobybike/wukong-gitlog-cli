@@ -4,6 +4,7 @@ import path from 'path';
 import { getGitLogs } from './git.mjs';
 import { renderText } from './text.mjs';
 import { analyzeOvertime, renderOvertimeText, renderOvertimeTab, renderOvertimeCsv } from './overtime.mjs';
+import { startServer } from './server.mjs';
 import { exportExcel, exportExcelPerPeriodSheets } from './excel.mjs';
 import { groupRecords, writeJSON, writeTextFile, outputFilePath } from './utils/index.mjs';
 
@@ -37,6 +38,8 @@ program
   .option('--per-period-formats <formats>', '每个周期单独输出的格式，逗号分隔：text,csv,tab,xlsx。默认为空（不输出 CSV/Tab/XLSX）', '')
   .option('--per-period-excel-mode <mode>', 'per-period Excel 模式：sheets|files（默认：sheets）', 'sheets')
   .option('--per-period-only', '仅输出 per-period（month/week）文件，不输出合并的 monthly/weekly 汇总文件')
+  .option('--serve', '启动本地 web 服务，查看提交统计（将在 output/data 下生成数据文件）')
+  .option('--port <n>', '本地 web 服务端口（默认 3000）', (v) => parseInt(v, 10), 3000)
   .parse();
 
 const opts = program.opts();
@@ -178,6 +181,24 @@ const opts = program.opts();
     console.log(chalk.green(`Overtime text 已导出: ${overtimeFile}`));
     console.log(chalk.green(`Overtime table (tabs) 已导出: ${overtimeTabFile}`));
     console.log(chalk.green(`Overtime CSV 已导出: ${overtimeCsvFile}`));
+
+    // If serve mode is enabled, write data modules and launch the web server
+    if (opts.serve) {
+      try {
+        const dataCommitsFile = outputFilePath('data/commits.mjs', outDir);
+        const commitsModule = `export default ${JSON.stringify(records, null, 2)};\n`;
+        writeTextFile(dataCommitsFile, commitsModule);
+        const dataStatsFile = outputFilePath('data/overtime-stats.mjs', outDir);
+        const statsModule = `export default ${JSON.stringify(stats, null, 2)};\n`;
+        writeTextFile(dataStatsFile, statsModule);
+        console.log(chalk.green(`Data module 已导出: ${dataCommitsFile}`));
+        console.log(chalk.green(`Data module 已导出: ${dataStatsFile}`));
+        // start server in background (non-blocking)
+        startServer(opts.port || 3000, outDir).catch(() => {});
+      } catch (err) {
+        console.warn('Export data modules failed:', err && err.message ? err.message : err);
+      }
+    }
     // 按月输出每个月的加班统计（合并文件 + individual files in month/）
     const perPeriodFormats = String(opts.perPeriodFormats || '').split(',').map(s => String(s || '').trim().toLowerCase()).filter(Boolean);
     try {

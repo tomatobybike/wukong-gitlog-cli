@@ -192,3 +192,22 @@ Example JSON output including `changeId`/`gerrit` when `--gerrit` uses `{{change
 ```
 
 ---
+
+如何使用（示例）：
+
+生成数据并启动本地仪表盘（默认端口 3000）：
+
+```bash
+node ./src/cli.mjs --serve --overtime --limit 200 --out commits.txt
+# 或
+npm run cli:serve
+```
+
+指定端口：
+
+```bash
+node ./src/cli.mjs --serve --port 8080 --overtime --limit 200 --out commits.txt
+
+```
+
+仪表盘地址：打开 http://localhost:3000 （或自定义端口）

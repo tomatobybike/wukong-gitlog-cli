@@ -108,6 +108,20 @@ If you'd like only per-period outputs and not the combined monthly/weekly summar
 wukong-gitlog-cli ./src/cli.mjs --overtime --limit 200 --format text --out commits.txt --per-period-formats csv,tab,xlsx --per-period-only
 ```
 
+### Serve a local dashboard
+You can start a small static web dashboard to visualize commit statistics and charts. It will export raw commits and analyzed stats into `output/data/` as `commits.mjs` and `overtime-stats.mjs`, and start a local web server serving `web/` and `output/data/`:
+
+```bash
+# Start the server on the default port (3000)
+wukong-gitlog-cli --serve --overtime --limit 200 --out commits.txt
+
+# Custom port
+wukong-gitlog-cli --serve --port 8080 --overtime --limit 200 --out commits.txt
+```
+
+Open `http://localhost:3000` to view the dashboard.
+
+
 
 ---
 

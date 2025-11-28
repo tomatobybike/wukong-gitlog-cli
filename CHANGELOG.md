@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.12](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v0.0.11...v0.0.12) (2025-11-28)
+
+
+### Features
+
+* 🎸 add web server ([b2e3d80](https://github.com/tomatobybike/wukong-gitlog-cli/commit/b2e3d80d1a998a07b289a2300d2ec53cd0d586ad))
+* 🎸 create web ([3e2da00](https://github.com/tomatobybike/wukong-gitlog-cli/commit/3e2da00222e74199eea6e324e15008e2bb2be127))
+* 🎸 fix eslint ([2666eed](https://github.com/tomatobybike/wukong-gitlog-cli/commit/2666eedd2b41dc1aa88cb9bb3e12a45ec0390f0b))
+* 🎸 web ([6feac90](https://github.com/tomatobybike/wukong-gitlog-cli/commit/6feac90f85a9142bb0e68b98250f7755603086d9))
+
+
+### Bug Fixes
+
+* 🐛 eslint error ([cb65012](https://github.com/tomatobybike/wukong-gitlog-cli/commit/cb65012589f543720d355505f3d8693fd573ee64))
+
 ### [0.0.11](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v0.0.10...v0.0.11) (2025-11-28)
 
 

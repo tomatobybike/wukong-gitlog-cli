@@ -115,6 +115,9 @@ You can start a small static web dashboard to visualize commit statistics and ch
 # Start the server on the default port (3000)
 wukong-gitlog-cli --serve --overtime --limit 200 --out commits.txt
 
+# Start server only (use existing output/data)
+wukong-gitlog-cli --serve-only
+
 # Custom port
 wukong-gitlog-cli --serve --port 8080 --overtime --limit 200 --out commits.txt
 ```

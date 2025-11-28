@@ -40,17 +40,31 @@ program
   .option('--per-period-only', '仅输出 per-period（month/week）文件，不输出合并的 monthly/weekly 汇总文件')
   .option('--serve', '启动本地 web 服务，查看提交统计（将在 output/data 下生成数据文件）')
   .option('--port <n>', '本地 web 服务端口（默认 3000）', (v) => parseInt(v, 10), 3000)
+  .option('--serve-only', '仅启动 web 服务，不导出或分析数据（使用 output/data 中已有的数据）')
   .parse();
 
 const opts = program.opts();
-
+// compute output directory root early (so serve-only can use it)
+const outDir = opts.outParent
+  ? path.resolve(process.cwd(), '..', 'output')
+  : opts.outDir || path.resolve(process.cwd(), 'output');
+// TODO: remove debug log before production
+console.log('✅', 'outDir', outDir);
 (async () => {
+  // if serve-only is requested, start server and exit
+  if (opts.serveOnly) {
+    try {
+      await startServer(opts.port || 3000, outDir);
+    } catch (err) {
+      console.warn('Start server failed:', err && err.message ? err.message : err);
+      process.exit(1);
+    }
+    return;
+  }
+
   let records = await getGitLogs(opts);
 
   // compute output directory root if user provided one or wants parent
-  const outDir = opts.outParent
-    ? path.resolve(process.cwd(), '..', 'output')
-    : opts.outDir || undefined;
 
   // --- Gerrit 地址处理（若提供） ---
   if (opts.gerrit) {

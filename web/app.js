@@ -3,8 +3,8 @@ const formatDate = (d) => new Date(d).toLocaleString();
 async function loadData() {
   try {
     const [commitsModule, statsModule] = await Promise.all([
-      import("../../../../../../../data/commits.mjs"),
-      import("../../../../../../../data/overtime-stats.mjs"),
+      import("/data/commits.mjs"),
+      import("/data/overtime-stats.mjs"),
     ]);
     const commits = commitsModule.default || [];
     const stats = statsModule.default || {};

@@ -17,8 +17,18 @@ const mime = new Map([
 ]);
 
 export function startServer(port = 3000, outputDir) {
+  // TODO: remove debug log before production
+  console.log('✅', 'outputDir', outputDir);
   const webRoot = path.resolve(process.cwd(), 'web');
   const dataRoot = outputDir ? path.resolve(outputDir) : path.resolve(process.cwd(), 'output');
+
+  // warn if web directory or data directory doesn't exist
+  if (!fs.existsSync(webRoot)) {
+    console.warn(chalk.yellow(`Warning: web/ directory not found at ${webRoot}. Server will still run but no UI will be available.`));
+  }
+  if (!fs.existsSync(dataRoot)) {
+    console.warn(chalk.yellow(`Warning: output data directory not found at ${dataRoot}. Server will still run but data endpoints (/data/) may 404.`));
+  }
 
   const server = http.createServer((req, res) => {
     try {
@@ -26,9 +36,10 @@ export function startServer(port = 3000, outputDir) {
       const u = new URL(req.url, `http://localhost`);
       let pathname = decodeURIComponent(u.pathname);
 
-      // Serve data files under /data/* mapped to dataRoot
+      // Serve data files under /data/* mapped to dataRoot/data/*
       if (pathname.startsWith('/data/')) {
-        const fileLocal = path.join(dataRoot, pathname.replace(/^\/data\//, ''));
+        const relative = pathname.replace(/^\/data\//, '');
+        const fileLocal = path.join(dataRoot, 'data', relative);
         if (fs.existsSync(fileLocal) && fs.statSync(fileLocal).isFile()) {
           const ext = path.extname(fileLocal).toLowerCase();
           res.setHeader('Content-Type', mime.get(ext) || 'application/octet-stream');

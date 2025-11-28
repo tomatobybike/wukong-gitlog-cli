@@ -525,6 +525,7 @@ const outDir = opts.outParent
           // eslint-disable-next-line no-shadow
           const perPeriodFormats = String(opts.perPeriodFormats || '')
             .split(',')
+            // eslint-disable-next-line no-shadow
             .map((s) =>
               String(s || '')
                 .trim()

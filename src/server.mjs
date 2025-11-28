@@ -16,6 +16,7 @@ const mime = new Map([
   ['.map', 'application/json; charset=utf-8'],
 ]);
 
+// eslint-disable-next-line default-param-last
 export function startServer(port = 3000, outputDir) {
   // TODO: remove debug log before production
   console.log('✅', 'outputDir', outputDir);

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.10](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v0.0.9...v0.0.10) (2025-11-28)
+
+
+### Features
+
+* 🎸 each hour percent ([4f1a7e7](https://github.com/tomatobybike/wukong-gitlog-cli/commit/4f1a7e75a1c0d83c92aabf42e97932421c349b8d))
+* 🎸 hourline ([9035ecb](https://github.com/tomatobybike/wukong-gitlog-cli/commit/9035ecb33295fa5f4ff64bbd9b9281c543247683))
+
 ### [0.0.9](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v0.0.8...v0.0.9) (2025-11-28)
 
 ### [0.0.8](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v0.0.7...v0.0.8) (2025-11-28)

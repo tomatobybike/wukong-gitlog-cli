@@ -17,5 +17,10 @@ export function ensureOutputDir(customDir) {
 
 export function outputFilePath(filename, customDir) {
   const dir = ensureOutputDir(customDir);
-  return path.join(dir, filename);
+  const fullpath = path.join(dir, filename);
+  const parent = path.dirname(fullpath);
+  if (!fs.existsSync(parent)) {
+    fs.mkdirSync(parent, { recursive: true });
+  }
+  return fullpath;
 }

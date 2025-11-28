@@ -20,7 +20,7 @@ program
   .option('--no-merges', '不包含 merge commit')
   .option('--json', '输出 JSON')
   .option('--format <type>', '输出格式: text | excel | json', 'text')
-  .option('--group-by <type>', '按日期分组: day | month')
+  .option('--group-by <type>', '按日期分组: day | month | week')
   .option('--stats', '输出每日统计数据')
   .option('--gerrit <prefix>', '显示 Gerrit 地址，支持在 prefix 中使用 {{hash}} 占位符')
   .option('--gerrit-api <url>', '可选：Gerrit REST API 基础地址，用于解析 changeNumber，例如 `https://gerrit.example.com`')
@@ -34,6 +34,7 @@ program
   .option('--out <file>', '输出文件名（不含路径）')
   .option('--out-dir <dir>', '自定义输出目录，支持相对路径或绝对路径，例如 `--out-dir ../output`')
   .option('--out-parent', '将输出目录放到当前工程的父目录的 `output/`（等同于 `--out-dir ../output`）')
+  .option('--per-period-formats <formats>', '每个周期单独输出的格式，逗号分隔：text,csv,tab。默认为空（不输出 CSV/Tab）', '')
   .parse();
 
 const opts = program.opts();
@@ -175,7 +176,8 @@ const opts = program.opts();
     console.log(chalk.green(`Overtime text 已导出: ${overtimeFile}`));
     console.log(chalk.green(`Overtime table (tabs) 已导出: ${overtimeTabFile}`));
     console.log(chalk.green(`Overtime CSV 已导出: ${overtimeCsvFile}`));
-    // 按月输出每个月的加班统计（合并文件）
+    // 按月输出每个月的加班统计（合并文件 + individual files in month/）
+    const perPeriodFormats = String(opts.perPeriodFormats || '').split(',').map(s => String(s || '').trim().toLowerCase()).filter(Boolean);
     try {
       const monthGroups = groupRecords(records, 'month');
       const monthlyFileName = `overtime_${outBase}_monthly.txt`;
@@ -193,13 +195,41 @@ const opts = program.opts();
         });
         monthlyContent += `===== ${k} =====\n`;
         monthlyContent += `${renderOvertimeText(s)}\n\n`;
+        // Also write a single file per month under 'month/' folder
+        try {
+          const perMonthFileName = `month/overtime_${outBase}_${k}.txt`;
+          const perMonthFile = outputFilePath(perMonthFileName, outDir);
+          writeTextFile(perMonthFile, renderOvertimeText(s));
+          console.log(chalk.green(`Overtime 月度(${k}) 已导出: ${perMonthFile}`));
+        // per-period CSV / Tab format (按需生成)
+        if (perPeriodFormats.includes('csv')) {
+          try {
+            const perMonthCsvName = `month/overtime_${outBase}_${k}.csv`;
+            writeTextFile(outputFilePath(perMonthCsvName, outDir), renderOvertimeCsv(s));
+            console.log(chalk.green(`Overtime 月度(CSV)(${k}) 已导出: ${outputFilePath(perMonthCsvName, outDir)}`));
+          } catch (err) {
+            console.warn(`Write monthly CSV for ${k} failed:`, err && err.message ? err.message : err);
+          }
+        }
+        if (perPeriodFormats.includes('tab')) {
+          try {
+            const perMonthTabName = `month/overtime_${outBase}_${k}.tab.txt`;
+            writeTextFile(outputFilePath(perMonthTabName, outDir), renderOvertimeTab(s));
+            console.log(chalk.green(`Overtime 月度(Tab)(${k}) 已导出: ${outputFilePath(perMonthTabName, outDir)}`));
+          } catch (err) {
+            console.warn(`Write monthly Tab for ${k} failed:`, err && err.message ? err.message : err);
+          }
+        }
+        } catch (err) {
+          console.warn(`Write monthly file for ${k} failed:`, err && err.message ? err.message : err);
+        }
       });
       writeTextFile(monthlyFile, monthlyContent);
       console.log(chalk.green(`Overtime 月度汇总 已导出: ${monthlyFile}`));
     } catch (err) {
       console.warn('Generate monthly overtime failed:', err && err.message ? err.message : err);
     }
-    // 按周输出每周的加班统计（合并文件）
+    // 按周输出每周的加班统计（合并文件 + individual files in week/）
     try {
       const weekGroups = groupRecords(records, 'week');
       const weeklyFileName = `overtime_${outBase}_weekly.txt`;
@@ -217,6 +247,34 @@ const opts = program.opts();
         });
         weeklyContent += `===== ${k} =====\n`;
         weeklyContent += `${renderOvertimeText(s)}\n\n`;
+        // Also write a single file per week under 'week/' folder
+        try {
+          const perWeekFileName = `week/overtime_${outBase}_${k}.txt`;
+          const perWeekFile = outputFilePath(perWeekFileName, outDir);
+          writeTextFile(perWeekFile, renderOvertimeText(s));
+          console.log(chalk.green(`Overtime 周度(${k}) 已导出: ${perWeekFile}`));
+        // per-period CSV / Tab format (按需生成)
+        if (perPeriodFormats.includes('csv')) {
+          try {
+            const perWeekCsvName = `week/overtime_${outBase}_${k}.csv`;
+            writeTextFile(outputFilePath(perWeekCsvName, outDir), renderOvertimeCsv(s));
+            console.log(chalk.green(`Overtime 周度(CSV)(${k}) 已导出: ${outputFilePath(perWeekCsvName, outDir)}`));
+          } catch (err) {
+            console.warn(`Write weekly CSV for ${k} failed:`, err && err.message ? err.message : err);
+          }
+        }
+        if (perPeriodFormats.includes('tab')) {
+          try {
+            const perWeekTabName = `week/overtime_${outBase}_${k}.tab.txt`;
+            writeTextFile(outputFilePath(perWeekTabName, outDir), renderOvertimeTab(s));
+            console.log(chalk.green(`Overtime 周度(Tab)(${k}) 已导出: ${outputFilePath(perWeekTabName, outDir)}`));
+          } catch (err) {
+            console.warn(`Write weekly Tab for ${k} failed:`, err && err.message ? err.message : err);
+          }
+        }
+        } catch (err) {
+          console.warn(`Write weekly file for ${k} failed:`, err && err.message ? err.message : err);
+        }
       });
       writeTextFile(weeklyFile, weeklyContent);
       console.log(chalk.green(`Overtime 周度汇总 已导出: ${weeklyFile}`));

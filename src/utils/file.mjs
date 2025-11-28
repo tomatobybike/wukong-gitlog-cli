@@ -1,5 +1,9 @@
 import fs from 'fs';
 import dayjs from 'dayjs';
+import isoWeek from 'dayjs/plugin/isoWeek.js';
+
+// add ISO week plugin to dayjs once when module loaded
+dayjs.extend(isoWeek);
 
 export function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
@@ -19,13 +23,9 @@ export function groupRecords(records, mode) {
     if (mode === 'day') {
       key = date.format('YYYY-MM-DD');
     } else if (mode === 'week') {
-      // compute ISO week key like 2025-W48 (Monday-based ISO week)
-      const d = new Date(Date.UTC(date.year(), date.month(), date.date()));
-      // ISO week: Thursday of the current week decides the year
-      d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-      const year = d.getUTCFullYear();
-      const firstDayOfYear = new Date(Date.UTC(year, 0, 1));
-      const week = Math.floor(((d - firstDayOfYear) / 86400000 + 1) / 7) + 1;
+      // use dayjs isoWeek / isoWeekYear plugins for accurate ISO week computation (Monday-based)
+      const week = date.isoWeek();
+      const year = date.isoWeekYear();
       key = `${year}-W${String(week).padStart(2, '0')}`;
     } else {
       // default to month grouping

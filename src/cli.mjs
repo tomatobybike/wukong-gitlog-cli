@@ -4,7 +4,7 @@ import path from 'path';
 import { getGitLogs } from './git.mjs';
 import { renderText } from './text.mjs';
 import { analyzeOvertime, renderOvertimeText, renderOvertimeTab, renderOvertimeCsv } from './overtime.mjs';
-import { exportExcel } from './excel.mjs';
+import { exportExcel, exportExcelPerPeriodSheets } from './excel.mjs';
 import { groupRecords, writeJSON, writeTextFile, outputFilePath } from './utils/index.mjs';
 
 const program = new Command();
@@ -34,7 +34,8 @@ program
   .option('--out <file>', '输出文件名（不含路径）')
   .option('--out-dir <dir>', '自定义输出目录，支持相对路径或绝对路径，例如 `--out-dir ../output`')
   .option('--out-parent', '将输出目录放到当前工程的父目录的 `output/`（等同于 `--out-dir ../output`）')
-  .option('--per-period-formats <formats>', '每个周期单独输出的格式，逗号分隔：text,csv,tab。默认为空（不输出 CSV/Tab）', '')
+  .option('--per-period-formats <formats>', '每个周期单独输出的格式，逗号分隔：text,csv,tab,xlsx。默认为空（不输出 CSV/Tab/XLSX）', '')
+  .option('--per-period-excel-mode <mode>', 'per-period Excel 模式：sheets|files（默认：sheets）', 'sheets')
   .parse();
 
 const opts = program.opts();
@@ -226,6 +227,33 @@ const opts = program.opts();
       });
       writeTextFile(monthlyFile, monthlyContent);
       console.log(chalk.green(`Overtime 月度汇总 已导出: ${monthlyFile}`));
+      // per-period Excel (sheets or files)
+      if (perPeriodFormats.includes('xlsx')) {
+        const perPeriodExcelMode = String(opts.perPeriodExcelMode || 'sheets');
+        if (perPeriodExcelMode === 'sheets') {
+          try {
+            const monthXlsxName = `month/overtime_${outBase}_monthly.xlsx`;
+            const monthXlsxFile = outputFilePath(monthXlsxName, outDir);
+            await exportExcelPerPeriodSheets(monthGroups, monthXlsxFile, { stats: opts.stats, gerrit: opts.gerrit });
+            console.log(chalk.green(`Overtime 月度(XLSX) 已导出: ${monthXlsxFile}`));
+          } catch (err) {
+            console.warn('Export month XLSX (sheets) failed:', err && err.message ? err.message : err);
+          }
+        } else {
+          try {
+            const monthKeys2 = Object.keys(monthGroups).sort();
+            const tasks = monthKeys2.map(k2 => {
+              const perMonthXlsxName = `month/overtime_${outBase}_${k2}.xlsx`;
+              const perMonthXlsxFile = outputFilePath(perMonthXlsxName, outDir);
+              return exportExcel(monthGroups[k2], null, { file: perMonthXlsxFile, stats: opts.stats, gerrit: opts.gerrit })
+                .then(() => console.log(chalk.green(`Overtime 月度(XLSX)(${k2}) 已导出: ${perMonthXlsxFile}`)));
+            });
+            await Promise.all(tasks);
+          } catch (err) {
+            console.warn('Export monthly XLSX files failed:', err && err.message ? err.message : err);
+          }
+        }
+      }
     } catch (err) {
       console.warn('Generate monthly overtime failed:', err && err.message ? err.message : err);
     }
@@ -278,6 +306,33 @@ const opts = program.opts();
       });
       writeTextFile(weeklyFile, weeklyContent);
       console.log(chalk.green(`Overtime 周度汇总 已导出: ${weeklyFile}`));
+      // per-period Excel (sheets or files)
+      if (perPeriodFormats.includes('xlsx')) {
+        const perPeriodExcelMode = String(opts.perPeriodExcelMode || 'sheets');
+        if (perPeriodExcelMode === 'sheets') {
+          try {
+            const weekXlsxName = `week/overtime_${outBase}_weekly.xlsx`;
+            const weekXlsxFile = outputFilePath(weekXlsxName, outDir);
+            await exportExcelPerPeriodSheets(weekGroups, weekXlsxFile, { stats: opts.stats, gerrit: opts.gerrit });
+            console.log(chalk.green(`Overtime 周度(XLSX) 已导出: ${weekXlsxFile}`));
+          } catch (err) {
+            console.warn('Export week XLSX (sheets) failed:', err && err.message ? err.message : err);
+          }
+        } else {
+          try {
+            const weekKeys2 = Object.keys(weekGroups).sort();
+            const tasks2 = weekKeys2.map(k2 => {
+              const perWeekXlsxName = `week/overtime_${outBase}_${k2}.xlsx`;
+              const perWeekXlsxFile = outputFilePath(perWeekXlsxName, outDir);
+              return exportExcel(weekGroups[k2], null, { file: perWeekXlsxFile, stats: opts.stats, gerrit: opts.gerrit })
+                .then(() => console.log(chalk.green(`Overtime 周度(XLSX)(${k2}) 已导出: ${perWeekXlsxFile}`)));
+            });
+            await Promise.all(tasks2);
+          } catch (err) {
+            console.warn('Export weekly XLSX files failed:', err && err.message ? err.message : err);
+          }
+        }
+      }
     } catch (err) {
       console.warn('Generate weekly overtime failed:', err && err.message ? err.message : err);
     }

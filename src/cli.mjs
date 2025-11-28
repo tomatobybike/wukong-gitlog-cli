@@ -175,6 +175,54 @@ const opts = program.opts();
     console.log(chalk.green(`Overtime text 已导出: ${overtimeFile}`));
     console.log(chalk.green(`Overtime table (tabs) 已导出: ${overtimeTabFile}`));
     console.log(chalk.green(`Overtime CSV 已导出: ${overtimeCsvFile}`));
+    // 按月输出每个月的加班统计（合并文件）
+    try {
+      const monthGroups = groupRecords(records, 'month');
+      const monthlyFileName = `overtime_${outBase}_monthly.txt`;
+      const monthlyFile = outputFilePath(monthlyFileName, outDir);
+      let monthlyContent = '';
+      const monthKeys = Object.keys(monthGroups).sort();
+      monthKeys.forEach((k) => {
+        const groupRecs = monthGroups[k];
+        const s = analyzeOvertime(groupRecs, {
+          startHour: opts.workStart || opts.workStart === 0 ? opts.workStart : 9,
+          endHour: opts.workEnd || opts.workEnd === 0 ? opts.workEnd : 18,
+          lunchStart: opts.lunchStart || opts.lunchStart === 0 ? opts.lunchStart : 12,
+          lunchEnd: opts.lunchEnd || opts.lunchEnd === 0 ? opts.lunchEnd : 14,
+          country: opts.country || 'CN',
+        });
+        monthlyContent += `===== ${k} =====\n`;
+        monthlyContent += `${renderOvertimeText(s)}\n\n`;
+      });
+      writeTextFile(monthlyFile, monthlyContent);
+      console.log(chalk.green(`Overtime 月度汇总 已导出: ${monthlyFile}`));
+    } catch (err) {
+      console.warn('Generate monthly overtime failed:', err && err.message ? err.message : err);
+    }
+    // 按周输出每周的加班统计（合并文件）
+    try {
+      const weekGroups = groupRecords(records, 'week');
+      const weeklyFileName = `overtime_${outBase}_weekly.txt`;
+      const weeklyFile = outputFilePath(weeklyFileName, outDir);
+      let weeklyContent = '';
+      const weekKeys = Object.keys(weekGroups).sort();
+      weekKeys.forEach((k) => {
+        const groupRecs = weekGroups[k];
+        const s = analyzeOvertime(groupRecs, {
+          startHour: opts.workStart || opts.workStart === 0 ? opts.workStart : 9,
+          endHour: opts.workEnd || opts.workEnd === 0 ? opts.workEnd : 18,
+          lunchStart: opts.lunchStart || opts.lunchStart === 0 ? opts.lunchStart : 12,
+          lunchEnd: opts.lunchEnd || opts.lunchEnd === 0 ? opts.lunchEnd : 14,
+          country: opts.country || 'CN',
+        });
+        weeklyContent += `===== ${k} =====\n`;
+        weeklyContent += `${renderOvertimeText(s)}\n\n`;
+      });
+      writeTextFile(weeklyFile, weeklyContent);
+      console.log(chalk.green(`Overtime 周度汇总 已导出: ${weeklyFile}`));
+    } catch (err) {
+      console.warn('Generate weekly overtime failed:', err && err.message ? err.message : err);
+    }
     // don't return — allow other outputs to proceed
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "wukong-gitlog-cli",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "Advanced Git commit log exporter with Excel/JSON/TXT output, grouping, stats and CLI.",
   "keywords": [
     "git",

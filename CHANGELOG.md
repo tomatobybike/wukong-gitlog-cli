@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.8](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v0.0.7...v0.0.8) (2025-11-28)
+
+
+### Features
+
+* 🎸 --overtime ([636633b](https://github.com/tomatobybike/wukong-gitlog-cli/commit/636633b424f8e440f53eeaabee1c9ffdbbbdcd04))
+* 🎸 cn datetime format ([7773b08](https://github.com/tomatobybike/wukong-gitlog-cli/commit/7773b084dadae415edc12a735bc450353ec127bf))
+* 🎸 export excel ([2e87900](https://github.com/tomatobybike/wukong-gitlog-cli/commit/2e87900af98883a1440871b2db6b581b158a3b1f))
+* 🎸 last work ([c31edff](https://github.com/tomatobybike/wukong-gitlog-cli/commit/c31edff080d7e8b1d6b1c2c9bdee2da57abaa3a0))
+* 🎸 last work ([64fcf3f](https://github.com/tomatobybike/wukong-gitlog-cli/commit/64fcf3f9fa0f4c7055b2aa39368f3553b41093b3))
+* 🎸 weekly monthly ([a4f76dd](https://github.com/tomatobybike/wukong-gitlog-cli/commit/a4f76dd31192ee740f73f160729f6e4a8d32542f))
+* **overtime:** add monthly and weekly overtime summary files ([024f3d4](https://github.com/tomatobybike/wukong-gitlog-cli/commit/024f3d497439106fabf8718bfd8076767404f7e8))
+
 ### [0.0.7](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v0.0.6...v0.0.7) (2025-11-27)
 
 ### [0.0.6](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v0.0.5...v0.0.6) (2025-11-27)

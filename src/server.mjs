@@ -2,6 +2,7 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
+import { fileURLToPath } from 'url';
 
 const mime = new Map([
   ['.html', 'text/html; charset=utf-8'],
@@ -18,9 +19,10 @@ const mime = new Map([
 
 // eslint-disable-next-line default-param-last
 export function startServer(port = 3000, outputDir) {
-  // TODO: remove debug log before production
-  console.log('✅', 'outputDir', outputDir);
-  const webRoot = path.resolve(process.cwd(), 'web');
+  // 解析包根目录，确保 web 资源在全局安装后也能找到
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const pkgRoot = path.resolve(__dirname, '..');
+  const webRoot = path.resolve(pkgRoot, 'web');
   const dataRoot = outputDir ? path.resolve(outputDir) : path.resolve(process.cwd(), 'output');
 
   // warn if web directory or data directory doesn't exist

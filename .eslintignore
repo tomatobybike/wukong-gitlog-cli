@@ -5,4 +5,5 @@
 /bin/
 /src/lib
 /backup
+/web/static/
 #/src/**/*.zx.mjs

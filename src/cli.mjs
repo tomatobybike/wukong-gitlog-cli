@@ -337,6 +337,7 @@ const outDir = opts.outParent
           const perWeekFile = outputFilePath(perWeekFileName, outDir);
           writeTextFile(perWeekFile, renderOvertimeText(s));
           console.log(chalk.green(`Overtime 周度(${k}) 已导出: ${perWeekFile}`));
+          // eslint-disable-next-line no-shadow
           const perPeriodFormats = String(opts.perPeriodFormats || '').split(',').map(s => String(s || '').trim().toLowerCase()).filter(Boolean);
           if (perPeriodFormats.includes('csv')) {
             try {

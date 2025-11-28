@@ -1,7 +1,8 @@
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin: 0; padding: 0; background: #fafafa; color: #222; }
 header { background: #0f172a; color: white; padding: 12px 20px; }
 main { display: flex; flex-direction: column; gap: 12px; padding: 20px; max-width: 1200px; margin: 20px auto; }
-#charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+#charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(640px, 1fr)); gap: 16px; }
+#chartsHalf { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
 .chart-card { background: white; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
 .table-card { background: white; padding: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
 table { width: 100%; border-collapse: collapse; }

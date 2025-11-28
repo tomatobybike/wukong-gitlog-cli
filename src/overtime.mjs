@@ -219,7 +219,7 @@ export function renderOvertimeText(stats) {
   lines.push(`非工作日（周末）提交数：${nonWorkdayCount}，占比：${(nonWorkdayRate * 100).toFixed(1)}%`);
   lines.push('');
   lines.push('每小时分布（提交数/占比）：');
-  let hourLine = '  Hour | Count | Percent';
+  const hourLine = '  Hour | Count | Percent';
   lines.push(hourLine);
   lines.push('  -----|-------|--------');
   for (let h = 0; h < 24; h++) {

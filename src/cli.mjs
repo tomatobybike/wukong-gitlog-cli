@@ -4,7 +4,6 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-
 import { CLI_NAME } from './constants/index.mjs'
 import { exportExcel, exportExcelPerPeriodSheets } from './excel.mjs'
 import { getGitLogs } from './git.mjs'
@@ -26,7 +25,6 @@ import {
 import { showVersionInfo } from './utils/showVersionInfo.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
 
 const pkg = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf8')
@@ -52,106 +50,110 @@ const version = async () => {
   process.exit(0)
 }
 
-const program = new Command()
+const main = async () => {
+  const program = new Command()
 
-program
-  .name('git-commits')
-  .description('Advanced Git commit log exporter.')
-  .option('--author <name>', '指定 author 名')
-  .option('--email <email>', '指定 email')
-  .option('--since <date>', '起始日期')
-  .option('--until <date>', '结束日期')
-  .option('--limit <n>', '限制数量', parseInt)
-  .option('--no-merges', '不包含 merge commit')
-  .option('--json', '输出 JSON')
-  .option('--format <type>', '输出格式: text | excel | json', 'text')
-  .option('--group-by <type>', '按日期分组: day | month | week')
-  .option('--stats', '输出每日统计数据')
-  .option(
-    '--gerrit <prefix>',
-    '显示 Gerrit 地址，支持在 prefix 中使用 {{hash}} 占位符'
-  )
-  .option(
-    '--gerrit-api <url>',
-    '可选：Gerrit REST API 基础地址，用于解析 changeNumber，例如 `https://gerrit.example.com`'
-  )
-  .option(
-    '--gerrit-auth <tokenOrUserPass>',
-    '可选：Gerrit API 授权，格式为 `user:pass` 或 `TOKEN`（表示 Bearer token）'
-  )
-  .option('--overtime', '分析公司加班文化（输出下班时间与非工作日提交占比）')
-  .option('--country <code>', '节假日国家：CN 或 US，默认为 CN', 'CN')
-  .option(
-    '--work-start <hour>',
-    '上班开始小时，默认 9',
-    (v) => parseInt(v, 10),
-    9
-  )
-  .option('--work-end <hour>', '下班小时，默认 18', (v) => parseInt(v, 10), 18)
-  .option(
-    '--lunch-start <hour>',
-    '午休开始小时，默认 12',
-    (v) => parseInt(v, 10),
-    12
-  )
-  .option(
-    '--lunch-end <hour>',
-    '午休结束小时，默认 14',
-    (v) => parseInt(v, 10),
-    14
-  )
-  .option('--out <file>', '输出文件名（不含路径）')
-  .option(
-    '--out-dir <dir>',
-    '自定义输出目录，支持相对路径或绝对路径，例如 `--out-dir ../output`'
-  )
-  .option(
-    '--out-parent',
-    '将输出目录放到当前工程的父目录的 `output/`（等同于 `--out-dir ../output`）'
-  )
-  .option(
-    '--per-period-formats <formats>',
-    '每个周期单独输出的格式，逗号分隔：text,csv,tab,xlsx。默认为空（不输出 CSV/Tab/XLSX）',
-    ''
-  )
-  .option(
-    '--per-period-excel-mode <mode>',
-    'per-period Excel 模式：sheets|files（默认：sheets）',
-    'sheets'
-  )
-  .option(
-    '--per-period-only',
-    '仅输出 per-period（month/week）文件，不输出合并的 monthly/weekly 汇总文件'
-  )
-  .option(
-    '--serve',
-    '启动本地 web 服务，查看提交统计（将在 output/data 下生成数据文件）'
-  )
-  .option(
-    '--port <n>',
-    '本地 web 服务端口（默认 3000）',
-    (v) => parseInt(v, 10),
-    3000
-  )
-  .option(
-    '--serve-only',
-    '仅启动 web 服务，不导出或分析数据（使用 output/data 中已有的数据）'
-  )
-  .option('--version', 'show version information')
-  .parse()
+  program
+    .name('git-commits')
+    .description('Advanced Git commit log exporter.')
+    .option('--author <name>', '指定 author 名')
+    .option('--email <email>', '指定 email')
+    .option('--since <date>', '起始日期')
+    .option('--until <date>', '结束日期')
+    .option('--limit <n>', '限制数量', parseInt)
+    .option('--no-merges', '不包含 merge commit')
+    .option('--json', '输出 JSON')
+    .option('--format <type>', '输出格式: text | excel | json', 'text')
+    .option('--group-by <type>', '按日期分组: day | month | week')
+    .option('--stats', '输出每日统计数据')
+    .option(
+      '--gerrit <prefix>',
+      '显示 Gerrit 地址，支持在 prefix 中使用 {{hash}} 占位符'
+    )
+    .option(
+      '--gerrit-api <url>',
+      '可选：Gerrit REST API 基础地址，用于解析 changeNumber，例如 `https://gerrit.example.com`'
+    )
+    .option(
+      '--gerrit-auth <tokenOrUserPass>',
+      '可选：Gerrit API 授权，格式为 `user:pass` 或 `TOKEN`（表示 Bearer token）'
+    )
+    .option('--overtime', '分析公司加班文化（输出下班时间与非工作日提交占比）')
+    .option('--country <code>', '节假日国家：CN 或 US，默认为 CN', 'CN')
+    .option(
+      '--work-start <hour>',
+      '上班开始小时，默认 9',
+      (v) => parseInt(v, 10),
+      9
+    )
+    .option(
+      '--work-end <hour>',
+      '下班小时，默认 18',
+      (v) => parseInt(v, 10),
+      18
+    )
+    .option(
+      '--lunch-start <hour>',
+      '午休开始小时，默认 12',
+      (v) => parseInt(v, 10),
+      12
+    )
+    .option(
+      '--lunch-end <hour>',
+      '午休结束小时，默认 14',
+      (v) => parseInt(v, 10),
+      14
+    )
+    .option('--out <file>', '输出文件名（不含路径）')
+    .option(
+      '--out-dir <dir>',
+      '自定义输出目录，支持相对路径或绝对路径，例如 `--out-dir ../output`'
+    )
+    .option(
+      '--out-parent',
+      '将输出目录放到当前工程的父目录的 `output/`（等同于 `--out-dir ../output`）'
+    )
+    .option(
+      '--per-period-formats <formats>',
+      '每个周期单独输出的格式，逗号分隔：text,csv,tab,xlsx。默认为空（不输出 CSV/Tab/XLSX）',
+      ''
+    )
+    .option(
+      '--per-period-excel-mode <mode>',
+      'per-period Excel 模式：sheets|files（默认：sheets）',
+      'sheets'
+    )
+    .option(
+      '--per-period-only',
+      '仅输出 per-period（month/week）文件，不输出合并的 monthly/weekly 汇总文件'
+    )
+    .option(
+      '--serve',
+      '启动本地 web 服务，查看提交统计（将在 output/data 下生成数据文件）'
+    )
+    .option(
+      '--port <n>',
+      '本地 web 服务端口（默认 3000）',
+      (v) => parseInt(v, 10),
+      3000
+    )
+    .option(
+      '--serve-only',
+      '仅启动 web 服务，不导出或分析数据（使用 output/data 中已有的数据）'
+    )
+    .option('--version', 'show version information')
+    .parse()
 
-const opts = program.opts()
-// compute output directory root early (so serve-only can use it)
-const outDir = opts.outParent
-  ? path.resolve(process.cwd(), '..', 'output')
-  : opts.outDir || undefined
+  const opts = program.opts()
+  // compute output directory root early (so serve-only can use it)
+  const outDir = opts.outParent
+    ? path.resolve(process.cwd(), '..', 'output')
+    : opts.outDir || undefined
 
-;(async () => {
   if (opts.version) {
     await version()
     return
   }
-  await autoCheckUpdate()
   // if serve-only is requested, start server and exit
   if (opts.serveOnly) {
     try {
@@ -621,4 +623,7 @@ const outDir = opts.outParent
     console.log(chalk.green(`Excel 已导出: ${excelPath}`))
     console.log(chalk.green(`文本已自动导出: ${txtPath}`))
   }
-})()
+  await autoCheckUpdate()
+}
+
+main()

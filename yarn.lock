@@ -2374,10 +2374,10 @@ is-obj@^2.0.0:
   resolved "https://registry.npmjs.org/is-obj/-/is-obj-2.0.0.tgz"
   integrity sha512-drqDG3cbczxxEJRoOXcOjtdp1J/lyp1mNn0xaznRs8+muBhgQcrnbspox5X5fOw0HnMnbfDzvnEMEtqDEJEo8w==
 
-is-online@12.0.1:
-  version "12.0.1"
-  resolved "https://registry.npmjs.org/is-online/-/is-online-12.0.1.tgz#71f72dd021bb006bb451726d1a4458e745976433"
-  integrity sha512-Ezu5cflH1OiI6gY2Bi1pJElExw5NzBi8EdxYsI+HmCReKnZFXbdR6fya4fJymfc4pQ0d5KOeI5H8VUahPxS5rg==
+is-online@12.0.2:
+  version "12.0.2"
+  resolved "https://registry.npmjs.org/is-online/-/is-online-12.0.2.tgz#c6bc1a6d28d86a3ed968c75b263bd63f2980e16f"
+  integrity sha512-aMN8oxroDeWTyio61kRQOlldQO1+BQp3JfdHMZD8R20oCtL/KZV4eUGUTy9gnuKOm7g6N49wXwLD9OIPi7qWmQ==
   dependencies:
     fetch-extras "^1.0.0"
     p-any "^4.0.0"

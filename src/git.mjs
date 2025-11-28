@@ -1,5 +1,5 @@
-#!/usr/bin/env zx
-import 'zx/globals'
+import { $ } from 'zx'
+
 
 export async function getGitLogs(opts) {
   const { author, email, since, until, limit, merges } = opts

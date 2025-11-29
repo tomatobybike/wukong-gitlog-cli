@@ -92,20 +92,20 @@ Command-line options:
 You can generate per-month and per-week outputs under `output/month/` and `output/week/` using the `--per-period-formats` option. Example:
 
 ```bash
-wukong-gitlog-cli ./src/cli.mjs --overtime --limit 200 --format text --out commits.txt --per-period-formats csv,tab
+wukong-gitlog-cli --overtime --limit 200 --format text --out commits.txt --per-period-formats csv,tab
 ```
 
 Want per-period Excel outputs? Use `xlsx` along with `--per-period-excel-mode` for `sheets` or `files`:
 
 ```bash
-wukong-gitlog-cli ./src/cli.mjs --overtime --limit 200 --format text --out commits.txt --per-period-formats csv,tab,xlsx --per-period-excel-mode sheets
-wukong-gitlog-cli ./src/cli.mjs --overtime --limit 200 --format text --out commits.txt --per-period-formats xlsx --per-period-excel-mode files
+wukong-gitlog-cli --overtime --limit 200 --format text --out commits.txt --per-period-formats csv,tab,xlsx --per-period-excel-mode sheets
+wukong-gitlog-cli --overtime --limit 200 --format text --out commits.txt --per-period-formats xlsx --per-period-excel-mode files
 ```
 
 If you'd like only per-period outputs and not the combined monthly/weekly summary files, add `--per-period-only`:
 
 ```bash
-wukong-gitlog-cli ./src/cli.mjs --overtime --limit 200 --format text --out commits.txt --per-period-formats csv,tab,xlsx --per-period-only
+wukong-gitlog-cli --overtime --limit 200 --format text --out commits.txt --per-period-formats csv,tab,xlsx --per-period-only
 ```
 
 ### Serve a local dashboard

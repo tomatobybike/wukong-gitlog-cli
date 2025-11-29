@@ -55,6 +55,7 @@ const main = async () => {
 
   program
     .name('git-commits')
+    .version(pkg.version, '-v', 'show version')
     .description('Advanced Git commit log exporter.')
     .option('--author <name>', '指定 author 名')
     .option('--email <email>', '指定 email')

@@ -14,6 +14,7 @@
 
 Advanced Git commit log exporter with Excel/JSON/TXT output, grouping, stats and CLI.
 
+English | [简体中文](./README.zh-CN.md)
 ---
 
 ## Features
@@ -82,7 +83,10 @@ Command-line options:
 - `--gerrit <prefix>`      Show Gerrit URL for each commit (supports templates `{{hash}}`, `{{changeId}}` and `{{changeNumber}}`; `{{changeId}}` falls back to `hash` when absent; `{{changeNumber}}` requires `--gerrit-api` and falls back to `changeId` or `hash`)
 - `--out <file>`           Output file name (without path). Defaults: `commits.json` / `commits.txt` / `commits.xlsx`
 - `--out-dir <dir>`      Output directory path — supports relative or absolute path, e.g., `--out-dir ../output`
-- `--out-parent`         Place output in the parent directory's `output/` folder (same as `--out-dir ../output`)
+- `--serve`         Start the local web service and view the submission statistics (data files will be generated under output/data)
+- `--port <n>`         Local web service port (default: 3000)
+- `--serve-only`         Only start the web service without exporting or analyzing data (using existing data in output/data)
+- `--version`         show version information
 
 > Output files are written to an `output/` directory in the current working directory.
 >

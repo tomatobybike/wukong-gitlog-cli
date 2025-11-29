@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>wukong-gitlog-cli — Overtime Dashboard</title>
     <link rel="stylesheet" href="/style.css" />
-    <script src="./static/chart.js"></script>
+    <script src="./static/echarts.min.js"></script>
   </head>
   <body>
     <header>
@@ -15,28 +15,43 @@
       <section id="chartsHalf">
         <div class="chart-card">
           <h2>下班时间 vs 工作时间提交占比</h2>
-          <canvas id="outsideVsInsideChart"></canvas>
+          <div id="outsideVsInsideChart" class="echart"></div>
         </div>
         <div class="chart-card"></div>
       </section>
       <section id="charts">
         <div class="chart-card">
           <h2>每小时加班分布 (小时 -> 提交数)</h2>
-          <canvas id="hourlyOvertimeChart"></canvas>
+          <div id="hourlyOvertimeChart" class="echart"></div>
         </div>
 
         <div class="chart-card">
           <h2>按日提交趋势</h2>
-          <canvas id="dailyTrendChart"></canvas>
+          <div id="dailyTrendChart" class="echart"></div>
         </div>
         <div class="chart-card">
           <h2>每周趋势（加班占比）</h2>
-          <canvas id="weeklyTrendChart"></canvas>
+          <div id="weeklyTrendChart" class="echart"></div>
         </div>
       </section>
 
       <section class="table-card">
         <h2>提交清单</h2>
+        <div id="tableControls">
+          <input id="searchInput" type="search" placeholder="搜索作者/信息/Hash" />
+          <label for="pageSize">每页显示</label>
+          <select id="pageSize">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <div class="pager">
+            <button id="prevPage">上一页</button>
+            <span id="pageInfo"></span>
+            <button id="nextPage">下一页</button>
+          </div>
+        </div>
         <table id="commitsTable">
           <thead>
             <tr>

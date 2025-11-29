@@ -62,7 +62,7 @@ wukong-gitlog-cli [options]
 ### 常用参数
 
 | 参数                 | 描述                                                               |
-| -------------------- | ------------------------------------------------------------------ | --- |
+| -------------------- | ------------------------------------------------------------------ |
 | `--author <name>`    | 按作者过滤                                                         |
 | `--email <email>`    | 按邮箱过滤                                                         |
 | `--since <date>`     | 起始日期（如 2025-01-01）                                          |
@@ -70,8 +70,8 @@ wukong-gitlog-cli [options]
 | `--limit <n>`        | 限制提交数量                                                       |
 | `--no-merges`        | 排除 merge 提交                                                    |
 | `--json`             | 输出 JSON                                                          |
-| `--format <type>`    | 输出格式：text / excel / json（默认 text）                         |
-| `--group-by <type>`  | 分组：day / month                                                  |
+| `--format <type>`    | 输出格式： text / excel / json（默认 text）                        |
+| `--group-by <type>`  | 分组： day / month                                                 |
 | `--overtime`         | 启用加班文化分析                                                   |
 | `--country <code>`   | 假期：CN 或 US（默认 CN）                                          |
 | `--stats`            | Excel 中包含统计 sheet                                             |
@@ -79,10 +79,10 @@ wukong-gitlog-cli [options]
 | `--gerrit-api <url>` | Gerrit API 地址（用于 changeNumber）                               |
 | `--out <file>`       | 输出文件名                                                         |
 | `--out-dir <dir>`    | 输出目录                                                           |
-| `--out-parent`       | 输出到父目录的 output/                                             |
-| `--serve`            | 启动本地 web 服务，查看提交统计（将在 output/data 下生成数据文件） |
-| `--port <n>`         | 本地 web 服务端口（默认 3000） (default: 3000)                     |     |
-| `--serve-only`       | 仅启动 web 服务，不导出或分析数据（使用 output/data 中已有的数据） |
+| `--out-parent`       | 输出到父目录的 `output/`                                           |
+| `--serve`            | 启动本地 Web 服务查看提交统计（会生成 output/data 下的数据）       |
+| `--port <n>`         | Web 服务端口（默认 3000）                                          |
+| `--serve-only`       | 仅启动 Web 服务，不导出或分析数据（使用现有 output/data）          |
 | `--version`          | 显示版本号                                                         |
 
 ---

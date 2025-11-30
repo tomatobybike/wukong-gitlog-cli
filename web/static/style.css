@@ -1,0 +1,170 @@
+/* 全局 -------------------------------------------------- */
+body {
+  font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial;
+  margin: 0;
+  padding: 0;
+  background: #f5f5f5;
+  color: #1e1e1e;
+}
+
+/* 顶部栏 -------------------------------------------------- */
+header {
+  background: #1976d2;
+  color: white;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 500;
+}
+
+/* 主体布局 -------------------------------------------------- */
+main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  max-width: 1280px;
+  margin: 20px auto;
+}
+
+/* 卡片基础样式（MUI Paper） ----------------------------- */
+.chart-card,
+.table-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+}
+
+.chart-card h2,
+.table-card h2 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* 图表网格 -------------------------------------------------- */
+#charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(640px, 1fr)); gap: 16px; }
+#chartsHalf { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.chart-card { background: white; border-radius: 8px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.echart {
+  width: 100%;
+  height: 340px;
+}
+
+/* 表格 -------------------------------------------------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 2px solid #e0e0e0;
+  color: #444;
+  font-weight: 500;
+}
+
+td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #eee;
+}
+
+/* 分页、搜索栏 -------------------------------------------------- */
+#tableControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+/* 输入框 — MUI Filled 风格 */
+#tableControls input[type="search"] {
+  flex: 1;
+  min-width: 240px;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  background: #fafafa;
+  border-radius: 8px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#tableControls input[type="search"]:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25,118,210,0.15);
+  outline: none;
+}
+
+/* 下拉框 */
+#tableControls select {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #fafafa;
+  transition: border-color 0.2s;
+}
+
+#tableControls select:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25,118,210,0.15);
+  outline: none;
+}
+
+/* 按钮 — MUI Button 风格 */
+.pager button {
+  padding: 8px 14px;
+  border: 1px solid #00A76F;
+  background: #00A76F;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.pager button:hover {
+  background: #007867;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.pager button:disabled {
+  color: rgba(145 158 171 / 80%);
+  background: rgba(145 158 171 / 24%);
+  border-color: rgba(145 158 171 / 24%);
+}
+
+.pager {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+}
+
+#pageInfo {
+  min-width: 80px;
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+}
+
+/* 底部 -------------------------------------------------- */
+footer {
+  text-align: center;
+  padding: 20px 0 30px 0;
+  color: #777;
+}
+
+footer small code {
+  background: #eee;
+  padding: 2px 4px;
+  border-radius: 4px;
+}

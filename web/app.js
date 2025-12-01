@@ -3,18 +3,22 @@ const formatDate = (d) => new Date(d).toLocaleString();
 
 async function loadData() {
   try {
-    const [commitsModule, statsModule, weeklyModule] = await Promise.all([
+    const [commitsModule, statsModule, weeklyModule, monthlyModule, latestByDayModule] = await Promise.all([
       import("/data/commits.mjs"),
       import("/data/overtime-stats.mjs"),
       import("/data/overtime-weekly.mjs"),
+      import("/data/overtime-monthly.mjs").catch(() => ({ default: [] })),
+      import("/data/overtime-latest-by-day.mjs").catch(() => ({ default: [] })),
     ]);
     const commits = commitsModule.default || [];
     const stats = statsModule.default || {};
     const weekly = weeklyModule.default || [];
-    return { commits, stats, weekly };
+    const monthly = monthlyModule.default || [];
+    const latestByDay = latestByDayModule.default || [];
+    return { commits, stats, weekly, monthly, latestByDay };
   } catch (err) {
     console.error('Load data failed', err);
-    return { commits: [], stats: {}, weekly: [] };
+    return { commits: [], stats: {}, weekly: [], monthly: [], latestByDay: [] };
   }
 }
 
@@ -157,8 +161,52 @@ function drawWeeklyTrend(weekly) {
   return chart;
 }
 
+function drawMonthlyTrend(monthly) {
+  if (!Array.isArray(monthly) || monthly.length === 0) return null;
+  const labels = monthly.map(m => m.period);
+  const dataRate = monthly.map(m => +(m.outsideWorkRate * 100).toFixed(1));
+  const el = document.getElementById('monthlyTrendChart');
+  const chart = echarts.init(el);
+  chart.setOption({
+    tooltip: {},
+    xAxis: { type: 'category', data: labels },
+    yAxis: { type: 'value', min: 0, max: 100 },
+    series: [{ type: 'line', name: '加班占比(%)', data: dataRate }]
+  });
+  return chart;
+}
+
+function drawLatestHourDaily(latestByDay) {
+  if (!Array.isArray(latestByDay) || latestByDay.length === 0) return null;
+  const labels = latestByDay.map(d => d.date);
+  const data = latestByDay.map(d => d.latestHour ?? null);
+  const el = document.getElementById('latestHourDailyChart');
+  const chart = echarts.init(el);
+  chart.setOption({
+    tooltip: {},
+    xAxis: { type: 'category', data: labels },
+    yAxis: { type: 'value', min: 0, max: 24 },
+    series: [{ type: 'line', name: '每日最晚提交小时', data }]
+  });
+  return chart;
+}
+
+function renderKpi(stats) {
+  const el = document.getElementById('kpiContent');
+  if (!el || !stats) return;
+  const latest = stats.latestCommit;
+  const latestHour = stats.latestCommitHour;
+  const latestOut = stats.latestOutsideCommit;
+  const latestOutHour = stats.latestOutsideCommitHour ?? (latestOut ? new Date(latestOut.date).getHours() : null);
+  const html = [
+    `<div>最晚一次提交时间：${latest ? formatDate(latest.date) : '-'}${typeof latestHour === 'number' ? `（${String(latestHour).padStart(2,'0')}:00）` : ''}</div>`,
+    `<div>加班最晚一次提交时间：${latestOut ? formatDate(latestOut.date) : '-'}${typeof latestOutHour === 'number' ? `（${String(latestOutHour).padStart(2,'0')}:00）` : ''}</div>`
+  ].join('');
+  el.innerHTML = html;
+}
+
 (async function main() {
-  const { commits, stats, weekly } = await loadData();
+  const { commits, stats, weekly, monthly, latestByDay } = await loadData();
   commitsAll = commits;
   filtered = commitsAll.slice();
   initTableControls();
@@ -168,4 +216,7 @@ function drawWeeklyTrend(weekly) {
   drawOutsideVsInside(stats);
   drawDailyTrend(commits);
   drawWeeklyTrend(weekly);
+  drawMonthlyTrend(monthly);
+  drawLatestHourDaily(latestByDay);
+  renderKpi(stats);
 })();

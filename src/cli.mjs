@@ -351,6 +351,57 @@ const main = async () => {
         writeTextFile(dataWeeklyFile, weeklyModule)
         console.log(chalk.green(`Weekly series 已导出: ${dataWeeklyFile}`))
 
+        // 新增：每月趋势数据（用于前端图表）
+        const monthGroups2 = groupRecords(records, 'month')
+        const monthKeys2 = Object.keys(monthGroups2).sort()
+        const monthlySeries = monthKeys2.map((k) => {
+          const s = analyzeOvertime(monthGroups2[k], {
+            startHour:
+              opts.workStart || opts.workStart === 0 ? opts.workStart : 9,
+            endHour: opts.workEnd || opts.workEnd === 0 ? opts.workEnd : 18,
+            lunchStart:
+              opts.lunchStart || opts.lunchStart === 0 ? opts.lunchStart : 12,
+            lunchEnd: opts.lunchEnd || opts.lunchEnd === 0 ? opts.lunchEnd : 14,
+            country: opts.country || 'CN'
+          })
+          return {
+            period: k,
+            total: s.total,
+            outsideWorkCount: s.outsideWorkCount,
+            outsideWorkRate: s.outsideWorkRate,
+            nonWorkdayCount: s.nonWorkdayCount,
+            nonWorkdayRate: s.nonWorkdayRate
+          }
+        })
+        const dataMonthlyFile = outputFilePath('data/overtime-monthly.mjs', outDir)
+        const monthlyModule = `export default ${JSON.stringify(monthlySeries, null, 2)};\n`
+        writeTextFile(dataMonthlyFile, monthlyModule)
+        console.log(chalk.green(`Monthly series 已导出: ${dataMonthlyFile}`))
+
+        // 新增：每日最晚提交小时（用于显著展示加班严重程度）
+        const dayGroups2 = groupRecords(records, 'day')
+        const dayKeys2 = Object.keys(dayGroups2).sort()
+        const latestByDay = dayKeys2.map((k) => {
+          const list = dayGroups2[k]
+          // find latest commit in this day
+          const vals = list
+            .map((r) => ({ r, _dt: new Date(r.date) }))
+            .filter((x) => x._dt && !Number.isNaN(x._dt.valueOf()))
+            .sort((a, b) => a._dt.valueOf() - b._dt.valueOf())
+          const last = vals.length > 0 ? vals[vals.length - 1] : null
+          const hour = last ? new Date(last.r.date).getHours() : null
+          return { date: k, latestHour: hour }
+        })
+        const dataLatestByDayFile = outputFilePath(
+          'data/overtime-latest-by-day.mjs',
+          outDir
+        )
+        const latestByDayModule = `export default ${JSON.stringify(latestByDay, null, 2)};\n`
+        writeTextFile(dataLatestByDayFile, latestByDayModule)
+        console.log(
+          chalk.green(`Latest-by-day series 已导出: ${dataLatestByDayFile}`)
+        )
+
         startServer(opts.port || 3000, outDir).catch(() => {})
       } catch (err) {
         console.warn(

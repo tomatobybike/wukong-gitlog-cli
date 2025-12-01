@@ -54,6 +54,8 @@ export function analyzeOvertime(records, opts = {}) {
   let endCommit = null;
   let latestCommit = null;
   let latestOutsideCommit = null;
+  let latestCommitHour = null;
+  let latestOutsideCommitHour = null;
 
   // init holiday checker for country
   const hd = new DateHolidays();
@@ -90,6 +92,7 @@ export function analyzeOvertime(records, opts = {}) {
       // 记录最新的加班提交
       if (!latestOutsideCommit || dt.isAfter(parseCommitDate(latestOutsideCommit.date))) {
         latestOutsideCommit = r;
+        latestOutsideCommitHour = dt.hour();
       }
     }
     if (isNonWork) nonWorkdayCount++;
@@ -137,6 +140,7 @@ export function analyzeOvertime(records, opts = {}) {
     [startCommit] = validRecords;
     endCommit = validRecords[validRecords.length - 1];
     latestCommit = endCommit;
+    latestCommitHour = parseCommitDate(latestCommit.date).hour();
     // cleanup temp _dt
     for (let i = 0; i < validRecords.length; i++) {
       // copy the object without _dt for safety
@@ -163,6 +167,8 @@ export function analyzeOvertime(records, opts = {}) {
     endCommit: endCommit || null,
     latestCommit: latestCommit || null,
     latestOutsideCommit: latestOutsideCommit || null,
+    latestCommitHour,
+    latestOutsideCommitHour,
     startHour,
     endHour,
     lunchStart,
@@ -179,7 +185,7 @@ export function analyzeOvertime(records, opts = {}) {
 
 export function renderOvertimeText(stats) {
   const { total, outsideWorkCount, nonWorkdayCount, holidayCount, outsideWorkRate, nonWorkdayRate, holidayRate, perAuthor, startHour, endHour, lunchStart, lunchEnd, country, hourlyOvertimeCommits = [], hourlyOvertimePercent = [] } = stats;
-  const { startCommit, endCommit, latestCommit, latestOutsideCommit } = stats;
+  const { startCommit, endCommit, latestCommit, latestOutsideCommit, latestCommitHour, latestOutsideCommitHour } = stats;
   const lines = [];
 
   const formatPercent = (v) => `${(v * 100).toFixed(1)}%`;
@@ -213,6 +219,7 @@ export function renderOvertimeText(stats) {
     lines.push(`  Author : ${latestCommit.author}`);
     lines.push(`  Date   : ${formatDateForCountry(latestCommit.date, country)}`);
     lines.push(`  Message: ${latestCommit.message}`);
+    if (typeof latestCommitHour === 'number') lines.push(`  Hour   : ${String(latestCommitHour).padStart(2, '0')}:00`);
   }
   if (latestOutsideCommit) {
     lines.push('加班最晚的一次提交：');
@@ -220,6 +227,8 @@ export function renderOvertimeText(stats) {
     lines.push(`  Author : ${latestOutsideCommit.author}`);
     lines.push(`  Date   : ${formatDateForCountry(latestOutsideCommit.date, country)}`);
     lines.push(`  Message: ${latestOutsideCommit.message}`);
+    const h = parseCommitDate(latestOutsideCommit.date).hour();
+    lines.push(`  Hour   : ${String(h).padStart(2, '0')}:00`);
   }
   // country: holiday region, lunchStart/lunchEnd define midday break
   lines.push(`下班时间定义：${startHour}:00 - ${endHour}:00 (午休 ${lunchStart}:00 - ${lunchEnd}:00)`);
@@ -317,4 +326,3 @@ export function renderOvertimeCsv(stats) {
   });
   return rows.join('\n');
 }
-

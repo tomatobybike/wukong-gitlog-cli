@@ -49,6 +49,7 @@ export function analyzeOvertime(records, opts = {}) {
   let holidayCount = 0;
   let nightOutsideCount = 0;
   let overtimeSeveritySum = 0;
+  let maxSeverity = -1;
 
   const byAuthor = new Map();
 
@@ -95,11 +96,11 @@ export function analyzeOvertime(records, opts = {}) {
         nightOutsideCount++;
         const sev = hour >= endHour ? (hour - endHour) : (24 - endHour + hour);
         overtimeSeveritySum += sev;
-      }
-      // 记录最新的加班提交
-      if (!latestOutsideCommit || dt.isAfter(parseCommitDate(latestOutsideCommit.date))) {
-        latestOutsideCommit = r;
-        latestOutsideCommitHour = dt.hour();
+        if (sev > maxSeverity) {
+          maxSeverity = sev;
+          latestOutsideCommit = r;
+          latestOutsideCommitHour = hour;
+        }
       }
     }
     if (isNonWork) nonWorkdayCount++;
@@ -191,6 +192,7 @@ export function analyzeOvertime(records, opts = {}) {
     hourlyPercent,
     hourlyOvertimeCommits,
     hourlyOvertimePercent,
+    latestOutsideCommitSeverity: (maxSeverity >= 0 ? maxSeverity : null),
   };
 }
 
@@ -239,7 +241,11 @@ export function renderOvertimeText(stats) {
     lines.push(`  Date   : ${formatDateForCountry(latestOutsideCommit.date, country)}`);
     lines.push(`  Message: ${latestOutsideCommit.message}`);
     const h = parseCommitDate(latestOutsideCommit.date).hour();
-    lines.push(`  Hour   : ${String(h).padStart(2, '0')}:00`);
+    let sev = null;
+    if (typeof endHour === 'number' && typeof h === 'number') {
+      sev = h >= endHour ? (h - endHour) : (24 - endHour + h);
+    }
+    lines.push(`  Hour   : ${String(h).padStart(2, '0')}:00${sev != null ? `（超过下班：${sev} 小时）` : ''}`);
   }
   // country: holiday region, lunchStart/lunchEnd define midday break
   lines.push(`下班时间定义：${startHour}:00 - ${endHour}:00 (午休 ${lunchStart}:00 - ${lunchEnd}:00)`);

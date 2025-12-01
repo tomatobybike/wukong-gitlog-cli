@@ -184,7 +184,16 @@ function drawLatestHourDaily(latestByDay) {
   const el = document.getElementById('latestHourDailyChart');
   const chart = echarts.init(el);
   chart.setOption({
-    tooltip: {},
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params) => {
+        const p = Array.isArray(params) ? params[0] : params;
+        const v = p && p.value != null ? Number(p.value) : null;
+        const endH = (window.__overtimeEndHour || 18);
+        const sev = v != null ? Math.max(0, (v >= 24 ? v : v) - endH) : 0;
+        return `${p.axisValue}<br/>最晚小时: ${v != null ? v : '-'}<br/>超过下班: ${sev} 小时`;
+      }
+    },
     xAxis: { type: 'category', data: labels },
     yAxis: { type: 'value', min: 0, max: Math.max(26, Math.ceil(Math.max(...raw.filter(v => typeof v === 'number')) + 1)) },
     series: [{
@@ -221,6 +230,7 @@ function renderKpi(stats) {
   const { commits, stats, weekly, monthly, latestByDay } = await loadData();
   commitsAll = commits;
   filtered = commitsAll.slice();
+  window.__overtimeEndHour = stats && typeof stats.endHour === 'number' ? stats.endHour : 18;
   initTableControls();
   updatePager();
   renderCommitsTablePage();

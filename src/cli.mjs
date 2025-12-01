@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import { Command } from 'commander'
+import dayjs from 'dayjs'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -390,7 +391,7 @@ const main = async () => {
             .sort((a, b) => a._dt.valueOf() - b._dt.valueOf())
           const last = vals.length > 0 ? vals[vals.length - 1] : null
           const hour = last ? new Date(last.r.date).getHours() : null
-          const nextKey = require('dayjs')(k).add(1, 'day').format('YYYY-MM-DD')
+          const nextKey = dayjs(k).add(1, 'day').format('YYYY-MM-DD')
           const early = dayGroups2[nextKey] || []
           const earlyHours = early
             .map((r) => new Date(r.date))
@@ -403,7 +404,7 @@ const main = async () => {
             typeof hour === 'number' ? hour : -1,
             typeof normalized === 'number' ? normalized : -1
           )
-          return { date: k, latestHour, latestHourNormalized: latestHourNormalized >= 0 ? latestHourNormalized : null }
+          return { date: k, latestHour: hour, latestHourNormalized: latestHourNormalized >= 0 ? latestHourNormalized : null }
         })
         const dataLatestByDayFile = outputFilePath(
           'data/overtime-latest-by-day.mjs',

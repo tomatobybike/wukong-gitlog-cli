@@ -47,6 +47,8 @@ export function analyzeOvertime(records, opts = {}) {
   let outsideWorkCount = 0;
   let nonWorkdayCount = 0;
   let holidayCount = 0;
+  let nightOutsideCount = 0;
+  let overtimeSeveritySum = 0;
 
   const byAuthor = new Map();
 
@@ -89,6 +91,11 @@ export function analyzeOvertime(records, opts = {}) {
 
     if (outside) {
       outsideWorkCount++;
+      if (hour >= endHour || hour < startHour) {
+        nightOutsideCount++;
+        const sev = hour >= endHour ? (hour - endHour) : (24 - endHour + hour);
+        overtimeSeveritySum += sev;
+      }
       // 记录最新的加班提交
       if (!latestOutsideCommit || dt.isAfter(parseCommitDate(latestOutsideCommit.date))) {
         latestOutsideCommit = r;
@@ -161,6 +168,10 @@ export function analyzeOvertime(records, opts = {}) {
     nonWorkdayCount,
     outsideWorkRate: total ? +(outsideWorkCount / total).toFixed(3) : 0,
     nonWorkdayRate: total ? +(nonWorkdayCount / total).toFixed(3) : 0,
+    nightOutsideCount,
+    nightOutsideRate: total ? +(nightOutsideCount / total).toFixed(3) : 0,
+    overtimeSeveritySum,
+    overtimeSeverityAvg: nightOutsideCount ? +(overtimeSeveritySum / nightOutsideCount).toFixed(2) : 0,
     perAuthor,
     /// 提示：计算 min/max 日期 & latest commit
     startCommit: startCommit || null,
@@ -184,7 +195,7 @@ export function analyzeOvertime(records, opts = {}) {
 }
 
 export function renderOvertimeText(stats) {
-  const { total, outsideWorkCount, nonWorkdayCount, holidayCount, outsideWorkRate, nonWorkdayRate, holidayRate, perAuthor, startHour, endHour, lunchStart, lunchEnd, country, hourlyOvertimeCommits = [], hourlyOvertimePercent = [] } = stats;
+  const { total, outsideWorkCount, nonWorkdayCount, holidayCount, outsideWorkRate, nonWorkdayRate, holidayRate, nightOutsideCount = 0, nightOutsideRate = 0, overtimeSeverityAvg = 0, perAuthor, startHour, endHour, lunchStart, lunchEnd, country, hourlyOvertimeCommits = [], hourlyOvertimePercent = [] } = stats;
   const { startCommit, endCommit, latestCommit, latestOutsideCommit, latestCommitHour, latestOutsideCommitHour } = stats;
   const lines = [];
 
@@ -235,6 +246,7 @@ export function renderOvertimeText(stats) {
   lines.push(`国家假期参考：${String(country).toUpperCase()}，节假日提交数：${holidayCount}，占比：${(holidayRate * 100).toFixed(1)}%`);
   lines.push(`下班时间（工作时间外）提交数：${outsideWorkCount}，占比：${(outsideWorkRate * 100).toFixed(1)}%`);
   lines.push(`非工作日（周末）提交数：${nonWorkdayCount}，占比：${(nonWorkdayRate * 100).toFixed(1)}%`);
+  lines.push(`晚间加班（${endHour}:00–次日${startHour}:00）提交数：${nightOutsideCount}，占比：${(nightOutsideRate * 100).toFixed(1)}%，平均超过下班：${overtimeSeverityAvg} 小时`);
   lines.push('');
   lines.push('每小时加班分布（工作时间外提交数/占比）：');
   const hourLine = '  Hour | OvertimeCount | Percent';

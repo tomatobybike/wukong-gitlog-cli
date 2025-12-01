@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.12](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.11...v1.0.12) (2025-12-01)
+
+
+### Features
+
+* 🎸 make color ([78d234a](https://github.com/tomatobybike/wukong-gitlog-cli/commit/78d234a04db3d925d8bc1d6cb593173026bcf336))
+* 🎸 make line color ([509f7af](https://github.com/tomatobybike/wukong-gitlog-cli/commit/509f7afca7c2c3cca7a59cf3ce1cdae2832b0c06))
+
+
+### Bug Fixes
+
+* 🐛 next day time ([1d0fea5](https://github.com/tomatobybike/wukong-gitlog-cli/commit/1d0fea548dbd5e8a75a63f80fd22649c19dc3f59))
+
 ### [1.0.11](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.10...v1.0.11) (2025-12-01)
 
 ### [1.0.10](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.9...v1.0.10) (2025-12-01)

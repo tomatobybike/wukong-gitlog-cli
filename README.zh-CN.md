@@ -129,7 +129,7 @@ http://localhost:3000
 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/tomatobybike/wukong-gitlog-cli/main/images/web/overtime.jpg" width="200" alt="wukong-dev Logo" />
+  <img src="https://raw.githubusercontent.com/tomatobybike/wukong-gitlog-cli/main/images/web/overtime.jpg" width="400" alt="wukong-dev Logo" />
 </p>
 ---
 

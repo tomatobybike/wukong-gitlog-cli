@@ -298,7 +298,6 @@ function drawDailySeverity(latestByDay) {
       : (d.latestHour ?? null)
   );
 
-  // 计算超过下班的小时数
   const sev = raw.map((v) => (v == null ? null : Math.max(0, Number(v) - endH)));
 
   const el = document.getElementById('dailySeverityChart');
@@ -308,15 +307,38 @@ function drawDailySeverity(latestByDay) {
     tooltip: {},
     xAxis: { type: 'category', data: labels },
     yAxis: { type: 'value', min: 0 },
+
     series: [
       {
         type: 'line',
         name: '超过下班小时数',
         data: sev,
+
+        // ⭐ 加班区域背景
+        markArea: {
+          data: [
+            // 0–1h：透明
+            [
+              { yAxis: 0 },
+              { yAxis: 1, itemStyle: { color: 'rgba(0,0,0,0)' } }
+            ],
+            // 1–2h：半透明橙色
+            [
+              { yAxis: 1 },
+              { yAxis: 2, itemStyle: { color: 'rgba(251, 140, 0, 0.15)' } } // #fb8c00
+            ],
+            // ≥2h：半透明红色
+            [
+              { yAxis: 2 },
+              { yAxis: 10, itemStyle: { color: 'rgba(211, 47, 47, 0.15)' } } // #d32f2f
+            ]
+          ]
+        },
+
+        // ⭐ 超时阈值标线
         markLine: {
           symbol: ['none', 'arrow'],
           data: [
-            // 1h —— 橙色
             {
               yAxis: 1,
               lineStyle: {
@@ -324,12 +346,8 @@ function drawDailySeverity(latestByDay) {
                 width: 2,
                 type: 'dashed'
               },
-              label: {
-                formatter: '1h',
-                color: '#fb8c00'
-              }
+              label: { formatter: '1h', color: '#fb8c00' }
             },
-            // 2h —— 红色
             {
               yAxis: 2,
               lineStyle: {
@@ -337,10 +355,7 @@ function drawDailySeverity(latestByDay) {
                 width: 2,
                 type: 'dashed'
               },
-              label: {
-                formatter: '2h',
-                color: '#d32f2f'
-              }
+              label: { formatter: '2h', color: '#d32f2f' }
             }
           ]
         }

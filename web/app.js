@@ -179,14 +179,26 @@ function drawMonthlyTrend(monthly) {
 function drawLatestHourDaily(latestByDay) {
   if (!Array.isArray(latestByDay) || latestByDay.length === 0) return null;
   const labels = latestByDay.map(d => d.date);
-  const data = latestByDay.map(d => d.latestHour ?? null);
+  const raw = latestByDay.map(d => (typeof d.latestHourNormalized === 'number' ? d.latestHourNormalized : d.latestHour ?? null));
+  const data = raw.map(v => ({ value: v, itemStyle: { color: (v >= 24) ? '#d32f2f' : (v >= 21 ? '#fb8c00' : '#1976d2') } }));
   const el = document.getElementById('latestHourDailyChart');
   const chart = echarts.init(el);
   chart.setOption({
     tooltip: {},
     xAxis: { type: 'category', data: labels },
-    yAxis: { type: 'value', min: 0, max: 24 },
-    series: [{ type: 'line', name: '每日最晚提交小时', data }]
+    yAxis: { type: 'value', min: 0, max: Math.max(26, Math.ceil(Math.max(...raw.filter(v => typeof v === 'number')) + 1)) },
+    series: [{
+      type: 'line',
+      name: '每日最晚提交小时',
+      data,
+      markLine: {
+        data: [
+          { yAxis: 21 },
+          { yAxis: 24 }
+        ],
+        lineStyle: { color: '#fb8c00' }
+      }
+    }]
   });
   return chart;
 }

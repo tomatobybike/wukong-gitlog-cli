@@ -381,16 +381,29 @@ const main = async () => {
         // 新增：每日最晚提交小时（用于显著展示加班严重程度）
         const dayGroups2 = groupRecords(records, 'day')
         const dayKeys2 = Object.keys(dayGroups2).sort()
+        const overnightCutoff = 6
         const latestByDay = dayKeys2.map((k) => {
           const list = dayGroups2[k]
-          // find latest commit in this day
           const vals = list
             .map((r) => ({ r, _dt: new Date(r.date) }))
             .filter((x) => x._dt && !Number.isNaN(x._dt.valueOf()))
             .sort((a, b) => a._dt.valueOf() - b._dt.valueOf())
           const last = vals.length > 0 ? vals[vals.length - 1] : null
           const hour = last ? new Date(last.r.date).getHours() : null
-          return { date: k, latestHour: hour }
+          const nextKey = require('dayjs')(k).add(1, 'day').format('YYYY-MM-DD')
+          const early = dayGroups2[nextKey] || []
+          const earlyHours = early
+            .map((r) => new Date(r.date))
+            .filter((d) => !Number.isNaN(d.valueOf()))
+            .map((d) => d.getHours())
+            .filter((h) => h >= 0 && h < overnightCutoff)
+          const earlyMax = earlyHours.length > 0 ? Math.max(...earlyHours) : null
+          const normalized = typeof earlyMax === 'number' ? 24 + earlyMax : null
+          const latestHourNormalized = Math.max(
+            typeof hour === 'number' ? hour : -1,
+            typeof normalized === 'number' ? normalized : -1
+          )
+          return { date: k, latestHour, latestHourNormalized: latestHourNormalized >= 0 ? latestHourNormalized : null }
         })
         const dataLatestByDayFile = outputFilePath(
           'data/overtime-latest-by-day.mjs',

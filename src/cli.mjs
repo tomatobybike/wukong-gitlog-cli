@@ -106,6 +106,12 @@ const main = async () => {
       (v) => parseInt(v, 10),
       14
     )
+    .option(
+      '--overnight-cutoff <hour>',
+      '次日凌晨归并窗口（小时），默认 6',
+      (v) => parseInt(v, 10),
+      6
+    )
     .option('--out <file>', '输出文件名（不含路径）')
     .option(
       '--out-dir <dir>',
@@ -382,7 +388,7 @@ const main = async () => {
         // 新增：每日最晚提交小时（用于显著展示加班严重程度）
         const dayGroups2 = groupRecords(records, 'day')
         const dayKeys2 = Object.keys(dayGroups2).sort()
-        const overnightCutoff = 6
+        const overnightCutoff = Number.isFinite(opts.overnightCutoff) ? opts.overnightCutoff : 6
         const latestByDay = dayKeys2.map((k) => {
           const list = dayGroups2[k]
           const vals = list
@@ -415,6 +421,22 @@ const main = async () => {
         console.log(
           chalk.green(`Latest-by-day series 已导出: ${dataLatestByDayFile}`)
         )
+
+        // 导出配置（供前端显示）
+        try {
+          const configFile = outputFilePath('data/config.mjs', outDir)
+          const cfg = {
+            startHour: opts.workStart || 9,
+            endHour: opts.workEnd || 18,
+            lunchStart: opts.lunchStart || 12,
+            lunchEnd: opts.lunchEnd || 14,
+            overnightCutoff
+          }
+          writeTextFile(configFile, `export default ${JSON.stringify(cfg, null, 2)};\n`)
+          console.log(chalk.green(`Config 已导出: ${configFile}`))
+        } catch (e) {
+          console.warn('Export config failed:', e && e.message ? e.message : e)
+        }
 
         startServer(opts.port || 3000, outDir).catch(() => {})
       } catch (err) {

@@ -3,19 +3,21 @@ const formatDate = (d) => new Date(d).toLocaleString();
 
 async function loadData() {
   try {
-    const [commitsModule, statsModule, weeklyModule, monthlyModule, latestByDayModule] = await Promise.all([
+    const [commitsModule, statsModule, weeklyModule, monthlyModule, latestByDayModule, configModule] = await Promise.all([
       import("/data/commits.mjs"),
       import("/data/overtime-stats.mjs"),
       import("/data/overtime-weekly.mjs"),
       import("/data/overtime-monthly.mjs").catch(() => ({ default: [] })),
       import("/data/overtime-latest-by-day.mjs").catch(() => ({ default: [] })),
+      import("/data/config.mjs").catch(() => ({ default: {} })),
     ]);
     const commits = commitsModule.default || [];
     const stats = statsModule.default || {};
     const weekly = weeklyModule.default || [];
     const monthly = monthlyModule.default || [];
     const latestByDay = latestByDayModule.default || [];
-    return { commits, stats, weekly, monthly, latestByDay };
+    const config = configModule.default || {};
+    return { commits, stats, weekly, monthly, latestByDay, config };
   } catch (err) {
     console.error('Load data failed', err);
     return { commits: [], stats: {}, weekly: [], monthly: [], latestByDay: [] };
@@ -212,6 +214,35 @@ function drawLatestHourDaily(latestByDay) {
   return chart;
 }
 
+function drawDailySeverity(latestByDay) {
+  if (!Array.isArray(latestByDay) || latestByDay.length === 0) return null;
+  const labels = latestByDay.map(d => d.date);
+  const endH = (window.__overtimeEndHour || 18);
+  const raw = latestByDay.map(d => (typeof d.latestHourNormalized === 'number' ? d.latestHourNormalized : d.latestHour ?? null));
+  const sev = raw.map(v => (v == null ? null : Math.max(0, Number(v) - endH)));
+  const el = document.getElementById('dailySeverityChart');
+  const chart = echarts.init(el);
+  chart.setOption({
+    tooltip: {},
+    xAxis: { type: 'category', data: labels },
+    yAxis: { type: 'value', min: 0 },
+    series: [{
+      type: 'line',
+      name: '超过下班小时数',
+      data: sev,
+      markLine: {
+        symbol: 'none',
+        data: [
+          { yAxis: 1 },
+          { yAxis: 2 }
+        ],
+        lineStyle: { color: '#9e9e9e', type: 'dashed' }
+      }
+    }]
+  });
+  return chart;
+}
+
 function renderKpi(stats) {
   const el = document.getElementById('kpiContent');
   if (!el || !stats) return;
@@ -219,18 +250,21 @@ function renderKpi(stats) {
   const latestHour = stats.latestCommitHour;
   const latestOut = stats.latestOutsideCommit;
   const latestOutHour = stats.latestOutsideCommitHour ?? (latestOut ? new Date(latestOut.date).getHours() : null);
+  const cutoff = window.__overnightCutoff ?? 6;
   const html = [
     `<div>最晚一次提交时间：${latest ? formatDate(latest.date) : '-'}${typeof latestHour === 'number' ? `（${String(latestHour).padStart(2,'0')}:00）` : ''}</div>`,
-    `<div>加班最晚一次提交时间：${latestOut ? formatDate(latestOut.date) : '-'}${typeof latestOutHour === 'number' ? `（${String(latestOutHour).padStart(2,'0')}:00）` : ''}</div>`
+    `<div>加班最晚一次提交时间：${latestOut ? formatDate(latestOut.date) : '-'}${typeof latestOutHour === 'number' ? `（${String(latestOutHour).padStart(2,'0')}:00）` : ''}</div>`,
+    `<div>次日归并窗口：凌晨 <b>${cutoff}</b> 点内归前一日</div>`
   ].join('');
   el.innerHTML = html;
 }
 
 (async function main() {
-  const { commits, stats, weekly, monthly, latestByDay } = await loadData();
+  const { commits, stats, weekly, monthly, latestByDay, config } = await loadData();
   commitsAll = commits;
   filtered = commitsAll.slice();
-  window.__overtimeEndHour = stats && typeof stats.endHour === 'number' ? stats.endHour : 18;
+  window.__overtimeEndHour = stats && typeof stats.endHour === 'number' ? stats.endHour : (config.endHour ?? 18);
+  window.__overnightCutoff = typeof config.overnightCutoff === 'number' ? config.overnightCutoff : 6;
   initTableControls();
   updatePager();
   renderCommitsTablePage();
@@ -240,5 +274,6 @@ function renderKpi(stats) {
   drawWeeklyTrend(weekly);
   drawMonthlyTrend(monthly);
   drawLatestHourDaily(latestByDay);
+  drawDailySeverity(latestByDay);
   renderKpi(stats);
 })();

@@ -115,11 +115,11 @@ const main = async () => {
     .option('--out <file>', '输出文件名（不含路径）')
     .option(
       '--out-dir <dir>',
-      '自定义输出目录，支持相对路径或绝对路径，例如 `--out-dir ../output`'
+      '自定义输出目录，支持相对路径或绝对路径，例如 `--out-dir ../output-wukong`'
     )
     .option(
       '--out-parent',
-      '将输出目录放到当前工程的父目录的 `output/`（等同于 `--out-dir ../output`）'
+      '将输出目录放到当前工程的父目录的 `output-wukong/`（等同于 `--out-dir ../output-wukong`）'
     )
     .option(
       '--per-period-formats <formats>',
@@ -137,7 +137,7 @@ const main = async () => {
     )
     .option(
       '--serve',
-      '启动本地 web 服务，查看提交统计（将在 output/data 下生成数据文件）'
+      '启动本地 web 服务，查看提交统计（将在 output-wukong/data 下生成数据文件）'
     )
     .option(
       '--port <n>',
@@ -147,7 +147,7 @@ const main = async () => {
     )
     .option(
       '--serve-only',
-      '仅启动 web 服务，不导出或分析数据（使用 output/data 中已有的数据）'
+      '仅启动 web 服务，不导出或分析数据（使用 output-wukong/data 中已有的数据）'
     )
     .option('--version', 'show version information')
     .parse()
@@ -155,7 +155,7 @@ const main = async () => {
   const opts = program.opts()
   // compute output directory root early (so serve-only can use it)
   const outDir = opts.outParent
-    ? path.resolve(process.cwd(), '..', 'output')
+    ? path.resolve(process.cwd(), '..', 'output-wukong')
     : opts.outDir || undefined
 
   if (opts.version) {

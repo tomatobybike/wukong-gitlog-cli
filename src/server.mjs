@@ -48,7 +48,7 @@ export function startServer(port = 3000, outputDir) {
   const webRoot = path.resolve(pkgRoot, 'web')
   const dataRoot = outputDir
     ? path.resolve(outputDir)
-    : path.resolve(process.cwd(), 'output')
+    : path.resolve(process.cwd(), 'output-wukong')
 
   // warn if web directory or data directory doesn't exist
   if (!fs.existsSync(webRoot)) {
@@ -118,7 +118,7 @@ export function startServer(port = 3000, outputDir) {
     server.listen(port, () => {
       const url = `http://localhost:${port}`
       console.log(chalk.green(`Server started at ${url}`))
-      console.log(chalk.green(`Serving web/ and output/data/`))
+      console.log(chalk.green(`Serving web/ and output-wukong/data/`))
 
       // ====== 自动打开浏览器 ======
       openBrowser(url)

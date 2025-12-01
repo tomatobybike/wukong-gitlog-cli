@@ -32,6 +32,7 @@ yarn-error.log*
 
 # Dependency directories
 output/
+output-wukong/
 dist/
 build/
 bin/

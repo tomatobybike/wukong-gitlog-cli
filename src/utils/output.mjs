@@ -3,10 +3,10 @@ import path from 'path';
 
 export function ensureOutputDir(customDir) {
   // If a custom absolute/relative path is provided, resolve relative to cwd as-is
-  // Otherwise default to `output` inside current working directory.
+  // Otherwise default to `output-wukong` inside current working directory.
   const dir = customDir
     ? path.resolve(process.cwd(), customDir)
-    : path.resolve(process.cwd(), 'output');
+    : path.resolve(process.cwd(), 'output-wukong');
 
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });

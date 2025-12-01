@@ -1,4 +1,4 @@
-## 📦  `wukong-gitlog-cli`
+## 📦 `wukong-gitlog-cli`
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/tomatobybike/wukong-gitlog-cli/main/images/logo.svg" width="200" alt="wukong-dev Logo" />
@@ -14,8 +14,7 @@
 
 Advanced Git commit log exporter with Excel/JSON/TXT output, grouping, stats and CLI.
 
-English | [简体中文](./README.zh-CN.md)
----
+## English | [简体中文](./README.zh-CN.md)
 
 ## Features
 
@@ -37,8 +36,6 @@ English | [简体中文](./README.zh-CN.md)
 ---
 
 ## Installation
-
-
 
 Install globally to run with a short command (recommended for CLI consumers):
 
@@ -62,37 +59,38 @@ wukong-gitlog-cli [options]
 
 Command-line options:
 
-- `--author <name>`        Filter commits by author name
-- `--email <email>`        Filter commits by author email
-- `--since <date>`         Start date (e.g., 2025-01-01)
-- `--until <date>`         End date
-- `--limit <n>`            Limit number of commits
-- `--no-merges`            Exclude merge commits
-- `--json`                 Output JSON
-- `--format <type>`        Output format: `text` | `excel` | `json` (default: `text`)
-- `--group-by <type>`      Group commits by date: `day` | `month`
-- `--overtime`              Analyze overtime culture: output counts/percentages for commits outside work hours and on non-workdays (per-person breakdown)
-  - `--country <code>`       Country/region for holidays (CN|US). Default: `CN`.
-  - `--work-start <hour>`    Workday start hour. Default: `9`.
-  - `--work-end <hour>`      Workday end hour. Default: `18`.
-  - `--lunch-start <hour>`   Lunch break start hour. Default: `12`.
-  - `--lunch-end <hour>`     Lunch break end hour. Default: `14`.
-- `--stats`                Include a `Stats` sheet in the Excel export
-- `--gerrit-api <url>`    Optional: Gerrit REST API base URL for resolving `{{changeNumber}}` (e.g. `https://gerrit.example.com/gerrit`)
+- `--author <name>` Filter commits by author name
+- `--email <email>` Filter commits by author email
+- `--since <date>` Start date (e.g., 2025-01-01)
+- `--until <date>` End date
+- `--limit <n>` Limit number of commits
+- `--no-merges` Exclude merge commits
+- `--json` Output JSON
+- `--format <type>` Output format: `text` | `excel` | `json` (default: `text`)
+- `--group-by <type>` Group commits by date: `day` | `month`
+- `--overtime` Analyze overtime culture: output counts/percentages for commits outside work hours and on non-workdays (per-person breakdown)
+  - `--country <code>` Country/region for holidays (CN|US). Default: `CN`.
+  - `--work-start <hour>` Workday start hour. Default: `9`.
+  - `--work-end <hour>` Workday end hour. Default: `18`.
+  - `--lunch-start <hour>` Lunch break start hour. Default: `12`.
+  - `--lunch-end <hour>` Lunch break end hour. Default: `14`.
+- `--stats` Include a `Stats` sheet in the Excel export
+- `--gerrit-api <url>` Optional: Gerrit REST API base URL for resolving `{{changeNumber}}` (e.g. `https://gerrit.example.com/gerrit`)
 - `--gerrit-auth <token>` Optional: Authorization for Gerrit REST API (either `user:pass` for Basic or token string for Bearer)
-- `--gerrit <prefix>`      Show Gerrit URL for each commit (supports templates `{{hash}}`, `{{changeId}}` and `{{changeNumber}}`; `{{changeId}}` falls back to `hash` when absent; `{{changeNumber}}` requires `--gerrit-api` and falls back to `changeId` or `hash`)
-- `--out <file>`           Output file name (without path). Defaults: `commits.json` / `commits.txt` / `commits.xlsx`
-- `--out-dir <dir>`      Output directory path — supports relative or absolute path, e.g., `--out-dir ../output`
-- `--serve`         Start the local web service and view the submission statistics (data files will be generated under output/data)
-- `--port <n>`         Local web service port (default: 3000)
-- `--serve-only`         Only start the web service without exporting or analyzing data (using existing data in output/data)
-- `--version`         show version information
+- `--gerrit <prefix>` Show Gerrit URL for each commit (supports templates `{{hash}}`, `{{changeId}}` and `{{changeNumber}}`; `{{changeId}}` falls back to `hash` when absent; `{{changeNumber}}` requires `--gerrit-api` and falls back to `changeId` or `hash`)
+- `--out <file>` Output file name (without path). Defaults: `commits.json` / `commits.txt` / `commits.xlsx`
+- `--out-dir <dir>` Output directory path — supports relative or absolute path, e.g., `--out-dir ../output`
+- `--serve` Start the local web service and view the submission statistics (data files will be generated under output/data)
+- `--port <n>` Local web service port (default: 3000)
+- `--serve-only` Only start the web service without exporting or analyzing data (using existing data in output/data)
+- `--version` show version information
 
 > Output files are written to an `output/` directory in the current working directory.
 >
 > Tip: Use `--out-parent` or `--out-dir ../output` to write outputs into the parent folder's `output/` to avoid accidentally committing generated files to your repository.
 
 ### Per-period outputs
+
 You can generate per-month and per-week outputs under `output/month/` and `output/week/` using the `--per-period-formats` option. Example:
 
 ```bash
@@ -113,6 +111,7 @@ wukong-gitlog-cli --overtime --limit 200 --format text --out commits.txt --per-p
 ```
 
 ### Serve a local dashboard
+
 You can start a small static web dashboard to visualize commit statistics and charts. It will export raw commits and analyzed stats into `output/data/` as `commits.mjs` and `overtime-stats.mjs`, and start a local web server serving `web/` and `output/data/`:
 
 ```bash
@@ -128,7 +127,9 @@ wukong-gitlog-cli --serve --port 8080 --overtime --limit 200 --out commits.txt
 
 Open `http://localhost:3000` to view the dashboard.
 
-
+<p align="center">
+  <img src="https://raw.githubusercontent.com/tomatobybike/wukong-gitlog-cli/main/images/web/overtime.jpg" width="200" alt="wukong-dev Logo" />
+</p>
 
 ---
 
@@ -209,8 +210,6 @@ wukong-gitlog-cli --out-dir ../output --format text --limit 5 --out custom1.txt
 
 ---
 
-
-
 ```bash
 wukong-gitlog-cli --overtime --limit 500
 ```
@@ -220,7 +219,7 @@ wukong-gitlog-cli --overtime --limit 500
 - The CLI prints helpful messages after exporting files and writes outputs to the `output/` folder in the repo root.
 - Internally `src/utils/index.mjs` acts as a barrel that re-exports helper functions located in `src/utils/`.
 - If you plan to reuse the helpers in other modules, import from `./src/utils/index.mjs` explicitly.
-- The Excel export uses `exceljs` and adds an ``autoFilter`` to the sheet header.
+- The Excel export uses `exceljs` and adds an `autoFilter` to the sheet header.
 
 Suggested `.gitignore` snippet (to avoid accidentally committing generated files):
 
@@ -241,4 +240,3 @@ PRs are welcome — add tests and keep changes modular. If you add new CLI flags
 ## License
 
 MIT
-

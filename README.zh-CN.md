@@ -118,7 +118,7 @@ wukong-gitlog-cli --per-period-only
 启动服务器：
 
 ```bash
-wukong-gitlog-cli --serve --overtime --limit 200
+wukong-gitlog-cli --overtime  --serve --port 5555 --limit 200
 ```
 
 浏览器访问：
@@ -127,6 +127,10 @@ wukong-gitlog-cli --serve --overtime --limit 200
 http://localhost:3000
 ```
 
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/tomatobybike/wukong-gitlog-cli/main/images/web/overtime.jpg" width="200" alt="wukong-dev Logo" />
+</p>
 ---
 
 ## 🔗 Gerrit 支持

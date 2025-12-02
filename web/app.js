@@ -100,21 +100,182 @@ function initTableControls() {
   })
 }
 
-function drawHourlyOvertime(stats) {
+function drawHourlyOvertime(stats, onHourClick) {
   const el = document.getElementById('hourlyOvertimeChart')
-  // eslint-disable-next-line no-undef
   const chart = echarts.init(el)
-  const data = stats.hourlyOvertimeCommits || []
+
+  const commits = stats.hourlyOvertimeCommits || []
+  const percent = stats.hourlyOvertimePercent || []
   const labels = Array.from({ length: 24 }, (_, i) =>
     String(i).padStart(2, '0')
   )
+
+  // 颜色逻辑（与 daily severity 风格一致）
+  function getColor(h) {
+    if (h >= 21) return '#d32f2f' // 深夜加班 红
+    if (h >= 19) return '#fb8c00' // 夜间加班 橙
+    if (h >= stats.lunchStart && h < stats.lunchEnd) return '#888888' // 午休灰
+    if (h >= stats.startHour && h < stats.endHour) return '#1976d2' // 工作时段 蓝
+    return '#b71c1c' // 凌晨 红
+  }
+
+  const data = commits.map((v, h) => ({
+    value: v,
+    itemStyle: { color: getColor(h) }
+  }))
+
   chart.setOption({
-    tooltip: {},
-    xAxis: { type: 'category', data: labels },
-    yAxis: { type: 'value' },
-    series: [{ type: 'bar', name: 'Overtime commits', data }]
+    tooltip: {
+      trigger: 'axis',
+      formatter(params) {
+        const p = params[0]
+        const h = parseInt(p.axisValue,10)
+        const count = p.value
+        const rate = (percent[h] * 100).toFixed(1)
+        return `
+          🕒 <b>${h}:00</b><br/>
+          提交次数：<b>${count}</b><br/>
+          占全天比例：<b>${rate}%</b>
+        `
+      }
+    },
+
+    xAxis: {
+      type: 'category',
+      data: labels,
+      axisLabel: { color: '#555' }
+    },
+
+    yAxis: {
+      type: 'value',
+      min: 0,
+      axisLabel: { color: '#555' }
+    },
+
+    grid: { left: 40, right: 30, top: 20, bottom: 40 },
+
+    series: [
+      {
+        type: 'bar',
+        name: 'Overtime commits',
+        data,
+        barWidth: 18,
+
+        markPoint: {
+          symbol: 'pin',
+          symbolSize: 45,
+          itemStyle: { color: '#d32f2f' },
+          data: [
+            {
+              name: '最晚提交',
+              coord: [
+                String(stats.latestCommitHour).padStart(2, '0'),
+                commits[stats.latestCommitHour]
+              ]
+            }
+          ]
+        },
+
+        markLine: {
+          symbol: 'none',
+          animation: true,
+          label: { color: '#888', formatter: '{b}' },
+          lineStyle: { type: 'dashed', color: '#aaa' },
+          data: [
+            {
+              name: '上班开始',
+              xAxis: String(stats.startHour).padStart(2, '0')
+            },
+            { name: '下班时间', xAxis: String(stats.endHour).padStart(2, '0') },
+            {
+              name: '午休开始',
+              xAxis: String(stats.lunchStart).padStart(2, '0')
+            },
+            { name: '午休结束', xAxis: String(stats.lunchEnd).padStart(2, '0') }
+          ]
+        }
+      }
+    ]
   })
+
+  // 点击事件（点击某小时 → 打开侧栏）
+  if (typeof onHourClick === 'function') {
+    chart.on('click', (p) => {
+      const hour = Number(p.name)
+      onHourClick(hour, commits[hour])
+    })
+  }
+
   return chart
+}
+
+// showSideBarForHour 实现
+function showSideBarForHour(hour, commitsOrCount) {
+  // 支持传入 number（仅次数）或 array（详细 commit 列表）
+  const sidebar = document.getElementById('hourDetailSidebar')
+  const titleEl = document.getElementById('hourSidebarTitle')
+  const contentEl = document.getElementById('hourSidebarContent')
+
+  // 兼容未传入侧栏 DOM 的情况（优雅降级）
+  if (!sidebar || !titleEl || !contentEl) {
+    console.warn(
+      'hourDetailSidebar DOM not found. Please add the HTML snippet.'
+    )
+    return
+  }
+
+  titleEl.innerHTML = `🕒 ${String(hour).padStart(2, '0')}:00 - ${String(hour).padStart(2, '0')}:59`
+
+  // 如果只是 number，显示计数
+  if (typeof commitsOrCount === 'number') {
+    contentEl.innerHTML = `<div style="font-size:14px;">提交次数：<b>${commitsOrCount}</b></div>`
+  } else if (Array.isArray(commitsOrCount) && commitsOrCount.length === 0) {
+    contentEl.innerHTML = `<div style="font-size:14px;">当小时无提交记录</div>`
+  } else if (Array.isArray(commitsOrCount)) {
+    // commits 列表：展示作者/时间/消息（最多前 50 条，避免性能问题）
+    const commits = commitsOrCount.slice(0, 50)
+    contentEl.innerHTML = commits
+      .map((c) => {
+        const author = c.author ?? c.name ?? 'unknown'
+        const time = c.date ?? c.time ?? ''
+        const msg = (c.message ?? c.msg ?? c.body ?? '').replace(/\n/g, ' ')
+        return `
+        <div class="hour-commit">
+          <div class="meta">👤 <b>${escapeHtml(author)}</b> · 🕒 ${escapeHtml(time)}</div>
+          <div class="msg">${escapeHtml(msg)}</div>
+        </div>
+      `
+      })
+      .join('')
+
+    if (commitsOrCount.length > 50) {
+      const more = commitsOrCount.length - 50
+      contentEl.innerHTML += `<div style="color:#888; padding:8px 0">另外 ${more} 条已省略</div>`
+    }
+  } else {
+    contentEl.innerHTML = `<div style="font-size:14px;">无可展示数据</div>`
+  }
+
+  // 打开侧栏
+  sidebar.classList.add('show')
+}
+
+// 关闭按钮绑定（只需运行一次）
+;(function bindHourSidebarClose() {
+  const btn = document.getElementById('hourSidebarClose')
+  const sidebar = document.getElementById('hourDetailSidebar')
+  if (!btn || !sidebar) return
+  btn.addEventListener('click', () => sidebar.classList.remove('show'))
+})()
+
+// 简单的 HTML 转义，防止 XSS 与布局断裂
+function escapeHtml(str = '') {
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
 }
 
 function drawOutsideVsInside(stats) {
@@ -141,57 +302,303 @@ function drawOutsideVsInside(stats) {
 }
 
 function drawDailyTrend(commits) {
+  if (!Array.isArray(commits) || commits.length === 0) return null
+
+  // 聚合每日提交数量
   const map = new Map()
   commits.forEach((c) => {
     const d = new Date(c.date).toISOString().slice(0, 10)
     map.set(d, (map.get(d) || 0) + 1)
   })
+
   const labels = Array.from(map.keys()).sort()
   const data = labels.map((l) => map.get(l))
+
   const el = document.getElementById('dailyTrendChart')
   // eslint-disable-next-line no-undef
   const chart = echarts.init(el)
+
   chart.setOption({
-    tooltip: {},
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params) => {
+        const p = params?.[0]
+        if (!p) return ''
+
+        const date = p.axisValue
+        const count = p.data
+
+        // 分级说明
+        let level = '🟢 正常（≤5 次）'
+        if (count > 5 && count < 10) level = '🟠 较高频（6–10 次）'
+        if (count >= 10) level = '🔴 高频（≥10 次）'
+
+        return `
+          <div style="font-size:13px; line-height:1.5;">
+            <b>${date}</b><br/>
+            提交次数：<b>${count}</b><br/>
+            等级：${level}
+          </div>
+        `
+      }
+    },
+
     xAxis: { type: 'category', data: labels },
-    yAxis: { type: 'value' },
-    series: [{ type: 'line', name: '每日提交', data, areaStyle: {} }]
+
+    yAxis: { type: 'value', min: 0 },
+
+    series: [
+      {
+        type: 'line',
+        name: '每日提交',
+        data,
+
+        smooth: true,
+
+        // ⭐ area 渐变背景
+        areaStyle: {
+          opacity: 0.2
+        },
+
+        // ⭐ 背景区间（低 / 中 / 高频）
+        markArea: {
+          data: [
+            [
+              { yAxis: 0 },
+              { yAxis: 5, itemStyle: { color: 'rgba(76, 175, 80, 0.12)' } } // 绿
+            ],
+            [
+              { yAxis: 5 },
+              { yAxis: 10, itemStyle: { color: 'rgba(251, 140, 0, 0.12)' } } // 橙
+            ],
+            [
+              { yAxis: 10 },
+              { yAxis: 50, itemStyle: { color: 'rgba(211, 47, 47, 0.12)' } } // 红
+            ]
+          ]
+        },
+
+        // ⭐ 阈值线
+        markLine: {
+          symbol: ['none', 'arrow'],
+          data: [
+            {
+              yAxis: 5,
+              lineStyle: { color: '#fb8c00', width: 2, type: 'dashed' },
+              label: { formatter: '5 次', color: '#fb8c00' }
+            },
+            {
+              yAxis: 10,
+              lineStyle: { color: '#d32f2f', width: 2, type: 'dashed' },
+              label: { formatter: '10 次', color: '#d32f2f' }
+            }
+          ]
+        }
+      }
+    ]
   })
+
   return chart
 }
 
 function drawWeeklyTrend(weekly) {
+  if (!Array.isArray(weekly) || weekly.length === 0) return null
+
   const labels = weekly.map((w) => w.period)
-  const dataRate = weekly.map((w) => +(w.outsideWorkRate * 100).toFixed(1))
+  const dataRate = weekly.map((w) => +(w.outsideWorkRate * 100).toFixed(1)) // %
   const dataCount = weekly.map((w) => w.outsideWorkCount)
+
   const el = document.getElementById('weeklyTrendChart')
   // eslint-disable-next-line no-undef
   const chart = echarts.init(el)
+
   chart.setOption({
-    tooltip: {},
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params) => {
+        const rate = params.find((p) => p.seriesName.includes('%'))?.data
+        const count = params.find((p) => p.seriesName.includes('次数'))?.data
+
+        // 加班等级
+        let level = '🟢 健康（<10%）'
+        if (rate >= 10 && rate < 20) level = '🟠 中度（10–20%）'
+        if (rate >= 20) level = '🔴 严重（≥20%）'
+
+        return `
+        <div style="font-size:13px; line-height:1.5;">
+          <b>${params[0].axisValue}</b><br/>
+          加班占比：<b>${rate}%</b><br/>
+          加班次数：${count} 次<br/>
+          等级：${level}
+        </div>
+      `
+      }
+    },
+
+    legend: {
+      top: 10
+    },
+
     xAxis: { type: 'category', data: labels },
-    yAxis: [{ type: 'value', min: 0, max: 100 }, { type: 'value' }],
+
+    yAxis: [
+      { type: 'value', min: 0, max: 100, name: '占比(%)' },
+      { type: 'value', name: '次数', min: 0 }
+    ],
+
     series: [
-      { type: 'line', name: '加班占比(%)', data: dataRate, yAxisIndex: 0 },
-      { type: 'line', name: '加班次数', data: dataCount, yAxisIndex: 1 }
+      {
+        type: 'line',
+        name: '加班占比(%)',
+        data: dataRate,
+
+        // ⭐ 区间背景（与 monthly/daily 对齐）
+        markArea: {
+          data: [
+            [
+              { yAxis: 0 },
+              { yAxis: 10, itemStyle: { color: 'rgba(76, 175, 80, 0.15)' } } // 绿色
+            ],
+            [
+              { yAxis: 10 },
+              { yAxis: 20, itemStyle: { color: 'rgba(251, 140, 0, 0.15)' } } // 橙色
+            ],
+            [
+              { yAxis: 20 },
+              { yAxis: 100, itemStyle: { color: 'rgba(211, 47, 47, 0.15)' } } // 红色
+            ]
+          ]
+        },
+
+        // ⭐ 阈值线
+        markLine: {
+          symbol: ['none', 'arrow'],
+          data: [
+            {
+              yAxis: 10,
+              lineStyle: { color: '#fb8c00', width: 2, type: 'dashed' },
+              label: { formatter: '10%', color: '#fb8c00' }
+            },
+            {
+              yAxis: 20,
+              lineStyle: { color: '#d32f2f', width: 2, type: 'dashed' },
+              label: { formatter: '20%', color: '#d32f2f' }
+            }
+          ]
+        }
+      },
+
+      {
+        type: 'line',
+        name: '加班次数',
+        data: dataCount,
+        yAxisIndex: 1,
+
+        // 次数线使用默认蓝色，避免干扰等级颜色区间
+        smooth: true
+      }
     ]
   })
+
   return chart
 }
 
 function drawMonthlyTrend(monthly) {
   if (!Array.isArray(monthly) || monthly.length === 0) return null
+
   const labels = monthly.map((m) => m.period)
-  const dataRate = monthly.map((m) => +(m.outsideWorkRate * 100).toFixed(1))
+  const dataRate = monthly.map((m) => +(m.outsideWorkRate * 100).toFixed(1)) // 0–100%
+
   const el = document.getElementById('monthlyTrendChart')
   // eslint-disable-next-line no-undef
   const chart = echarts.init(el)
+
   chart.setOption({
-    tooltip: {},
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params) => {
+        const p = params[0]
+        if (!p) return ''
+
+        const rate = p.data
+        let level = '🟢 健康（<10%）'
+        if (rate >= 10 && rate < 20) level = '🟠 中度（10–20%）'
+        if (rate >= 20) level = '🔴 严重（≥20%）'
+
+        return `
+          <div style="font-size:13px; line-height:1.5">
+            <b>${p.axisValue}</b><br/>
+            加班占比：<b>${rate}%</b><br/>
+            加班等级：${level}
+          </div>
+        `
+      }
+    },
+
     xAxis: { type: 'category', data: labels },
     yAxis: { type: 'value', min: 0, max: 100 },
-    series: [{ type: 'line', name: '加班占比(%)', data: dataRate }]
+
+    series: [
+      {
+        type: 'line',
+        name: '加班占比(%)',
+        data: dataRate,
+
+        // ⭐ 区间背景（可配置）
+        markArea: {
+          data: [
+            // <10% 绿色轻度
+            [
+              { yAxis: 0 },
+              { yAxis: 10, itemStyle: { color: 'rgba(76, 175, 80, 0.15)' } }
+            ],
+            // 10–20% 橙色中度
+            [
+              { yAxis: 10 },
+              { yAxis: 20, itemStyle: { color: 'rgba(251, 140, 0, 0.15)' } }
+            ],
+            // ≥20% 红色严重
+            [
+              { yAxis: 20 },
+              { yAxis: 100, itemStyle: { color: 'rgba(211, 47, 47, 0.15)' } }
+            ]
+          ]
+        },
+
+        // ⭐ 阈值线（同每日图风格）
+        markLine: {
+          symbol: ['none', 'arrow'],
+          data: [
+            {
+              yAxis: 10,
+              lineStyle: {
+                color: '#fb8c00',
+                width: 2,
+                type: 'dashed'
+              },
+              label: {
+                formatter: '10%',
+                color: '#fb8c00'
+              }
+            },
+            {
+              yAxis: 20,
+              lineStyle: {
+                color: '#d32f2f',
+                width: 2,
+                type: 'dashed'
+              },
+              label: {
+                formatter: '20%',
+                color: '#d32f2f'
+              }
+            }
+          ]
+        }
+      }
+    ]
   })
+
   return chart
 }
 
@@ -211,6 +618,7 @@ function drawLatestHourDaily(latestByDay) {
     value: v,
     itemStyle: {
       color:
+        // eslint-disable-next-line no-nested-ternary
         v >= 20
           ? '#d32f2f' // 红
           : v >= 19
@@ -224,6 +632,7 @@ function drawLatestHourDaily(latestByDay) {
   const maxV = numericValues.length > 0 ? Math.max(...numericValues) : 0
 
   const el = document.getElementById('latestHourDailyChart')
+  // eslint-disable-next-line no-undef
   const chart = echarts.init(el)
 
   chart.setOption({
@@ -233,8 +642,31 @@ function drawLatestHourDaily(latestByDay) {
         const p = Array.isArray(params) ? params[0] : params
         const v = p?.value != null ? Number(p.value) : null
         const endH = window.__overtimeEndHour || 18
-        const sev = v != null ? Math.max(0, v - endH) : 0
-        return `${p.axisValue}<br/>最晚小时: ${v != null ? v : '-'}<br/>超过下班: ${sev} 小时`
+
+        if (v == null) {
+          return `
+        <div style="font-size:13px; line-height:1.5">
+          <b>${p.axisValue}</b><br/>
+          无数据
+        </div>
+      `
+        }
+
+        const overtime = Math.max(0, v - endH)
+        const overtimeText = overtime.toFixed(2)
+
+        let level = '🟢 正常（无明显加班）'
+        if (overtime >= 1 && overtime < 2) level = '🟠 中度加班（1–2h）'
+        if (overtime >= 2) level = '🔴 严重加班（≥2h）'
+
+        return `
+      <div style="font-size:13px; line-height:1.5">
+        <b>${p.axisValue}</b><br/>
+        最晚提交时间：<b>${v.toFixed(2)} 点</b><br/>
+        超出下班：<b>${overtimeText} 小时</b><br/>
+        加班等级：${level}
+      </div>
+    `
       }
     },
     xAxis: { type: 'category', data: labels },
@@ -287,24 +719,60 @@ function drawLatestHourDaily(latestByDay) {
 }
 
 function drawDailySeverity(latestByDay) {
-  if (!Array.isArray(latestByDay) || latestByDay.length === 0) return null;
+  if (!Array.isArray(latestByDay) || latestByDay.length === 0) return null
 
-  const labels = latestByDay.map((d) => d.date);
-  const endH = window.__overtimeEndHour || 18;
+  const labels = latestByDay.map((d) => d.date)
+  const endH = window.__overtimeEndHour || 18
 
   const raw = latestByDay.map((d) =>
     typeof d.latestHourNormalized === 'number'
       ? d.latestHourNormalized
       : (d.latestHour ?? null)
-  );
+  )
 
-  const sev = raw.map((v) => (v == null ? null : Math.max(0, Number(v) - endH)));
+  const sev = raw.map((v) => (v == null ? null : Math.max(0, Number(v) - endH)))
 
-  const el = document.getElementById('dailySeverityChart');
-  const chart = echarts.init(el);
+  const el = document.getElementById('dailySeverityChart')
+  // eslint-disable-next-line no-undef
+  const chart = echarts.init(el)
 
   chart.setOption({
-    tooltip: {},
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params) => {
+        const p = params[0]
+        if (!p) return ''
+        const date = p.axisValue
+        const overtime = p.data
+        const rawHour = raw[p.dataIndex] // 原始 latestHour 或 latestHourNormalized
+
+        if (overtime == null) {
+          return `
+        <div style="font-size:13px;">
+          <b>${date}</b><br/>
+          无数据
+        </div>
+      `
+        }
+
+        return `
+      <div style="font-size:13px;">
+        <b>${date}</b><br/>
+        下班后：<b>${overtime.toFixed(2)} 小时</b><br/>
+        原始最晚提交：${rawHour != null ? `${rawHour.toFixed(2)} 点` : '无'}<br/>
+        加班等级：${
+          // eslint-disable-next-line no-nested-ternary
+          overtime < 1
+            ? '🟢 0–1 小时（轻度）'
+            : overtime < 2
+              ? '🟠 1–2 小时（中度）'
+              : '🔴 ≥2 小时（严重）'
+        }
+      </div>
+    `
+      }
+    },
+
     xAxis: { type: 'category', data: labels },
     yAxis: { type: 'value', min: 0 },
 
@@ -318,10 +786,7 @@ function drawDailySeverity(latestByDay) {
         markArea: {
           data: [
             // 0–1h：透明
-            [
-              { yAxis: 0 },
-              { yAxis: 1, itemStyle: { color: 'rgba(0,0,0,0)' } }
-            ],
+            [{ yAxis: 0 }, { yAxis: 1, itemStyle: { color: 'rgba(0,0,0,0)' } }],
             // 1–2h：半透明橙色
             [
               { yAxis: 1 },
@@ -361,11 +826,197 @@ function drawDailySeverity(latestByDay) {
         }
       }
     ]
-  });
+  })
 
-  return chart;
+  return chart
 }
 
+/**
+ * 绘制每日趋势（带加班严重度背景区间）并自动分析最累的日期
+ * @param {Array} commits - 原始提交记录（包含 c.date）
+ * @param {Function} onDayClick - 用户点击某一天时的回调 (date, count) => void
+ */
+/**
+ * 绘制每日趋势（含严重度背景区间、最累标记、tooltip 明细）
+ */
+function drawDailyTrendSeverity(commits, weekly, onDayClick) {
+  // ---------- 1. 聚合每日数据 ----------
+  const dayMap = new Map()
+  const dayCommitsDetail = {}
+
+  commits.forEach((c) => {
+    const d = new Date(c.date).toISOString().slice(0, 10)
+
+    // 数量统计
+    dayMap.set(d, (dayMap.get(d) || 0) + 1)
+
+    // 详细信息统计（用于 tooltip 显示）
+    if (!dayCommitsDetail[d]) dayCommitsDetail[d] = []
+    dayCommitsDetail[d].push({
+      author: c.author,
+      time: c.date,
+      msg: c.message
+    })
+  })
+
+  const labels = Array.from(dayMap.keys()).sort()
+  const data = labels.map((l) => dayMap.get(l))
+
+  // ---------- 2. 自动分析「最累的一天」 ----------
+  const maxDailyCount = Math.max(...data)
+  const maxDailyIndex = data.indexOf(maxDailyCount)
+  const mostTiredDay = labels[maxDailyIndex]
+
+  document.getElementById('mostTiredDay').innerHTML =
+    `🔥 最累的一天：<b>${mostTiredDay}</b>（${maxDailyCount} 次提交）`
+
+  // ---------- 3. 自动分析「最累的一周」 ----------
+  let maxWeek = null
+  if (Array.isArray(weekly)) {
+    maxWeek = weekly.reduce((a, b) =>
+      a.outsideWorkCount > b.outsideWorkCount ? a : b
+    )
+    if (maxWeek) {
+      document.getElementById('mostTiredWeek').innerHTML =
+        `🔥 最累的一周：<b>${maxWeek.period}</b>（${maxWeek.outsideWorkCount} 次加班）`
+    }
+  }
+
+  // ---------- 4. 自动分析「最累的月份」 ----------
+  const monthMap = new Map()
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    monthMap.set(ym, (monthMap.get(ym) || 0) + 1)
+  })
+
+  const mostTiredMonth = Array.from(monthMap.entries()).sort(
+    (a, b) => b[1] - a[1]
+  )[0]
+
+  document.getElementById('mostTiredMonth').innerHTML =
+    `🔥 最累的月份：<b>${mostTiredMonth[0]}</b>（${mostTiredMonth[1]} 次提交）`
+
+  // ---------- 5. 背景严重度区块 ----------
+  const markArea = {
+    silent: true,
+    itemStyle: { opacity: 0.15 },
+    data: [
+      [{ name: '0–1 小时', yAxis: 0 }, { yAxis: 1 }],
+      [
+        { name: '1–2 小时', yAxis: 1 },
+        { yAxis: 2, itemStyle: { color: 'orange', opacity: 0.25 } }
+      ],
+      [
+        { name: '2 小时以上', yAxis: 2 },
+        { yAxis: 999, itemStyle: { color: 'red', opacity: 0.25 } }
+      ]
+    ]
+  }
+
+  // ---------- 6. 构造 tooltip ----------
+  const tooltipFormatter = (params) => {
+    const date = params?.[0].name
+    const count = params?.[0].value
+    const details = dayCommitsDetail[date] || []
+
+    let html = `📅 <b>${date}</b><br/>提交次数：${count}<br/><br/>`
+
+    details.slice(0, 5).forEach((d) => {
+      html += `👤 ${d.author}<br/>🕒 ${d.time}<br/>💬 ${d.msg}<br/><br/>`
+    })
+
+    if (details.length > 5) {
+      html += `（其余 ${details.length - 5} 条已省略）`
+    }
+
+    return html
+  }
+
+  // ---------- 7. 绘图 ----------
+  const el = document.getElementById('dailyTrendChartDog')
+  const chart = echarts.init(el)
+
+  chart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      formatter: tooltipFormatter,
+      axisPointer: { type: 'shadow' }
+    },
+    xAxis: { type: 'category', data: labels },
+    yAxis: { type: 'value', min: 0 },
+    series: [
+      {
+        type: 'line',
+        name: '每日提交',
+        data,
+        areaStyle: {},
+        markArea,
+        markPoint: {
+          data: [
+            {
+              name: '最累的一天',
+              coord: [mostTiredDay, maxDailyCount],
+              value: maxDailyCount,
+              symbolSize: 70,
+              itemStyle: { color: '#ff4d4f' },
+              label: { formatter: '🔥 最累' }
+            }
+          ]
+        }
+      }
+    ]
+  })
+
+  // ---------- 8. 点击事件 ----------
+  if (typeof onDayClick === 'function') {
+    chart.on('click', (params) => {
+      if (params.componentType === 'series') {
+        const date = labels[params.dataIndex]
+        const count = data[params.dataIndex]
+        onDayClick(date, count, dayCommitsDetail[date])
+      }
+    })
+  }
+
+  return {
+    chart,
+    analysis: {
+      mostTiredDay,
+      mostTiredMonth,
+      mostTiredWeek: maxWeek
+    }
+  }
+}
+
+function showDayDetailSidebar(date, count, commits) {
+  const sidebar = document.getElementById('dayDetailSidebar')
+  const title = document.getElementById('sidebarTitle')
+  const content = document.getElementById('sidebarContent')
+
+  title.innerHTML = `📅 ${date}（${count} 次提交）`
+
+  // 渲染详情
+  content.innerHTML = commits
+    .map(
+      (c) => `
+    <div style="margin-bottom:12px;">
+      <div>👤 <b>${c.author}</b></div>
+      <div>🕒 ${c.time}</div>
+      <div>💬 ${c.msg}</div>
+    </div>
+    <hr/>
+  `
+    )
+    .join('')
+
+  sidebar.classList.add('show')
+}
+
+// 关闭按钮
+document.getElementById('sidebarClose').onclick = () => {
+  document.getElementById('dayDetailSidebar').classList.remove('show')
+}
 
 function renderKpi(stats) {
   const el = document.getElementById('kpiContent')
@@ -378,11 +1029,25 @@ function renderKpi(stats) {
     (latestOut ? new Date(latestOut.date).getHours() : null)
   const cutoff = window.__overnightCutoff ?? 6
   const html = [
-    `<div>最晚一次提交时间：${latest ? formatDate(latest.date) : '-'}${typeof latestHour === 'number' ? `（${String(latestHour).padStart(2, '0')}:00）` : ''}</div>`,
-    `<div>加班最晚一次提交时间：${latestOut ? formatDate(latestOut.date) : '-'}${typeof latestOutHour === 'number' ? `（${String(latestOutHour).padStart(2, '0')}:00）` : ''}</div>`,
+    `<div>最晚一次提交时间：${latest ? formatDate(latest.date) : '-'}${typeof latestHour === 'number' ? `（${String(latestHour).padStart(2, '0')}:00）` : ''} <div class="author">${latest.author}</div> <div> ${latest.message} <div></div>`,
+    `<div class="hr"></div>`,
+    `<div>加班最晚一次提交时间：${latestOut ? formatDate(latestOut.date) : '-'}${typeof latestOutHour === 'number' ? `（${String(latestOutHour).padStart(2, '0')}:00）` : ''} <div class="author">${latestOut.author}</div> <div>${latestOut.message}</div> </div>`,
+    `<div class="hr"></div>`,
     `<div>次日归并窗口：凌晨 <b>${cutoff}</b> 点内归前一日</div>`
   ].join('')
   el.innerHTML = html
+}
+
+// 1) 按小时分组（例：commits 为原始提交数组）
+function groupCommitsByHour(commits) {
+  const byHour = Array.from({ length: 24 }, () => [])
+  commits.forEach((c) => {
+    // 解析 commit 的本地小时（考虑时区已有 '+0800' 等）
+    const d = new Date(c.date)
+    const h = d.getHours() // 若数据已为 UTC，请按需求调整
+    byHour[h].push(c)
+  })
+  return byHour
 }
 
 ;(async function main() {
@@ -399,12 +1064,21 @@ function renderKpi(stats) {
   initTableControls()
   updatePager()
   renderCommitsTablePage()
-  drawHourlyOvertime(stats)
+  // 使用举例
+  const hourCommitsDetail = groupCommitsByHour(commits)
+
+  drawHourlyOvertime(stats, (hour, count) => {
+    // 将 commit 列表传给侧栏（若没有详情，则传空数组）
+    showSideBarForHour(hour, hourCommitsDetail[hour] || [])
+  })
   drawOutsideVsInside(stats)
   drawDailyTrend(commits)
   drawWeeklyTrend(weekly)
   drawMonthlyTrend(monthly)
   drawLatestHourDaily(latestByDay)
   drawDailySeverity(latestByDay)
+  const daily = drawDailyTrendSeverity(commits, weekly, showDayDetailSidebar)
+
+  console.log('最累的一天：', daily.analysis.mostTiredDay)
   renderKpi(stats)
 })()

@@ -32,6 +32,7 @@
           <h2>按日提交趋势</h2>
           <div id="dailyTrendChart" class="echart"></div>
         </div>
+
         <div class="chart-card">
           <h2>每周趋势（加班占比）</h2>
           <div id="weeklyTrendChart" class="echart"></div>
@@ -48,12 +49,23 @@
           <h2>每日超过下班的小时数</h2>
           <div id="dailySeverityChart" class="echart"></div>
         </div>
+        <div class="chart-card">
+          <h2>按日提交趋势</h2>
+          <div id="dailyTrendChartDog" class="echart"></div>
+        </div>
+        <div id="mostTiredDay"></div>
+        <div id="mostTiredWeek"></div>
+        <div id="mostTiredMonth"></div>
       </section>
 
       <section class="table-card">
         <h2>提交清单</h2>
         <div id="tableControls">
-          <input id="searchInput" type="search" placeholder="搜索作者/信息/Hash" />
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="搜索作者/信息/Hash"
+          />
           <label for="pageSize">每页显示</label>
           <select id="pageSize">
             <option value="10">10</option>
@@ -86,6 +98,26 @@
         <code>/data/</code>.</small
       >
     </footer>
+    <!-- 右侧滑出的详情侧栏 -->
+    <div id="dayDetailSidebar" class="sidebar">
+      <div class="sidebar-header">
+        <span id="sidebarTitle"></span>
+        <button id="sidebarClose">×</button>
+      </div>
+
+      <div id="sidebarContent" class="sidebar-content"></div>
+    </div>
+
+    <!-- 小时详情侧栏（独立） -->
+    <div id="hourDetailSidebar" class="sidebar">
+      <div class="sidebar-header">
+        <span id="hourSidebarTitle"> </span>
+        <button id="hourSidebarClose">×</button>
+      </div>
+
+      <div id="hourSidebarContent" class="sidebar-content"></div>
+    </div>
+
     <script type="module" src="/app.js"></script>
   </body>
 </html>

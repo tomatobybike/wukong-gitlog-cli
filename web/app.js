@@ -293,7 +293,7 @@ function drawOutsideVsInside(stats) {
   return chart
 }
 
-function drawDailyTrend(commits) {
+function drawDailyTrend(commits, onDayClick) {
   if (!Array.isArray(commits) || commits.length === 0) return null
 
   // 聚合每日提交数量
@@ -389,6 +389,19 @@ function drawDailyTrend(commits) {
       }
     ]
   })
+
+  // 点击某一天，打开抽屉显示当日 commits
+  if (typeof onDayClick === 'function') {
+    chart.on('click', (params) => {
+      const idx = params.dataIndex
+      const date = labels[idx]
+      const count = data[idx]
+      const dayCommits = commits.filter(
+        (c) => new Date(c.date).toISOString().slice(0, 10) === date
+      )
+      onDayClick(date, count, dayCommits)
+    })
+  }
 
   return chart
 }
@@ -547,7 +560,7 @@ function drawWeeklyTrend(weekly, commits, onWeekClick) {
   return chart
 }
 
-function drawMonthlyTrend(monthly) {
+function drawMonthlyTrend(monthly, commits, onMonthClick) {
   if (!Array.isArray(monthly) || monthly.length === 0) return null
 
   const labels = monthly.map((m) => m.period)
@@ -643,10 +656,27 @@ function drawMonthlyTrend(monthly) {
     ]
   })
 
+  // 点击某个月份，打开抽屉显示该月的所有 commits
+  if (typeof onMonthClick === 'function' && Array.isArray(commits)) {
+    chart.on('click', (params) => {
+      const idx = params.dataIndex
+      const ym = labels[idx] // 'YYYY-MM'
+      const monthCommits = commits.filter((c) => {
+        const d = new Date(c.date)
+        const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+          2,
+          '0'
+        )}`
+        return m === ym
+      })
+      onMonthClick(ym, monthCommits.length, monthCommits)
+    })
+  }
+
   return chart
 }
 
-function drawLatestHourDaily(latestByDay) {
+function drawLatestHourDaily(latestByDay, commits, onDayClick) {
   if (!Array.isArray(latestByDay) || latestByDay.length === 0) return null
 
   const labels = latestByDay.map((d) => d.date)
@@ -761,10 +791,28 @@ function drawLatestHourDaily(latestByDay) {
     ]
   })
 
+  // 点击某一天的最晚提交时间点，打开抽屉显示该日 commits
+  if (typeof onDayClick === 'function' && Array.isArray(commits)) {
+    // 预聚合：按天收集 commits
+    const dayCommitsMap = {}
+    commits.forEach((c) => {
+      const d = new Date(c.date).toISOString().slice(0, 10)
+      if (!dayCommitsMap[d]) dayCommitsMap[d] = []
+      dayCommitsMap[d].push(c)
+    })
+
+    chart.on('click', (params) => {
+      const idx = params.dataIndex
+      const date = labels[idx]
+      const list = dayCommitsMap[date] || []
+      onDayClick(date, list.length, list)
+    })
+  }
+
   return chart
 }
 
-function drawDailySeverity(latestByDay) {
+function drawDailySeverity(latestByDay, commits, onDayClick) {
   if (!Array.isArray(latestByDay) || latestByDay.length === 0) return null
 
   const labels = latestByDay.map((d) => d.date)
@@ -870,6 +918,25 @@ function drawDailySeverity(latestByDay) {
       }
     ]
   })
+
+  // 点击某一天的「超过下班小时数」点，打开抽屉显示该日 commits
+  if (typeof onDayClick === 'function' && Array.isArray(commits)) {
+    const dayCommitsMap = {}
+    commits.forEach((c) => {
+      const d = new Date(c.date).toISOString().slice(0, 10)
+      if (!dayCommitsMap[d]) dayCommitsMap[d] = []
+      dayCommitsMap[d].push(c)
+    })
+
+    chart.on('click', (params) => {
+      const idx = params.dataIndex
+      const date = labels[idx]
+      const list = dayCommitsMap[date] || []
+      // FIXME: remove debug log before production
+      console.log('❌', 'list', list);
+      onDayClick(date, list.length, list)
+    })
+  }
 
   return chart
 }
@@ -1045,8 +1112,8 @@ function showDayDetailSidebar(date, count, commits) {
       (c) => `
     <div style="margin-bottom:12px;">
       <div>👤 <b>${c.author}</b></div>
-      <div>🕒 ${c.time}</div>
-      <div>💬 ${c.msg}</div>
+      <div>🕒 ${c.time || c.date}</div>
+      <div>💬 ${c.msg ||c.message}</div>
     </div>
     <hr/>
   `
@@ -1153,11 +1220,22 @@ async function main() {
     showSideBarForHour(hour, hourCommitsDetail[hour] || [])
   })
   drawOutsideVsInside(stats)
-  drawDailyTrend(commits)
+
+  // 按日提交趋势：点击某天打开抽屉，显示当日所有 commits
+  drawDailyTrend(commits, showDayDetailSidebar)
+
+  // 周趋势：保持原有点击行为（显示该周详情）
   drawWeeklyTrend(weekly, commits, showSideBarForWeek)
-  drawMonthlyTrend(monthly)
-  drawLatestHourDaily(latestByDay)
-  drawDailySeverity(latestByDay)
+
+  // 月趋势（加班占比）：点击某个月打开抽屉，显示该月所有 commits
+  drawMonthlyTrend(monthly, commits, showDayDetailSidebar)
+
+  // 每日最晚提交时间（小时）：点击某天打开抽屉，显示当日所有 commits
+  drawLatestHourDaily(latestByDay, commits, showDayDetailSidebar)
+
+  // 每日超过下班的小时数：点击某天打开抽屉，显示当日所有 commits
+  drawDailySeverity(latestByDay, commits, showDayDetailSidebar)
+
   const daily = drawDailyTrendSeverity(commits, weekly, showDayDetailSidebar)
 
   console.log('最累的一天：', daily.analysis.mostTiredDay)

@@ -260,14 +260,6 @@ function showSideBarForHour(hour, commitsOrCount) {
   sidebar.classList.add('show')
 }
 
-// 关闭按钮绑定（只需运行一次）
-;(function bindHourSidebarClose() {
-  const btn = document.getElementById('hourSidebarClose')
-  const sidebar = document.getElementById('hourDetailSidebar')
-  if (!btn || !sidebar) return
-  btn.addEventListener('click', () => sidebar.classList.remove('show'))
-})()
-
 // 简单的 HTML 转义，防止 XSS 与布局断裂
 function escapeHtml(str = '') {
   return String(str)
@@ -401,7 +393,43 @@ function drawDailyTrend(commits) {
   return chart
 }
 
-function drawWeeklyTrend(weekly) {
+function showSideBarForWeek(period, weeklyItem, commits = []) {
+  const sidebar = document.getElementById('weekDetailSidebar')
+  const titleEl = document.getElementById('weekSidebarTitle')
+  const contentEl = document.getElementById('weekSidebarContent')
+
+  titleEl.innerHTML = `📅 周期：<b>${period}</b>`
+
+  let html = `
+    <div style="padding:6px 0;">
+      加班次数：<b>${weeklyItem.outsideWorkCount}</b><br/>
+      占比：<b>${(weeklyItem.outsideWorkRate * 100).toFixed(1)}%</b>
+    </div>
+    <hr/>
+  `
+
+  if (!commits.length) {
+    html += `<div style="padding:10px;color:#777;">该周无提交记录</div>`
+  } else {
+    html += commits
+      .map((c) => {
+        return `
+          <div class="week-commit">
+            <div class="meta">👤 <b>${escapeHtml(c.author || 'unknown')}</b> · 🕒 ${
+              c.date
+            }</div>
+            <div class="msg">${escapeHtml((c.message || '').replace(/\n/g, ' '))}</div>
+          </div>
+        `
+      })
+      .join('')
+  }
+
+  contentEl.innerHTML = html
+  sidebar.classList.add('show')
+}
+
+function drawWeeklyTrend(weekly, commits, onWeekClick) {
   if (!Array.isArray(weekly) || weekly.length === 0) return null
 
   const labels = weekly.map((w) => w.period)
@@ -409,7 +437,6 @@ function drawWeeklyTrend(weekly) {
   const dataCount = weekly.map((w) => w.outsideWorkCount)
 
   const el = document.getElementById('weeklyTrendChart')
-  // eslint-disable-next-line no-undef
   const chart = echarts.init(el)
 
   chart.setOption({
@@ -419,6 +446,7 @@ function drawWeeklyTrend(weekly) {
         const pp = params[0]
         const weekItem = weekly[pp.dataIndex]
         const { start, end } = weekItem.range
+
         const rate = params.find((p) => p.seriesName.includes('%'))?.data
         const count = params.find((p) => p.seriesName.includes('次数'))?.data
 
@@ -428,23 +456,20 @@ function drawWeeklyTrend(weekly) {
         if (rate >= 20) level = '🔴 严重（≥20%）'
 
         return `
-        <div style="font-size:13px; line-height:1.5;">
-          <b>${params[0].axisValue}</b><br/>
-          📅 周区间：<b>${start} ~ ${end}</b><br/>
-          加班占比：<b>${rate}%</b><br/>
-          加班次数：${count} 次<br/>
-          等级：${level}
-        </div>
-      `
+          <div style="font-size:13px; line-height:1.5;">
+            <b>${params[0].axisValue}</b><br/>
+            📅 周区间：<b>${start} ~ ${end}</b><br/>
+            加班占比：<b>${rate}%</b><br/>
+            加班次数：${count} 次<br/>
+            等级：${level}
+          </div>
+        `
       }
     },
 
-    legend: {
-      top: 10
-    },
+    legend: { top: 10 },
 
     xAxis: { type: 'category', data: labels },
-
     yAxis: [
       { type: 'value', min: 0, max: 100, name: '占比(%)' },
       { type: 'value', name: '次数', min: 0 }
@@ -455,26 +480,22 @@ function drawWeeklyTrend(weekly) {
         type: 'line',
         name: '加班占比(%)',
         data: dataRate,
-
-        // ⭐ 区间背景（与 monthly/daily 对齐）
         markArea: {
           data: [
             [
               { yAxis: 0 },
-              { yAxis: 10, itemStyle: { color: 'rgba(76, 175, 80, 0.15)' } } // 绿色
+              { yAxis: 10, itemStyle: { color: 'rgba(76, 175, 80, 0.15)' } }
             ],
             [
               { yAxis: 10 },
-              { yAxis: 20, itemStyle: { color: 'rgba(251, 140, 0, 0.15)' } } // 橙色
+              { yAxis: 20, itemStyle: { color: 'rgba(251, 140, 0, 0.15)' } }
             ],
             [
               { yAxis: 20 },
-              { yAxis: 100, itemStyle: { color: 'rgba(211, 47, 47, 0.15)' } } // 红色
+              { yAxis: 100, itemStyle: { color: 'rgba(211, 47, 47, 0.15)' } }
             ]
           ]
         },
-
-        // ⭐ 阈值线
         markLine: {
           symbol: ['none', 'arrow'],
           data: [
@@ -497,11 +518,30 @@ function drawWeeklyTrend(weekly) {
         name: '加班次数',
         data: dataCount,
         yAxisIndex: 1,
-
-        // 次数线使用默认蓝色，避免干扰等级颜色区间
         smooth: true
       }
     ]
+  })
+
+  // ⭐ 点击事件：从 commits 过滤该周提交
+  chart.on('click', (p) => {
+    const idx = p.dataIndex
+    const w = weekly[idx]
+
+
+    const start = new Date(w.range.start)
+    const end = new Date(w.range.end)
+    end.setHours(23, 59, 59, 999) // 包含当天
+
+    const weeklyCommits = commits.filter((c) => {
+      const d = new Date(c.date)
+      return d >= start && d <= end
+    })
+
+    // 回调交给外面决定如何打开侧栏
+    if (typeof onWeekClick === 'function') {
+      onWeekClick(w.period, w, weeklyCommits)
+    }
   })
 
   return chart
@@ -1017,11 +1057,6 @@ function showDayDetailSidebar(date, count, commits) {
   sidebar.classList.add('show')
 }
 
-// 关闭按钮
-document.getElementById('sidebarClose').onclick = () => {
-  document.getElementById('dayDetailSidebar').classList.remove('show')
-}
-
 function renderKpi(stats) {
   const el = document.getElementById('kpiContent')
   if (!el || !stats) return
@@ -1054,7 +1089,7 @@ function groupCommitsByHour(commits) {
   return byHour
 }
 
-;(async function main() {
+async function main() {
   const { commits, stats, weekly, monthly, latestByDay, config } =
     await loadData()
   commitsAll = commits
@@ -1068,16 +1103,16 @@ function groupCommitsByHour(commits) {
   initTableControls()
   updatePager()
   renderCommitsTablePage()
-  // 使用举例
-  const hourCommitsDetail = groupCommitsByHour(commits)
 
   drawHourlyOvertime(stats, (hour, count) => {
+    // 使用举例
+    const hourCommitsDetail = groupCommitsByHour(commits)
     // 将 commit 列表传给侧栏（若没有详情，则传空数组）
     showSideBarForHour(hour, hourCommitsDetail[hour] || [])
   })
   drawOutsideVsInside(stats)
   drawDailyTrend(commits)
-  drawWeeklyTrend(weekly)
+  drawWeeklyTrend(weekly, commits, showSideBarForWeek)
   drawMonthlyTrend(monthly)
   drawLatestHourDaily(latestByDay)
   drawDailySeverity(latestByDay)
@@ -1085,4 +1120,28 @@ function groupCommitsByHour(commits) {
 
   console.log('最累的一天：', daily.analysis.mostTiredDay)
   renderKpi(stats)
-})()
+}
+
+// 关闭按钮绑定（只需运行一次）
+function bindHourSidebarClose() {
+  const btn = document.getElementById('hourSidebarClose')
+  const sidebar = document.getElementById('hourDetailSidebar')
+  if (!btn || !sidebar) return
+  btn.addEventListener('click', () => sidebar.classList.remove('show'))
+}
+
+function bindWeekSidebarClose() {
+  const btn = document.getElementById('weekSidebarClose')
+  const sidebar = document.getElementById('weekDetailSidebar')
+  if (!btn || !sidebar) return
+  btn.addEventListener('click', () => sidebar.classList.remove('show'))
+}
+
+bindHourSidebarClose()
+bindWeekSidebarClose()
+
+// 关闭按钮
+document.getElementById('sidebarClose').onclick = () => {
+  document.getElementById('dayDetailSidebar').classList.remove('show')
+}
+main()

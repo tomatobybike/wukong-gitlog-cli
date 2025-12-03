@@ -56,6 +56,10 @@ wukong-gitlog-cli --help
 ## 🚀 使用方法
 
 ```bash
+wukong-gitlog-cli --overtime  --serve --port 5555
+```
+
+```bash
 wukong-gitlog-cli [options]
 ```
 

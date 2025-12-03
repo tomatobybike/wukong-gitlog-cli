@@ -1239,7 +1239,114 @@ async function main() {
   const daily = drawDailyTrendSeverity(commits, weekly, showDayDetailSidebar)
 
   console.log('最累的一天：', daily.analysis.mostTiredDay)
+  computeAndRenderLatestOvertime(latestByDay)
   renderKpi(stats)
+}
+
+// 基于 latestByDay + cutoff/endHour 统计「最晚加班的一天 / 一周 / 一月」
+function computeAndRenderLatestOvertime(latestByDay) {
+  if (!Array.isArray(latestByDay) || latestByDay.length === 0) return
+
+  const endH = window.__overtimeEndHour || 18
+
+  // 每天的 latestHourNormalized → 超出下班的小时数
+  const dailyOvertime = latestByDay
+    .map((d) => {
+      const v =
+        typeof d.latestHourNormalized === 'number'
+          ? d.latestHourNormalized
+          : typeof d.latestHour === 'number'
+            ? d.latestHour
+            : null
+      if (v == null) return null
+      const overtime = Math.max(0, Number(v) - endH)
+      return { date: d.date, overtime, raw: v }
+    })
+    .filter(Boolean)
+
+  if (!dailyOvertime.length) return
+
+  // 1) 最晚加班的一天（超出下班小时数最大，若相同取日期更晚）
+  const dailySorted = [...dailyOvertime].sort((a, b) => {
+    if (b.overtime !== a.overtime) return b.overtime - a.overtime
+    return new Date(b.date) - new Date(a.date)
+  })
+  const worstDay = dailySorted[0]
+  const dayEl = document.getElementById('latestOvertimeDay')
+  if (dayEl) {
+    dayEl.innerHTML = `⏰ 最晚加班的一天：<b>${worstDay.date}</b>（超过下班 <b>${worstDay.overtime.toFixed(
+      2
+    )}</b> 小时，逻辑时间约 ${worstDay.raw.toFixed(2)} 点）`
+  }
+
+  // 工具：根据日期字符串计算 ISO 周 key：YYYY-Www
+  const getIsoWeekKey = (dStr) => {
+    const d = new Date(dStr)
+    if (Number.isNaN(d.valueOf())) return null
+    const target = new Date(
+      Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
+    )
+    const dayNum = target.getUTCDay() || 7 // Sunday=0
+    target.setUTCDate(target.getUTCDate() + 4 - dayNum)
+    const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1))
+    const weekNo = Math.ceil(((target - yearStart) / 86400000 + 1) / 7)
+    const year = target.getUTCFullYear()
+    return `${year}-W${String(weekNo).padStart(2, '0')}`
+  }
+
+  // 2) 按周聚合：每周取「该周内任意一天的最大加班时长」
+  const weekMap = new Map()
+  dailyOvertime.forEach((d) => {
+    const key = getIsoWeekKey(d.date)
+    if (!key) return
+    const cur = weekMap.get(key)
+    if (!cur || d.overtime > cur.overtime) {
+      weekMap.set(key, d)
+    }
+  })
+
+  if (weekMap.size) {
+    const weeks = Array.from(weekMap.entries()).sort((a, b) => {
+      if (b[1].overtime !== a[1].overtime) return b[1].overtime - a[1].overtime
+      return new Date(b[1].date) - new Date(a[1].date)
+    })
+    const [weekKey, weekInfo] = weeks[0]
+    const weekEl = document.getElementById('latestOvertimeWeek')
+    if (weekEl) {
+      weekEl.innerHTML = `⏰ 最晚加班的一周：<b>${weekKey}</b>（代表日期 ${weekInfo.date}，超过下班 <b>${weekInfo.overtime.toFixed(
+        2
+      )}</b> 小时）`
+    }
+  }
+
+  // 3) 按月聚合：每月取「该月任意一天的最大加班时长」
+  const monthMap = new Map()
+  dailyOvertime.forEach((d) => {
+    const dt = new Date(d.date)
+    if (Number.isNaN(dt.valueOf())) return
+    const key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}`
+    const cur = monthMap.get(key)
+    if (!cur || d.overtime > cur.overtime) {
+      monthMap.set(key, d)
+    }
+  })
+
+  if (monthMap.size) {
+    const months = Array.from(monthMap.entries()).sort((a, b) => {
+      if (b[1].overtime !== a[1].overtime) return b[1].overtime - a[1].overtime
+      return new Date(b[1].date) - new Date(a[1].date)
+    })
+    const [monthKey, monthInfo] = months[0]
+    const monthEl = document.getElementById('latestOvertimeMonth')
+    if (monthEl) {
+      monthEl.innerHTML = `⏰ 最晚加班的月份：<b>${monthKey}</b>（代表日期 ${monthInfo.date}，超过下班 <b>${monthInfo.overtime.toFixed(
+        2
+      )}</b> 小时）`
+    }
+  }
 }
 
 // 关闭按钮

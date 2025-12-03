@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.16](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.15...v1.0.16) (2025-12-03)
+
+
+### Features
+
+* 🎸 sider bar UI ([e3a48ab](https://github.com/tomatobybike/wukong-gitlog-cli/commit/e3a48abe5b0148fe0d9dcd42b7b028cad53d4c94))
+* 🎸 ui show ([e9eba58](https://github.com/tomatobybike/wukong-gitlog-cli/commit/e9eba5823333545d598be363b58eca1f6ecfa6ed))
+
+
+### Bug Fixes
+
+* 🐛 makeline clickEvent ([4ad6378](https://github.com/tomatobybike/wukong-gitlog-cli/commit/4ad6378d88aca2dde6083efde844730443228e48))
+
 ### [1.0.15](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.14...v1.0.15) (2025-12-03)
 
 

@@ -289,21 +289,59 @@ td {
   background: transparent;
 }
 
-/* 小块提交记录样式（列表风格略微提升） -------------------- */
-/* 小块提交记录样式 */
-.hour-commit {
-  padding: 10px 8px;
-  border-radius: 6px;
-  background: #fafafa;
-  margin-bottom: 10px;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
+/* 抽屉中的提交列表（参考 MUI List / ListItem） ------------- */
+.sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0;
 }
-.hour-commit .meta {
-  color: #666;
+
+.sidebar-item,
+.hour-commit,
+.week-commit {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f9fafb;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition:
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.1s ease;
+  margin: 8px 0;
+}
+
+.sidebar-item:hover,
+.hour-commit:hover,
+.week-commit:hover {
+  background: #f3f4ff;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+
+.sidebar-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 12px;
-  margin-bottom: 6px;
+  color: #64748b;
+  margin-bottom: 4px;
 }
-.hour-commit .msg {
+
+.sidebar-item-header .author {
+  font-weight: 600;
+  color: #111827;
+}
+
+.sidebar-item-header .time {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+}
+
+.sidebar-item-message {
+  font-size: 13px;
+  color: #111827;
   font-weight: 500;
   word-break: break-word;
 }

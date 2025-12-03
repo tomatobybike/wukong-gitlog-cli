@@ -253,19 +253,22 @@ function showSideBarForHour(hour, commitsOrCount) {
   } else if (Array.isArray(commitsOrCount)) {
     // commits 列表：展示作者/时间/消息（最多前 50 条，避免性能问题）
     const commits = commitsOrCount.slice(0, 50)
-    contentEl.innerHTML = commits
+    contentEl.innerHTML = `<div class="sidebar-list">${commits
       .map((c) => {
         const author = c.author ?? c.name ?? 'unknown'
         const time = c.date ?? c.time ?? ''
         const msg = (c.message ?? c.msg ?? c.body ?? '').replace(/\n/g, ' ')
         return `
-        <div class="hour-commit">
-          <div class="meta">👤 <b>${escapeHtml(author)}</b> · 🕒 ${escapeHtml(time)}</div>
-          <div class="msg">${escapeHtml(msg)}</div>
-        </div>
-      `
+          <div class="sidebar-item">
+            <div class="sidebar-item-header">
+              <span class="author">👤 ${escapeHtml(author)}</span>
+              <span class="time">🕒 ${escapeHtml(time)}</span>
+            </div>
+            <div class="sidebar-item-message">${escapeHtml(msg)}</div>
+          </div>
+        `
       })
-      .join('')
+      .join('')}</div>`
 
     if (commitsOrCount.length > 50) {
       const more = commitsOrCount.length - 50
@@ -446,18 +449,22 @@ function showSideBarForWeek(period, weeklyItem, commits = []) {
   if (!commits.length) {
     html += `<div style="padding:10px;color:#777;">该周无提交记录</div>`
   } else {
-    html += commits
+    html += `<div class="sidebar-list">${commits
       .map((c) => {
+        const author = escapeHtml(c.author || 'unknown')
+        const time = escapeHtml(c.date || '')
+        const msg = escapeHtml((c.message || '').replace(/\n/g, ' '))
         return `
-          <div class="week-commit">
-            <div class="meta">👤 <b>${escapeHtml(c.author || 'unknown')}</b> · 🕒 ${
-              c.date
-            }</div>
-            <div class="msg">${escapeHtml((c.message || '').replace(/\n/g, ' '))}</div>
+          <div class="sidebar-item">
+            <div class="sidebar-item-header">
+              <span class="author">👤 ${author}</span>
+              <span class="time">🕒 ${time}</span>
+            </div>
+            <div class="sidebar-item-message">${msg}</div>
           </div>
         `
       })
-      .join('')
+      .join('')}</div>`
   }
 
   contentEl.innerHTML = html
@@ -1129,12 +1136,13 @@ function showDayDetailSidebar(date, count, commits) {
   content.innerHTML = commits
     .map(
       (c) => `
-    <div style="margin-bottom:12px;">
-      <div>👤 <b>${c.author}</b></div>
-      <div>🕒 ${c.time || c.date}</div>
-      <div>💬 ${c.msg || c.message}</div>
+    <div class="sidebar-item">
+      <div class="sidebar-item-header">
+        <span class="author">👤 ${escapeHtml(c.author || 'unknown')}</span>
+        <span class="time">🕒 ${escapeHtml(c.time || c.date || '')}</span>
+      </div>
+      <div class="sidebar-item-message">${escapeHtml(c.msg || c.message || '')}</div>
     </div>
-    <hr/>
   `
     )
     .join('')

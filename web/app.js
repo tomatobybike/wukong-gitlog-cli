@@ -231,6 +231,7 @@ function showSideBarForHour(hour, commitsOrCount) {
   // 支持传入 number（仅次数）或 array（详细 commit 列表）
   // 统一复用通用详情侧栏 DOM
   const sidebar = document.getElementById('dayDetailSidebar')
+  const backdrop = document.getElementById('sidebarBackdrop')
   const titleEl = document.getElementById('sidebarTitle')
   const contentEl = document.getElementById('sidebarContent')
 
@@ -274,8 +275,9 @@ function showSideBarForHour(hour, commitsOrCount) {
     contentEl.innerHTML = `<div style="font-size:14px;">无可展示数据</div>`
   }
 
-  // 打开侧栏
+  // 打开侧栏 + 遮罩
   sidebar.classList.add('show')
+  if (backdrop) backdrop.classList.add('show')
 }
 
 // 简单的 HTML 转义，防止 XSS 与布局断裂
@@ -427,6 +429,7 @@ function drawDailyTrend(commits, onDayClick) {
 function showSideBarForWeek(period, weeklyItem, commits = []) {
   // 统一复用通用详情侧栏 DOM
   const sidebar = document.getElementById('dayDetailSidebar')
+  const backdrop = document.getElementById('sidebarBackdrop')
   const titleEl = document.getElementById('sidebarTitle')
   const contentEl = document.getElementById('sidebarContent')
 
@@ -459,6 +462,7 @@ function showSideBarForWeek(period, weeklyItem, commits = []) {
 
   contentEl.innerHTML = html
   sidebar.classList.add('show')
+  if (backdrop) backdrop.classList.add('show')
 }
 
 function drawWeeklyTrend(weekly, commits, onWeekClick) {
@@ -1115,6 +1119,7 @@ function drawDailyTrendSeverity(commits, weekly, onDayClick) {
 
 function showDayDetailSidebar(date, count, commits) {
   const sidebar = document.getElementById('dayDetailSidebar')
+  const backdrop = document.getElementById('sidebarBackdrop')
   const title = document.getElementById('sidebarTitle')
   const content = document.getElementById('sidebarContent')
 
@@ -1135,6 +1140,7 @@ function showDayDetailSidebar(date, count, commits) {
     .join('')
 
   sidebar.classList.add('show')
+  if (backdrop) backdrop.classList.add('show')
 }
 
 function renderKpi(stats) {
@@ -1363,8 +1369,18 @@ function computeAndRenderLatestOvertime(latestByDay) {
   }
 }
 
-// 关闭按钮
+// 抽屉关闭交互（按钮 + 点击遮罩）
 document.getElementById('sidebarClose').onclick = () => {
   document.getElementById('dayDetailSidebar').classList.remove('show')
+  const backdrop = document.getElementById('sidebarBackdrop')
+  if (backdrop) backdrop.classList.remove('show')
+}
+
+const sidebarBackdropEl = document.getElementById('sidebarBackdrop')
+if (sidebarBackdropEl) {
+  sidebarBackdropEl.addEventListener('click', () => {
+    document.getElementById('dayDetailSidebar').classList.remove('show')
+    sidebarBackdropEl.classList.remove('show')
+  })
 }
 main()

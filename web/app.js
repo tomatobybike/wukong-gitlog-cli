@@ -184,14 +184,24 @@ function drawHourlyOvertime(stats, onHourClick) {
           data: [
             {
               name: '上班开始',
+              nameValue: String(stats.startHour).padStart(2, '0'),
               xAxis: String(stats.startHour).padStart(2, '0')
             },
-            { name: '下班时间', xAxis: String(stats.endHour).padStart(2, '0') },
+            {
+              name: '下班时间',
+              nameValue: String(stats.endHour).padStart(2, '0'),
+              xAxis: String(stats.endHour).padStart(2, '0')
+            },
             {
               name: '午休开始',
+              nameValue: String(stats.lunchStart).padStart(2, '0'),
               xAxis: String(stats.lunchStart).padStart(2, '0')
             },
-            { name: '午休结束', xAxis: String(stats.lunchEnd).padStart(2, '0') }
+            {
+              name: '午休结束',
+              nameValue: String(stats.lunchEnd).padStart(2, '0'),
+              xAxis: String(stats.lunchEnd).padStart(2, '0')
+            }
           ]
         }
       }
@@ -201,7 +211,14 @@ function drawHourlyOvertime(stats, onHourClick) {
   // 点击事件（点击某小时 → 打开侧栏）
   if (typeof onHourClick === 'function') {
     chart.on('click', (p) => {
-      const hour = Number(p.name)
+      let hour = Number(p.name)
+      if(p.componentType === 'markLine') {
+        hour = Number(p.data.xAxis)
+      }
+      // FIXME: remove debug log before production
+      console.log('❌', 'hour', hour, p)
+      document.getElementById('dayDetailSidebar').classList.remove('show')
+      if (Object.is(hour, NaN)) return
       onHourClick(hour, commits[hour])
     })
   }
@@ -543,7 +560,6 @@ function drawWeeklyTrend(weekly, commits, onWeekClick) {
     const idx = p.dataIndex
     const w = weekly[idx]
 
-
     const start = new Date(w.range.start)
     const end = new Date(w.range.end)
     end.setHours(23, 59, 59, 999) // 包含当天
@@ -828,9 +844,7 @@ function drawDailySeverity(latestByDay, commits, onDayClick) {
 
   // 若某天 latestHourNormalized 为空，表示「没有下班后到次日上班前的提交」，
   // 这里按 0 小时加班处理，保证折线连续。
-  const sev = raw.map((v) =>
-    v == null ? 0 : Math.max(0, Number(v) - endH)
-  )
+  const sev = raw.map((v) => (v == null ? 0 : Math.max(0, Number(v) - endH)))
 
   const el = document.getElementById('dailySeverityChart')
   // eslint-disable-next-line no-undef
@@ -1113,7 +1127,7 @@ function showDayDetailSidebar(date, count, commits) {
     <div style="margin-bottom:12px;">
       <div>👤 <b>${c.author}</b></div>
       <div>🕒 ${c.time || c.date}</div>
-      <div>💬 ${c.msg ||c.message}</div>
+      <div>💬 ${c.msg || c.message}</div>
     </div>
     <hr/>
   `
@@ -1132,13 +1146,13 @@ function renderKpi(stats) {
   // 使用 cutoff + 上下班时间，重新在全部 commits 中计算「加班最晚一次提交」
   const cutoff = window.__overnightCutoff ?? 6
   const startHour =
-    (typeof stats.startHour === 'number' && stats.startHour >= 0
+    typeof stats.startHour === 'number' && stats.startHour >= 0
       ? stats.startHour
-      : 9)
+      : 9
   const endHour =
-    (typeof stats.endHour === 'number' && stats.endHour >= 0
+    typeof stats.endHour === 'number' && stats.endHour >= 0
       ? stats.endHour
-      : window.__overtimeEndHour ?? 18)
+      : (window.__overtimeEndHour ?? 18)
 
   let latestOut = null
   let latestOutHour = null

@@ -724,6 +724,8 @@ function drawLatestHourDaily(latestByDay) {
         type: 'line',
         name: '每日最晚提交小时',
         data,
+        // 让折线在 null 点之间连起来，避免视觉上“断裂”
+        connectNulls: true,
         markLine: {
           symbol: ['none', 'arrow'],
           data: [
@@ -774,7 +776,11 @@ function drawDailySeverity(latestByDay) {
       : (d.latestHour ?? null)
   )
 
-  const sev = raw.map((v) => (v == null ? null : Math.max(0, Number(v) - endH)))
+  // 若某天 latestHourNormalized 为空，表示「没有下班后到次日上班前的提交」，
+  // 这里按 0 小时加班处理，保证折线连续。
+  const sev = raw.map((v) =>
+    v == null ? 0 : Math.max(0, Number(v) - endH)
+  )
 
   const el = document.getElementById('dailySeverityChart')
   // eslint-disable-next-line no-undef
@@ -789,15 +795,6 @@ function drawDailySeverity(latestByDay) {
         const date = p.axisValue
         const overtime = p.data
         const rawHour = raw[p.dataIndex] // 原始 latestHour 或 latestHourNormalized
-
-        if (overtime == null) {
-          return `
-        <div style="font-size:13px;">
-          <b>${date}</b><br/>
-          无数据
-        </div>
-      `
-        }
 
         return `
       <div style="font-size:13px;">
@@ -825,6 +822,8 @@ function drawDailySeverity(latestByDay) {
         type: 'line',
         name: '超过下班小时数',
         data: sev,
+        // 连续显示 0 小时加班的日期，避免折线断开
+        connectNulls: true,
 
         // ⭐ 加班区域背景
         markArea: {

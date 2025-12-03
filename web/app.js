@@ -212,9 +212,10 @@ function drawHourlyOvertime(stats, onHourClick) {
 // showSideBarForHour 实现
 function showSideBarForHour(hour, commitsOrCount) {
   // 支持传入 number（仅次数）或 array（详细 commit 列表）
-  const sidebar = document.getElementById('hourDetailSidebar')
-  const titleEl = document.getElementById('hourSidebarTitle')
-  const contentEl = document.getElementById('hourSidebarContent')
+  // 统一复用通用详情侧栏 DOM
+  const sidebar = document.getElementById('dayDetailSidebar')
+  const titleEl = document.getElementById('sidebarTitle')
+  const contentEl = document.getElementById('sidebarContent')
 
   // 兼容未传入侧栏 DOM 的情况（优雅降级）
   if (!sidebar || !titleEl || !contentEl) {
@@ -407,9 +408,10 @@ function drawDailyTrend(commits, onDayClick) {
 }
 
 function showSideBarForWeek(period, weeklyItem, commits = []) {
-  const sidebar = document.getElementById('weekDetailSidebar')
-  const titleEl = document.getElementById('weekSidebarTitle')
-  const contentEl = document.getElementById('weekSidebarContent')
+  // 统一复用通用详情侧栏 DOM
+  const sidebar = document.getElementById('dayDetailSidebar')
+  const titleEl = document.getElementById('sidebarTitle')
+  const contentEl = document.getElementById('sidebarContent')
 
   titleEl.innerHTML = `📅 周期：<b>${period}</b>`
 
@@ -932,8 +934,6 @@ function drawDailySeverity(latestByDay, commits, onDayClick) {
       const idx = params.dataIndex
       const date = labels[idx]
       const list = dayCommitsMap[date] || []
-      // FIXME: remove debug log before production
-      console.log('❌', 'list', list);
       onDayClick(date, list.length, list)
     })
   }
@@ -1241,24 +1241,6 @@ async function main() {
   console.log('最累的一天：', daily.analysis.mostTiredDay)
   renderKpi(stats)
 }
-
-// 关闭按钮绑定（只需运行一次）
-function bindHourSidebarClose() {
-  const btn = document.getElementById('hourSidebarClose')
-  const sidebar = document.getElementById('hourDetailSidebar')
-  if (!btn || !sidebar) return
-  btn.addEventListener('click', () => sidebar.classList.remove('show'))
-}
-
-function bindWeekSidebarClose() {
-  const btn = document.getElementById('weekSidebarClose')
-  const sidebar = document.getElementById('weekDetailSidebar')
-  if (!btn || !sidebar) return
-  btn.addEventListener('click', () => sidebar.classList.remove('show'))
-}
-
-bindHourSidebarClose()
-bindWeekSidebarClose()
 
 // 关闭按钮
 document.getElementById('sidebarClose').onclick = () => {

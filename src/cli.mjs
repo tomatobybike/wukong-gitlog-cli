@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import { Command } from 'commander'
 import dayjs from 'dayjs'
+import isoWeek from 'dayjs/plugin/isoWeek.js'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -31,6 +32,8 @@ const pkg = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf8')
 )
 
+dayjs.extend(isoWeek)
+
 const PKG_NAME = pkg.name
 const VERSION = pkg.version
 
@@ -49,6 +52,21 @@ const version = async () => {
   showVersionInfo(VERSION)
   await autoCheckUpdate()
   process.exit(0)
+}
+
+/** 将 "2025-W48" → { start: '2025-11-24', end: '2025-11-30' } */
+export function getWeekRange(periodStr) {
+  // periodStr = "2025-W48"
+  const [year, w] = periodStr.split('-W')
+  const week = parseInt(w, 10)
+
+  const start = dayjs().year(year).isoWeek(week).startOf('week') // Monday
+  const end = dayjs().year(year).isoWeek(week).endOf('week') // Sunday
+
+  return {
+    start: start.format('YYYY-MM-DD'),
+    end: end.format('YYYY-MM-DD')
+  }
 }
 
 const main = async () => {
@@ -343,6 +361,7 @@ const main = async () => {
           })
           return {
             period: k,
+            range: getWeekRange(k),
             total: s.total,
             outsideWorkCount: s.outsideWorkCount,
             outsideWorkRate: s.outsideWorkRate,
@@ -380,7 +399,10 @@ const main = async () => {
             nonWorkdayRate: s.nonWorkdayRate
           }
         })
-        const dataMonthlyFile = outputFilePath('data/overtime-monthly.mjs', outDir)
+        const dataMonthlyFile = outputFilePath(
+          'data/overtime-monthly.mjs',
+          outDir
+        )
         const monthlyModule = `export default ${JSON.stringify(monthlySeries, null, 2)};\n`
         writeTextFile(dataMonthlyFile, monthlyModule)
         console.log(chalk.green(`Monthly series 已导出: ${dataMonthlyFile}`))
@@ -388,7 +410,9 @@ const main = async () => {
         // 新增：每日最晚提交小时（用于显著展示加班严重程度）
         const dayGroups2 = groupRecords(records, 'day')
         const dayKeys2 = Object.keys(dayGroups2).sort()
-        const overnightCutoff = Number.isFinite(opts.overnightCutoff) ? opts.overnightCutoff : 6
+        const overnightCutoff = Number.isFinite(opts.overnightCutoff)
+          ? opts.overnightCutoff
+          : 6
         const latestByDay = dayKeys2.map((k) => {
           const list = dayGroups2[k]
           const vals = list
@@ -404,13 +428,19 @@ const main = async () => {
             .filter((d) => !Number.isNaN(d.valueOf()))
             .map((d) => d.getHours())
             .filter((h) => h >= 0 && h < overnightCutoff)
-          const earlyMax = earlyHours.length > 0 ? Math.max(...earlyHours) : null
+          const earlyMax =
+            earlyHours.length > 0 ? Math.max(...earlyHours) : null
           const normalized = typeof earlyMax === 'number' ? 24 + earlyMax : null
           const latestHourNormalized = Math.max(
             typeof hour === 'number' ? hour : -1,
             typeof normalized === 'number' ? normalized : -1
           )
-          return { date: k, latestHour: hour, latestHourNormalized: latestHourNormalized >= 0 ? latestHourNormalized : null }
+          return {
+            date: k,
+            latestHour: hour,
+            latestHourNormalized:
+              latestHourNormalized >= 0 ? latestHourNormalized : null
+          }
         })
         const dataLatestByDayFile = outputFilePath(
           'data/overtime-latest-by-day.mjs',
@@ -432,7 +462,10 @@ const main = async () => {
             lunchEnd: opts.lunchEnd || 14,
             overnightCutoff
           }
-          writeTextFile(configFile, `export default ${JSON.stringify(cfg, null, 2)};\n`)
+          writeTextFile(
+            configFile,
+            `export default ${JSON.stringify(cfg, null, 2)};\n`
+          )
           console.log(chalk.green(`Config 已导出: ${configFile}`))
         } catch (e) {
           console.warn('Export config failed:', e && e.message ? e.message : e)

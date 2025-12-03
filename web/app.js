@@ -129,7 +129,7 @@ function drawHourlyOvertime(stats, onHourClick) {
       trigger: 'axis',
       formatter(params) {
         const p = params[0]
-        const h = parseInt(p.axisValue,10)
+        const h = parseInt(p.axisValue, 10)
         const count = p.value
         const rate = (percent[h] * 100).toFixed(1)
         return `
@@ -416,6 +416,9 @@ function drawWeeklyTrend(weekly) {
     tooltip: {
       trigger: 'axis',
       formatter: (params) => {
+        const pp = params[0]
+        const weekItem = weekly[pp.dataIndex]
+        const { start, end } = weekItem.range
         const rate = params.find((p) => p.seriesName.includes('%'))?.data
         const count = params.find((p) => p.seriesName.includes('次数'))?.data
 
@@ -427,6 +430,7 @@ function drawWeeklyTrend(weekly) {
         return `
         <div style="font-size:13px; line-height:1.5;">
           <b>${params[0].axisValue}</b><br/>
+          📅 周区间：<b>${start} ~ ${end}</b><br/>
           加班占比：<b>${rate}%</b><br/>
           加班次数：${count} 次<br/>
           等级：${level}

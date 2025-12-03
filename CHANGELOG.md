@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.15](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.14...v1.0.15) (2025-12-03)
+
+
+### Features
+
+* 🎸 dayDetailSidebar ([21b99fd](https://github.com/tomatobybike/wukong-gitlog-cli/commit/21b99fd859af45641987dfd5f50a8c5604a380c5))
+* 🎸 each day ([ffa3d5e](https://github.com/tomatobybike/wukong-gitlog-cli/commit/ffa3d5e6192a69a727c747ffa325b56ae5bf78d4))
+* 🎸 hourlyOvertimeChart ([93f62b7](https://github.com/tomatobybike/wukong-gitlog-cli/commit/93f62b7b9906154a16bdcf38bd7b0979d44bebfe))
+* 🎸 latestOvertimeDay ([40cb157](https://github.com/tomatobybike/wukong-gitlog-cli/commit/40cb15788411441306e0c838108817fa36268624))
+* 🎸 next day cutof ([efe6a5f](https://github.com/tomatobybike/wukong-gitlog-cli/commit/efe6a5f41e54ca0fdadb3c0071f1fcf7a286e6c2))
+* 🎸 onDayClick ([9132b54](https://github.com/tomatobybike/wukong-gitlog-cli/commit/9132b5423449ceb8a964d813dfd4931834993913))
+* 🎸 renderKpi ([e26cc0d](https://github.com/tomatobybike/wukong-gitlog-cli/commit/e26cc0deac83a7e9bccaae81ba572da0e39e82b3))
+* 🎸 week range ([cd565da](https://github.com/tomatobybike/wukong-gitlog-cli/commit/cd565dac98b6c38442eeacdd6dd423b93d657ab0))
+
 ### [1.0.14](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.13...v1.0.14) (2025-12-02)
 
 

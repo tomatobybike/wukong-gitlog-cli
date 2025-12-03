@@ -1061,11 +1061,54 @@ function renderKpi(stats) {
   if (!el || !stats) return
   const latest = stats.latestCommit
   const latestHour = stats.latestCommitHour
-  const latestOut = stats.latestOutsideCommit
-  const latestOutHour =
-    stats.latestOutsideCommitHour ??
-    (latestOut ? new Date(latestOut.date).getHours() : null)
+
+  // 使用 cutoff + 上下班时间，重新在全部 commits 中计算「加班最晚一次提交」
   const cutoff = window.__overnightCutoff ?? 6
+  const startHour =
+    (typeof stats.startHour === 'number' && stats.startHour >= 0
+      ? stats.startHour
+      : 9)
+  const endHour =
+    (typeof stats.endHour === 'number' && stats.endHour >= 0
+      ? stats.endHour
+      : window.__overtimeEndHour ?? 18)
+
+  let latestOut = null
+  let latestOutHour = null
+  let maxSeverity = -1
+
+  if (Array.isArray(commitsAll) && commitsAll.length > 0) {
+    commitsAll.forEach((c) => {
+      const d = new Date(c.date)
+      if (!d || Number.isNaN(d.valueOf())) return
+      const h = d.getHours()
+
+      // 只看「当日下班后」以及「次日凌晨 cutoff 之前，且仍在上班前」的提交
+      let sev = null
+      if (h >= endHour && h < 24) {
+        // 当晚：直接按 h - endHour 计算
+        sev = h - endHour
+      } else if (h >= 0 && h < cutoff && h < startHour) {
+        // 次日凌晨：视作跨天，加上 24
+        sev = 24 - endHour + h
+      }
+
+      if (sev != null && sev >= 0 && sev > maxSeverity) {
+        maxSeverity = sev
+        latestOut = c
+        latestOutHour = h
+      }
+    })
+  }
+
+  // 若按 cutoff 没算出结果，则退回到原来的 stats.latestOutsideCommit
+  if (!latestOut && stats.latestOutsideCommit) {
+    latestOut = stats.latestOutsideCommit
+    latestOutHour =
+      stats.latestOutsideCommitHour ??
+      (latestOut ? new Date(latestOut.date).getHours() : null)
+  }
+
   const html = [
     `<div>最晚一次提交时间：${latest ? formatDate(latest.date) : '-'}${typeof latestHour === 'number' ? `（${String(latestHour).padStart(2, '0')}:00）` : ''} <div class="author">${latest.author}</div> <div> ${latest.message} <div></div>`,
     `<div class="hr"></div>`,

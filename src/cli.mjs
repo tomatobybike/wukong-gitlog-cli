@@ -3,12 +3,18 @@ import { Command } from 'commander'
 import dayjs from 'dayjs'
 import isoWeek from 'dayjs/plugin/isoWeek.js'
 import fs from 'fs'
+import ora from 'ora'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { CLI_NAME } from './constants/index.mjs'
-import { exportExcel, exportExcelPerPeriodSheets } from './excel.mjs'
+import {
+  exportExcel,
+  exportExcelAuthorChangeStats,
+  exportExcelPerPeriodSheets
+} from './excel.mjs'
 import { getGitLogs } from './git.mjs'
+import { renderAuthorChangesJson } from './json.mjs'
 import {
   analyzeOvertime,
   renderOvertimeCsv,
@@ -16,7 +22,7 @@ import {
   renderOvertimeText
 } from './overtime.mjs'
 import { startServer } from './server.mjs'
-import { renderText } from './text.mjs'
+import { renderChangedLinesText, renderText } from './text.mjs'
 import { checkUpdateWithPatch } from './utils/checkUpdate.mjs'
 import {
   groupRecords,
@@ -193,6 +199,8 @@ const main = async () => {
     }
     return
   }
+
+  const spinner = ora('Loading...').start()
 
   let records = await getGitLogs(opts)
 
@@ -770,7 +778,10 @@ const main = async () => {
     const file = opts.out || 'commits.json'
     const filepath = outputFilePath(file, outDir)
     writeJSON(filepath, groups || records)
+    const jsonText = renderAuthorChangesJson(records)
+    writeJSON(outputFilePath('author-changes.json', outDir), jsonText)
     console.log(chalk.green(`JSON 已导出: ${filepath}`))
+    spinner.succeed('Done')
     return
   }
 
@@ -779,8 +790,13 @@ const main = async () => {
     const filepath = outputFilePath(file, outDir)
     const text = renderText(records, groups, { showGerrit: !!opts.gerrit })
     writeTextFile(filepath, text)
+    writeTextFile(
+      outputFilePath('author-changes.text', outDir),
+      renderChangedLinesText(records)
+    )
     console.log(text)
     console.log(chalk.green(`文本已导出: ${filepath}`))
+    spinner.succeed('Done')
     return
   }
 
@@ -794,11 +810,17 @@ const main = async () => {
       stats: opts.stats,
       gerrit: opts.gerrit
     })
+    await exportExcelAuthorChangeStats(
+      records,
+      outputFilePath('author_stats.xlsx', outDir)
+    )
     const text = renderText(records, groups)
     writeTextFile(txtPath, text)
     console.log(chalk.green(`Excel 已导出: ${excelPath}`))
     console.log(chalk.green(`文本已自动导出: ${txtPath}`))
+    spinner.succeed('Done')
   }
+
   await autoCheckUpdate()
 }
 

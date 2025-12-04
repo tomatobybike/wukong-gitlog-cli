@@ -1,12 +1,9 @@
 import { $ } from 'zx'
 
-
 export async function getGitLogs(opts) {
   const { author, email, since, until, limit, merges } = opts
 
-  // include subject and full body so we can extract Change-Id from commit message
   const pretty = '%H%x1f%an%x1f%ae%x1f%ad%x1f%s%x1f%B%x1e'
-
   const args = ['log', `--pretty=format:${pretty}`, '--date=iso']
 
   if (author) args.push(`--author=${author}`)
@@ -16,15 +13,13 @@ export async function getGitLogs(opts) {
   if (merges === false) args.push(`--no-merges`)
   if (limit) args.push(`-n`, `${limit}`)
 
-  // 使用 spread 形式传参，ZX 才会正确处理
   const { stdout } = await $`git ${args}`.quiet()
 
-  return stdout
+  const commits = stdout
     .split('\x1e')
     .filter(Boolean)
     .map((r) => {
       const f = r.split('\x1f').map((s) => (s || '').trim())
-
       const hash = f[0]
       const authorName = f[1]
       const emailAddr = f[2]
@@ -32,7 +27,6 @@ export async function getGitLogs(opts) {
       const subject = f[4]
       const body = f[5] || ''
 
-      // extract Change-Id from commit body (line like "Change-Id: Iabc123...")
       const [, changeId] = body.match(/Change-Id:\s*(I[0-9a-fA-F]+)/) || []
 
       return {
@@ -45,4 +39,36 @@ export async function getGitLogs(opts) {
         changeId
       }
     })
+
+  // === 新增：为每个 commit 计算代码增量 ===
+  for (const c of commits) {
+    try {
+      const { stdout: diffOut } = await $`git show --numstat --format= ${c.hash}`.quiet()
+      // numstat 格式:  "12 5 path/file.js"
+      const lines = diffOut
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l && /^\d+\s+\d+/.test(l))
+
+      let added = 0
+      let deleted = 0
+
+      for (const line of lines) {
+        const [a, d] = line.split(/\s+/)
+        added += parseInt(a, 10) || 0
+        deleted += parseInt(d, 10) || 0
+      }
+
+      c.added = added
+      c.deleted = deleted
+      c.changed = added + deleted
+    } catch (err) {
+      // 避免阻塞，异常时改动量设置为0
+      c.added = 0
+      c.deleted = 0
+      c.changed = 0
+    }
+  }
+
+  return commits
 }

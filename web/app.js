@@ -1480,6 +1480,7 @@ function drawAuthorOvertimeTrends(commits, stats) {
 
   // 输出本周风险总结
   renderWeeklyRiskSummary(commits, { startHour, endHour, cutoff })
+  renderMonthlyRiskSummary(commits, { startHour, endHour, cutoff })
 
   return chart
 }
@@ -1569,6 +1570,109 @@ function renderWeeklyRiskSummary(
   box.innerHTML = `
     <div class="risk-summary">
       <div class="risk-title">【本周风险总结】</div>
+      <ul>
+        ${lines
+          .slice(1)
+          .map((l) => `<li>${escapeHtml(l)}</li>`)
+          .join('')}
+      </ul>
+    </div>
+  `
+}
+
+function renderMonthlyRiskSummary(
+  commits,
+  { startHour = 9, endHour = 18, cutoff = 6 } = {}
+) {
+  const box = document.getElementById('monthlyRiskSummary')
+  if (!box) return
+
+  const now = new Date()
+  const curKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const prev = new Date(now)
+  prev.setMonth(prev.getMonth() - 1)
+  const prevKey = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`
+
+  const monthAuthor = new Map()
+  const monthMax = new Map()
+
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    if (Number.isNaN(d.valueOf())) return
+    const h = d.getHours()
+    const isOT = (h >= endHour && h < 24) || (h >= 0 && h < cutoff && h < startHour)
+    if (!isOT) return
+
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const author = c.author || 'unknown'
+
+    if (!monthAuthor.has(key)) monthAuthor.set(key, new Map())
+    const m = monthAuthor.get(key)
+    m.set(author, (m.get(author) || 0) + 1)
+
+    let overtime = null
+    if (h >= endHour && h < 24) overtime = h - endHour
+    else if (h >= 0 && h < cutoff && h < startHour) overtime = 24 - endHour + h
+    if (overtime == null) return
+
+    if (!monthMax.has(key)) monthMax.set(key, new Map())
+    const mm = monthMax.get(key)
+    const cur = mm.get(author)
+    const dateStr = d.toISOString().slice(0, 10)
+    if (!cur || overtime > cur.max) mm.set(author, { max: overtime, date: dateStr })
+  })
+
+  const curMap = monthAuthor.get(curKey) || new Map()
+  const prevMap = monthAuthor.get(prevKey) || new Map()
+  const curTotal = Array.from(curMap.values()).reduce((a, b) => a + b, 0)
+  const prevTotal = Array.from(prevMap.values()).reduce((a, b) => a + b, 0)
+  const delta = prevTotal > 0 ? Math.round(((curTotal - prevTotal) / prevTotal) * 100) : null
+
+  let topAuthor = null
+  let top = { max: -1, date: null }
+  const curMaxMap = monthMax.get(curKey) || new Map()
+  curMaxMap.forEach((v, k) => {
+    if (v.max > top.max) {
+      top = v
+      topAuthor = k
+    }
+  })
+
+  let prevMax = -1
+  const prevMaxMap = monthMax.get(prevKey) || new Map()
+  prevMaxMap.forEach((v) => {
+    if (v.max > prevMax) prevMax = v.max
+  })
+
+  const lines = []
+  lines.push('【本月加班风险】')
+
+  if (curTotal === 0) {
+    lines.push('本月尚无下班后提交，未发现明显风险。')
+  } else {
+    if (delta === null) {
+      lines.push(`本月下班后提交 ${curTotal} 次。`)
+    } else {
+      const trend = delta >= 0 ? '上升' : '下降'
+      lines.push(`本月下班后提交${trend} ${Math.abs(delta)}%（vs 上月）。`)
+    }
+
+    if (top.max >= 0) {
+      let trend2 = '暂无上月对比'
+      if (prevMax >= 0) {
+        if (top.max > prevMax) trend2 = '较上月更晚'
+        else if (top.max < prevMax) trend2 = '较上月提前'
+        else trend2 = '与上月持平'
+      }
+      lines.push(`${topAuthor} 本月最晚超出下班 ${top.max.toFixed(2)} 小时（${top.date}），${trend2}。`)
+      if (top.max >= 2) lines.push('已超过 2 小时，存在严重加班风险。')
+      else if (top.max >= 1) lines.push('已超过 1 小时，存在中度加班风险。')
+    }
+  }
+
+  box.innerHTML = `
+    <div class="risk-summary">
+      <div class="risk-title">【本月加班风险】</div>
       <ul>
         ${lines
           .slice(1)
@@ -1677,6 +1781,7 @@ function drawAuthorLatestOvertimeTrends(commits, stats) {
   })
 
   renderLatestRiskSummary(commits, { startHour, endHour, cutoff })
+  renderLatestMonthlyRiskSummary(commits, { startHour, endHour, cutoff })
 
   return chart
 }
@@ -1764,6 +1869,89 @@ function renderLatestRiskSummary(
   box.innerHTML = `
     <div class="risk-summary">
       <div class="risk-title">【本周最晚加班风险】</div>
+      <ul>
+        ${lines
+          .slice(1)
+          .map((l) => `<li>${escapeHtml(l)}</li>`)
+          .join('')}
+      </ul>
+    </div>
+  `
+}
+
+function renderLatestMonthlyRiskSummary(
+  commits,
+  { startHour = 9, endHour = 18, cutoff = 6 } = {}
+) {
+  const box = document.getElementById('latestMonthlyRiskSummary')
+  if (!box) return
+
+  const now = new Date()
+  const curKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const prev = new Date(now)
+  prev.setMonth(prev.getMonth() - 1)
+  const prevKey = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`
+
+  const monthMax = new Map()
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    if (Number.isNaN(d.valueOf())) return
+    const h = d.getHours()
+    let overtime = null
+    if (h >= endHour && h < 24) overtime = h - endHour
+    else if (h >= 0 && h < cutoff && h < startHour) overtime = 24 - endHour + h
+    if (overtime == null) return
+
+    const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    if (!monthMax.has(mKey)) monthMax.set(mKey, new Map())
+    const m = monthMax.get(mKey)
+    const author = c.author || 'unknown'
+    const cur = m.get(author)
+    if (!cur || overtime > cur.max) {
+      m.set(author, { max: overtime, date: d.toISOString().slice(0, 10) })
+    }
+  })
+
+  const curMap = monthMax.get(curKey) || new Map()
+  const prevMap = monthMax.get(prevKey) || new Map()
+
+  let topAuthor = null
+  let top = { max: -1, date: null }
+  curMap.forEach((v, k) => {
+    if (v.max > top.max) {
+      top = v
+      topAuthor = k
+    }
+  })
+
+  let prevMax = -1
+  prevMap.forEach((v) => {
+    if (v.max > prevMax) prevMax = v.max
+  })
+
+  const lines = []
+  lines.push('【本月最晚加班风险】')
+
+  if (top.max < 0) {
+    lines.push('本月尚无下班后/凌晨提交，未发现明显风险。')
+  } else {
+    let trend = '暂无上月对比'
+    if (prevMax >= 0) {
+      if (top.max > prevMax) trend = '较上月更晚'
+      else if (top.max < prevMax) trend = '较上月提前'
+      else trend = '与上月持平'
+    }
+    lines.push(`${topAuthor} 本月最晚超出下班 ${top.max.toFixed(2)} 小时（${top.date}），${trend}。`)
+    if (top.max >= 2) {
+      lines.push('已超过 2 小时，存在严重加班风险，请关注工作节奏。')
+    } else if (top.max >= 1) {
+      lines.push('已超过 1 小时，注意控制夜间工作时长。')
+    }
+  }
+
+  box.innerHTML = `
+    <div class="risk-summary">
+      <div class="risk-title">【本月最晚加班风险】</div>
       <ul>
         ${lines
           .slice(1)

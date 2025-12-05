@@ -53,12 +53,14 @@
           <h2>按日提交趋势</h2>
           <div id="dailyTrendChartDog" class="echart"></div>
         </div>
-        <div id="mostTiredDay"></div>
-        <div id="mostTiredWeek"></div>
-        <div id="mostTiredMonth"></div>
-        <div id="latestOvertimeDay"></div>
-        <div id="latestOvertimeWeek"></div>
-        <div id="latestOvertimeMonth"></div>
+        <div class="chart-card">
+          <div id="mostTiredDay"></div>
+          <div id="mostTiredWeek"></div>
+          <div id="mostTiredMonth"></div>
+          <div id="latestOvertimeDay"></div>
+          <div id="latestOvertimeWeek"></div>
+          <div id="latestOvertimeMonth"></div>
+        </div>
       </section>
 
       <div class="chart-card">
@@ -81,6 +83,17 @@
         </div>
         <div id="chartAuthorOvertime" class="echart"></div>
         <div id="weeklyRiskSummary" class="risk-summary"></div>
+      </div>
+
+      <div class="chart-card">
+        <h2>开发者 加班最晚趋势</h2>
+        <div class="tabs" id="tabsLatestOvertime">
+          <button data-type="daily" class="active">按日</button>
+          <button data-type="weekly">按周</button>
+          <button data-type="monthly">按月</button>
+        </div>
+        <div id="chartAuthorLatestOvertime" class="echart"></div>
+        <div id="latestRiskSummary" class="risk-summary"></div>
       </div>
 
       <section class="table-card">

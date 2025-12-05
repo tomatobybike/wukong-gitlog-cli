@@ -66,7 +66,7 @@
       <div class="chart-card">
         <h2>开发者 Changed 工作量趋势</h2>
 
-        <div id="tabs">
+        <div id="tabs" class="tabs">
           <button data-type="daily" class="active">按日</button>
           <button data-type="weekly">按周</button>
           <button data-type="monthly">按月</button>
@@ -82,7 +82,7 @@
           <button data-type="monthly">按月</button>
         </div>
         <div id="chartAuthorOvertime" class="echart"></div>
-        <div id="weeklyRiskSummary" class="risk-summary"></div>
+        <div id="weeklyRiskSummary" class="risk-summary-box"></div>
       </div>
 
       <div class="chart-card">
@@ -93,7 +93,7 @@
           <button data-type="monthly">按月</button>
         </div>
         <div id="chartAuthorLatestOvertime" class="echart"></div>
-        <div id="latestRiskSummary" class="risk-summary"></div>
+        <div id="latestRiskSummary" class="risk-summary-box"></div>
       </div>
 
       <section class="table-card">
@@ -124,6 +124,7 @@
               <th>Author</th>
               <th>Date</th>
               <th>Message</th>
+              <th>Changed</th>
             </tr>
           </thead>
           <tbody></tbody>

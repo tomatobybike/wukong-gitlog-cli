@@ -60,8 +60,10 @@ function renderCommitsTablePage() {
   const start = (page - 1) * pageSize
   const end = start + pageSize
   filtered.slice(start, end).forEach((c) => {
+    // FIXME: remove debug log before production
+    console.log('❌', 'c', c);
     const tr = document.createElement('tr')
-    tr.innerHTML = `<td>${c.hash.slice(0, 8)}</td><td>${c.author}</td><td>${formatDate(c.date)}</td><td>${c.message}</td>`
+    tr.innerHTML = `<td>${c.hash.slice(0, 8)}</td><td>${c.author}</td><td>${formatDate(c.date)}</td><td>${c.message}</td><td>${c.changed}</td>`
     tbody.appendChild(tr)
   })
 }

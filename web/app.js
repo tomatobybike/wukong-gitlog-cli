@@ -1483,6 +1483,7 @@ function drawAuthorOvertimeTrends(commits, stats) {
   renderMonthlyRiskSummary(commits, { startHour, endHour, cutoff })
   renderWeeklyDurationRiskSummary(commits, { startHour, endHour, cutoff })
   renderMonthlyDurationRiskSummary(commits, { startHour, endHour, cutoff })
+  renderRolling30DurationRiskSummary(commits, { startHour, endHour, cutoff })
 
   return chart
 }
@@ -1689,6 +1690,53 @@ function renderMonthlyDurationRiskSummary(
   box.innerHTML = `
     <div class="risk-summary">
       <div class="risk-title">【本月加班时长风险】</div>
+      <ul>
+        ${lines
+          .slice(1)
+          .map((l) => `<li>${escapeHtml(l)}</li>`)
+          .join('')}
+      </ul>
+    </div>
+  `
+}
+
+function renderRolling30DurationRiskSummary(
+  commits,
+  { startHour = 9, endHour = 18, cutoff = 6 } = {}
+) {
+  const box = document.getElementById('rolling30DurationRiskSummary')
+  if (!box) return
+  const now = new Date()
+  const utcToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+  utcToday.setUTCDate(utcToday.getUTCDate() - 29)
+  const startKey = utcToday.toISOString().slice(0, 10)
+
+  const byAuthorDay = computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff)
+  const sums = []
+  byAuthorDay.forEach((dayMap, author) => {
+    let total = 0
+    dayMap.forEach((v, dayKey) => {
+      if (dayKey >= startKey) total += v
+    })
+    if (total > 0) sums.push({ author, total })
+  })
+  sums.sort((a, b) => b.total - a.total)
+  const top = sums.slice(0, 6)
+  const lines = []
+  lines.push('【最近30天加班时长风险】')
+  if (top.length === 0) {
+    lines.push('最近30天暂无加班时长风险。')
+  } else {
+    top.forEach(({ author, total }) => {
+      let level = '轻度'
+      if (total >= 20) level = '严重'
+      else if (total >= 10) level = '中度'
+      lines.push(`${author} 最近30天累计加班 ${total.toFixed(2)} 小时（${level}）。`)
+    })
+  }
+  box.innerHTML = `
+    <div class="risk-summary">
+      <div class="risk-title">【最近30天加班时长风险】</div>
       <ul>
         ${lines
           .slice(1)

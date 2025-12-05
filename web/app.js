@@ -1389,8 +1389,224 @@ const drawChangeTrends = (stats, type = 'daily') => {
   return chart;
 }
 
+// ========= 开发者加班趋势（基于 commits 现场计算） =========
+function getIsoWeekKey(dStr) {
+  const d = new Date(dStr)
+  if (Number.isNaN(d.valueOf())) return null
+  const target = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+  const dayNum = target.getUTCDay() || 7 // Sunday=0
+  target.setUTCDate(target.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1))
+  const weekNo = Math.ceil(((target - yearStart) / 86400000 + 1) / 7)
+  const year = target.getUTCFullYear()
+  return `${year}-W${String(weekNo).padStart(2, '0')}`
+}
+
+function buildAuthorOvertimeDataset(
+  commits,
+  type,
+  startHour,
+  endHour,
+  cutoff
+) {
+  const byAuthor = new Map()
+  const periods = new Set()
+
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    if (Number.isNaN(d.valueOf())) return
+    const h = d.getHours()
+    const isOvertime =
+      (h >= endHour && h < 24) || (h >= 0 && h < cutoff && h < startHour)
+    if (!isOvertime) return
+
+    let key
+    if (type === 'daily') {
+      key = d.toISOString().slice(0, 10)
+    } else if (type === 'weekly') {
+      key = getIsoWeekKey(d.toISOString().slice(0, 10))
+    } else {
+      key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    }
+    if (!key) return
+    periods.add(key)
+
+    const author = c.author || 'unknown'
+    if (!byAuthor.has(author)) byAuthor.set(author, {})
+    const obj = byAuthor.get(author)
+    obj[key] = (obj[key] || 0) + 1
+  })
+
+  const allPeriods = Array.from(periods).sort()
+  const authors = Array.from(byAuthor.keys()).sort()
+  const series = authors.map((a) => ({
+    name: a,
+    type: 'line',
+    smooth: true,
+    data: allPeriods.map((p) => (byAuthor.get(a)[p] || 0))
+  }))
+  return { authors, allPeriods, series }
+}
+
+function drawAuthorOvertimeTrends(commits, stats) {
+  const el = document.getElementById('chartAuthorOvertime')
+  if (!el) return null
+  const chart = echarts.init(el)
+
+  const startHour =
+    typeof stats.startHour === 'number' && stats.startHour >= 0
+      ? stats.startHour
+      : 9
+  const endHour =
+    typeof stats.endHour === 'number' && stats.endHour >= 0
+      ? stats.endHour
+      : window.__overtimeEndHour || 18
+  const cutoff = window.__overnightCutoff ?? 6
+
+  function render(type) {
+    const ds = buildAuthorOvertimeDataset(
+      commits,
+      type,
+      startHour,
+      endHour,
+      cutoff
+    )
+    chart.setOption({
+      tooltip: { trigger: 'axis' },
+      legend: { data: ds.authors },
+      xAxis: { type: 'category', data: ds.allPeriods },
+      yAxis: { type: 'value' },
+      series: ds.series
+    })
+  }
+
+  // 初始按日
+  render('daily')
+
+  // tabs 切换
+  document.querySelectorAll('#tabsOvertime button').forEach((btn) => {
+    btn.onclick = () => {
+      document
+        .querySelectorAll('#tabsOvertime button')
+        .forEach((b) => b.classList.remove('active'))
+      btn.classList.add('active')
+      render(btn.dataset.type)
+    }
+  })
+
+  // 输出本周风险总结
+  renderWeeklyRiskSummary(commits, { startHour, endHour, cutoff })
+
+  return chart
+}
+
+function renderWeeklyRiskSummary(
+  commits,
+  { startHour = 9, endHour = 18, cutoff = 6 } = {}
+) {
+  const box = document.getElementById('weeklyRiskSummary')
+  if (!box) return
+
+  // 获取当前周与上一周 key
+  const now = new Date()
+  const curKey = getIsoWeekKey(now.toISOString().slice(0, 10))
+  const prev = new Date(now)
+  prev.setDate(prev.getDate() - 7)
+  const prevKey = getIsoWeekKey(prev.toISOString().slice(0, 10))
+
+  // 统计：每周 -> author -> count；同时统计每周日期集合
+  const weekAuthor = new Map()
+  const weekDatesByAuthor = new Map() // week -> author -> Set(date)
+
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    if (Number.isNaN(d.valueOf())) return
+    const h = d.getHours()
+    const isOT =
+      (h >= endHour && h < 24) || (h >= 0 && h < cutoff && h < startHour)
+    if (!isOT) return
+
+    const key = getIsoWeekKey(d.toISOString().slice(0, 10))
+    if (!key) return
+    const author = c.author || 'unknown'
+
+    if (!weekAuthor.has(key)) weekAuthor.set(key, new Map())
+    const m = weekAuthor.get(key)
+    m.set(author, (m.get(author) || 0) + 1)
+
+    if (!weekDatesByAuthor.has(key)) weekDatesByAuthor.set(key, new Map())
+    const dMap = weekDatesByAuthor.get(key)
+    if (!dMap.has(author)) dMap.set(author, new Set())
+    dMap.get(author).add(d.toISOString().slice(0, 10))
+  })
+
+  const curMap = weekAuthor.get(curKey) || new Map()
+  const prevMap = weekAuthor.get(prevKey) || new Map()
+  const curTotal = Array.from(curMap.values()).reduce((a, b) => a + b, 0)
+  const prevTotal = Array.from(prevMap.values()).reduce((a, b) => a + b, 0)
+  const delta =
+    prevTotal > 0 ? Math.round(((curTotal - prevTotal) / prevTotal) * 100) : null
+
+  // 找当前周最“活跃”的人（加班提交最多），并统计他加班的自然日数
+  let topAuthor = null
+  let topCount = -1
+  curMap.forEach((v, k) => {
+    if (v > topCount) {
+      topCount = v
+      topAuthor = k
+    }
+  })
+  const curDatesMap = weekDatesByAuthor.get(curKey) || new Map()
+  const topDays =
+    topAuthor && curDatesMap.get(topAuthor)
+      ? curDatesMap.get(topAuthor).size
+      : 0
+
+  // 文案
+  const lines = []
+  lines.push('【本周风险总结】')
+
+  if (curTotal === 0) {
+    lines.push('团队本周暂无加班提交。')
+  } else {
+    if (delta === null) {
+      lines.push(`团队本周加班提交 ${curTotal} 次。`)
+    } else {
+      const trend = delta >= 0 ? '上升' : '下降'
+      lines.push(`团队加班${trend} ${Math.abs(delta)}%（vs 上周）。`)
+    }
+  }
+
+  if (topAuthor && curTotal > 0) {
+    const pct = Math.round((topCount / curTotal) * 100)
+    lines.push(
+      `${topAuthor} 夜间活跃度 ${pct}%，${topDays} 天出现下班后提交（${endHour}:00 后或次日 ${cutoff}:00 前）。`
+    )
+  }
+
+  box.innerHTML = `
+    <div class="risk-summary">
+      <div class="risk-title">【本周风险总结】</div>
+      <ul>
+        ${lines
+          .slice(1)
+          .map((l) => `<li>${escapeHtml(l)}</li>`)
+          .join('')}
+      </ul>
+    </div>
+  `
+}
+
 async function main() {
-  const { commits, stats, weekly, monthly, latestByDay, config,authorChanges } =
+  const {
+    commits,
+    stats,
+    weekly,
+    monthly,
+    latestByDay,
+    config,
+    authorChanges
+  } =
     await loadData()
   commitsAll = commits
   filtered = commitsAll.slice()
@@ -1431,7 +1647,8 @@ async function main() {
 
   console.log('最累的一天：', daily.analysis.mostTiredDay)
 
-  drawChangeTrends(authorChanges, 'daily');
+  drawChangeTrends(authorChanges, 'daily')
+  drawAuthorOvertimeTrends(commits, stats)
   computeAndRenderLatestOvertime(latestByDay)
   renderKpi(stats)
 }

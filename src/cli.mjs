@@ -350,6 +350,13 @@ const main = async () => {
         const dataCommitsFile = outputFilePath('data/commits.mjs', outDir)
         const commitsModule = `export default ${JSON.stringify(records, null, 2)};\n`
         writeTextFile(dataCommitsFile, commitsModule)
+
+        const dataCommitsChangedFile = outputFilePath('data/author-changes.mjs', outDir)
+        const jsonText = renderAuthorChangesJson(records)
+
+        const commitsChangedModule = `export default ${JSON.stringify(jsonText, null, 2)};\n`
+        writeTextFile(dataCommitsChangedFile, commitsChangedModule)
+
         const dataStatsFile = outputFilePath('data/overtime-stats.mjs', outDir)
         const statsModule = `export default ${JSON.stringify(stats, null, 2)};\n`
         writeTextFile(dataStatsFile, statsModule)

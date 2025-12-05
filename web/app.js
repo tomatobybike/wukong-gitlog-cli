@@ -9,14 +9,16 @@ async function loadData() {
       weeklyModule,
       monthlyModule,
       latestByDayModule,
-      configModule
+      configModule,
+      authorChangesModule
     ] = await Promise.all([
       import('/data/commits.mjs'),
       import('/data/overtime-stats.mjs'),
       import('/data/overtime-weekly.mjs'),
       import('/data/overtime-monthly.mjs').catch(() => ({ default: [] })),
       import('/data/overtime-latest-by-day.mjs').catch(() => ({ default: [] })),
-      import('/data/config.mjs').catch(() => ({ default: {} }))
+      import('/data/config.mjs').catch(() => ({ default: {} })),
+      import('/data/author-changes.mjs').catch(() => ({ default: {} }))
     ])
     const commits = commitsModule.default || []
     const stats = statsModule.default || {}
@@ -24,7 +26,8 @@ async function loadData() {
     const monthly = monthlyModule.default || []
     const latestByDay = latestByDayModule.default || []
     const config = configModule.default || {}
-    return { commits, stats, weekly, monthly, latestByDay, config }
+    const authorChanges = authorChangesModule.default || {}
+    return { commits, stats, weekly, monthly, latestByDay, config, authorChanges }
   } catch (err) {
     console.error('Load data failed', err)
     return { commits: [], stats: {}, weekly: [], monthly: [], latestByDay: [] }
@@ -1226,50 +1229,6 @@ function groupCommitsByHour(commits) {
   return byHour
 }
 
-async function main() {
-  const { commits, stats, weekly, monthly, latestByDay, config } =
-    await loadData()
-  commitsAll = commits
-  filtered = commitsAll.slice()
-  window.__overtimeEndHour =
-    stats && typeof stats.endHour === 'number'
-      ? stats.endHour
-      : (config.endHour ?? 18)
-  window.__overnightCutoff =
-    typeof config.overnightCutoff === 'number' ? config.overnightCutoff : 6
-  initTableControls()
-  updatePager()
-  renderCommitsTablePage()
-
-  drawHourlyOvertime(stats, (hour, count) => {
-    // 使用举例
-    const hourCommitsDetail = groupCommitsByHour(commits)
-    // 将 commit 列表传给侧栏（若没有详情，则传空数组）
-    showSideBarForHour(hour, hourCommitsDetail[hour] || [])
-  })
-  drawOutsideVsInside(stats)
-
-  // 按日提交趋势：点击某天打开抽屉，显示当日所有 commits
-  drawDailyTrend(commits, showDayDetailSidebar)
-
-  // 周趋势：保持原有点击行为（显示该周详情）
-  drawWeeklyTrend(weekly, commits, showSideBarForWeek)
-
-  // 月趋势（加班占比）：点击某个月打开抽屉，显示该月所有 commits
-  drawMonthlyTrend(monthly, commits, showDayDetailSidebar)
-
-  // 每日最晚提交时间（小时）：点击某天打开抽屉，显示当日所有 commits
-  drawLatestHourDaily(latestByDay, commits, showDayDetailSidebar)
-
-  // 每日超过下班的小时数：点击某天打开抽屉，显示当日所有 commits
-  drawDailySeverity(latestByDay, commits, showDayDetailSidebar)
-
-  const daily = drawDailyTrendSeverity(commits, weekly, showDayDetailSidebar)
-
-  console.log('最累的一天：', daily.analysis.mostTiredDay)
-  computeAndRenderLatestOvertime(latestByDay)
-  renderKpi(stats)
-}
 
 // 基于 latestByDay + cutoff/endHour 统计「最晚加班的一天 / 一周 / 一月」
 function computeAndRenderLatestOvertime(latestByDay) {
@@ -1376,6 +1335,107 @@ function computeAndRenderLatestOvertime(latestByDay) {
     }
   }
 }
+
+function buildDataset(stats, type) {
+  const dataMap = stats[type]; // { author: { period: changed } }
+
+  const authors = Object.keys(dataMap);
+  const allPeriods = Array.from(new Set(
+    authors.flatMap(a => Object.keys(dataMap[a]))
+  )).sort();
+
+  const series = authors.map(a => ({
+    name: a,
+    type: 'line',
+    smooth: true,
+    data: allPeriods.map(p => dataMap[a][p] || 0)
+  }));
+
+  return { authors, allPeriods, series };
+}
+
+const drawChangeTrends = (stats, type = 'daily') => {
+  const el = document.getElementById("chartAuthorChanges");
+  if (!el) return null;
+  // FIXME: remove debug log before production
+  console.log('❌', 'el', el);
+  const chart = echarts.init(el);
+
+  function render(type) {
+    const { authors, allPeriods, series } = buildDataset(stats, type);
+
+    chart.setOption({
+      tooltip: { trigger: 'axis' },
+      legend: { data: authors },
+      xAxis: { type: 'category', data: allPeriods },
+      yAxis: { type: 'value' },
+      series
+    });
+  }
+
+  // 初次渲染：日
+  render('daily');
+
+  // tabs 切换
+  document.querySelectorAll('#tabs button').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('#tabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      render(btn.dataset.type);
+    };
+  });
+
+  return chart;
+}
+
+async function main() {
+  const { commits, stats, weekly, monthly, latestByDay, config,authorChanges } =
+    await loadData()
+  commitsAll = commits
+  filtered = commitsAll.slice()
+  window.__overtimeEndHour =
+    stats && typeof stats.endHour === 'number'
+      ? stats.endHour
+      : (config.endHour ?? 18)
+  window.__overnightCutoff =
+    typeof config.overnightCutoff === 'number' ? config.overnightCutoff : 6
+  initTableControls()
+  updatePager()
+  renderCommitsTablePage()
+
+  drawHourlyOvertime(stats, (hour, count) => {
+    // 使用举例
+    const hourCommitsDetail = groupCommitsByHour(commits)
+    // 将 commit 列表传给侧栏（若没有详情，则传空数组）
+    showSideBarForHour(hour, hourCommitsDetail[hour] || [])
+  })
+  drawOutsideVsInside(stats)
+
+  // 按日提交趋势：点击某天打开抽屉，显示当日所有 commits
+  drawDailyTrend(commits, showDayDetailSidebar)
+
+  // 周趋势：保持原有点击行为（显示该周详情）
+  drawWeeklyTrend(weekly, commits, showSideBarForWeek)
+
+  // 月趋势（加班占比）：点击某个月打开抽屉，显示该月所有 commits
+  drawMonthlyTrend(monthly, commits, showDayDetailSidebar)
+
+  // 每日最晚提交时间（小时）：点击某天打开抽屉，显示当日所有 commits
+  drawLatestHourDaily(latestByDay, commits, showDayDetailSidebar)
+
+  // 每日超过下班的小时数：点击某天打开抽屉，显示当日所有 commits
+  drawDailySeverity(latestByDay, commits, showDayDetailSidebar)
+
+  const daily = drawDailyTrendSeverity(commits, weekly, showDayDetailSidebar)
+
+  console.log('最累的一天：', daily.analysis.mostTiredDay)
+
+  drawChangeTrends(authorChanges, 'daily');
+  computeAndRenderLatestOvertime(latestByDay)
+  renderKpi(stats)
+}
+
 
 // 抽屉关闭交互（按钮 + 点击遮罩）
 document.getElementById('sidebarClose').onclick = () => {

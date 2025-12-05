@@ -47,5 +47,5 @@ export function renderAuthorChangeStatsText(stats, opts = {}) {
     output += buildSection('Monthly Changed', stats.monthly, 'Month');
   }
 
-  return output.trim() + '\n';
+  return `${output.trim()  }\n`;
 }

@@ -1481,6 +1481,8 @@ function drawAuthorOvertimeTrends(commits, stats) {
   // 输出本周风险总结
   renderWeeklyRiskSummary(commits, { startHour, endHour, cutoff })
   renderMonthlyRiskSummary(commits, { startHour, endHour, cutoff })
+  renderWeeklyDurationRiskSummary(commits, { startHour, endHour, cutoff })
+  renderMonthlyDurationRiskSummary(commits, { startHour, endHour, cutoff })
 
   return chart
 }
@@ -1580,6 +1582,122 @@ function renderWeeklyRiskSummary(
   `
 }
 
+function computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff) {
+  const byAuthorDay = new Map()
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    if (Number.isNaN(d.valueOf())) return
+    const h = d.getHours()
+    let overtime = null
+    let dayKey = null
+    if (h >= endHour && h < 24) {
+      overtime = h - endHour
+      dayKey = d.toISOString().slice(0, 10)
+    } else if (h >= 0 && h < cutoff && h < startHour) {
+      overtime = 24 - endHour + h
+      const cur = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+      cur.setUTCDate(cur.getUTCDate() - 1)
+      dayKey = cur.toISOString().slice(0, 10)
+    }
+    if (overtime == null || !dayKey) return
+    const author = c.author || 'unknown'
+    if (!byAuthorDay.has(author)) byAuthorDay.set(author, new Map())
+    const m = byAuthorDay.get(author)
+    const cur = m.get(dayKey)
+    if (!cur || overtime > cur) m.set(dayKey, overtime)
+  })
+  return byAuthorDay
+}
+
+function renderWeeklyDurationRiskSummary(
+  commits,
+  { startHour = 9, endHour = 18, cutoff = 6 } = {}
+) {
+  const box = document.getElementById('weeklyDurationRiskSummary')
+  if (!box) return
+  const now = new Date()
+  const curWeek = getIsoWeekKey(now.toISOString().slice(0, 10))
+  const byAuthorDay = computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff)
+  const sums = []
+  byAuthorDay.forEach((dayMap, author) => {
+    let total = 0
+    dayMap.forEach((v, dayKey) => {
+      const wk = getIsoWeekKey(dayKey)
+      if (wk === curWeek) total += v
+    })
+    if (total > 0) sums.push({ author, total })
+  })
+  sums.sort((a, b) => b.total - a.total)
+  const top = sums.slice(0, 6)
+  const lines = []
+  lines.push('【本周加班时长风险】')
+  if (top.length === 0) {
+    lines.push('本周暂无加班时长风险。')
+  } else {
+    top.forEach(({ author, total }) => {
+      let level = '轻度'
+      if (total >= 12) level = '严重'
+      else if (total >= 6) level = '中度'
+      lines.push(`${author} 本周累计加班 ${total.toFixed(2)} 小时（${level}）。`)
+    })
+  }
+  box.innerHTML = `
+    <div class="risk-summary">
+      <div class="risk-title">【本周加班时长风险】</div>
+      <ul>
+        ${lines
+          .slice(1)
+          .map((l) => `<li>${escapeHtml(l)}</li>`)
+          .join('')}
+      </ul>
+    </div>
+  `
+}
+
+function renderMonthlyDurationRiskSummary(
+  commits,
+  { startHour = 9, endHour = 18, cutoff = 6 } = {}
+) {
+  const box = document.getElementById('monthlyDurationRiskSummary')
+  if (!box) return
+  const now = new Date()
+  const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const byAuthorDay = computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff)
+  const sums = []
+  byAuthorDay.forEach((dayMap, author) => {
+    let total = 0
+    dayMap.forEach((v, dayKey) => {
+      const m = dayKey.slice(0, 7)
+      if (m === curMonth) total += v
+    })
+    if (total > 0) sums.push({ author, total })
+  })
+  sums.sort((a, b) => b.total - a.total)
+  const top = sums.slice(0, 6)
+  const lines = []
+  lines.push('【本月加班时长风险】')
+  if (top.length === 0) {
+    lines.push('本月暂无加班时长风险。')
+  } else {
+    top.forEach(({ author, total }) => {
+      let level = '轻度'
+      if (total >= 20) level = '严重'
+      else if (total >= 10) level = '中度'
+      lines.push(`${author} 本月累计加班 ${total.toFixed(2)} 小时（${level}）。`)
+    })
+  }
+  box.innerHTML = `
+    <div class="risk-summary">
+      <div class="risk-title">【本月加班时长风险】</div>
+      <ul>
+        ${lines
+          .slice(1)
+          .map((l) => `<li>${escapeHtml(l)}</li>`)
+          .join('')}
+      </ul>
+    </div>
+  `
+}
 function renderMonthlyRiskSummary(
   commits,
   { startHour = 9, endHour = 18, cutoff = 6 } = {}

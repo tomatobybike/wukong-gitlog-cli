@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.19](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.18...v1.0.19) (2025-12-05)
+
+
+### Features
+
+* 🎸 latestMonthlyRiskSummary ([e8a442e](https://github.com/tomatobybike/wukong-gitlog-cli/commit/e8a442e8333ac303815e7eaaf3aa571e7e976bd6))
+* 🎸 monthlyDurationRiskSummary ([d853876](https://github.com/tomatobybike/wukong-gitlog-cli/commit/d853876a5457bac57fbe4a000be90308b49d8b9d))
+
 ### [1.0.18](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.17...v1.0.18) (2025-12-05)
 
 

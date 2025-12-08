@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.21](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.20...v1.0.21) (2025-12-08)
+
+
+### Features
+
+* 🎸 weekly rangeMap ([8389e5e](https://github.com/tomatobybike/wukong-gitlog-cli/commit/8389e5e700640273906a4e616333e318a5961d12))
+
 ### [1.0.20](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.19...v1.0.20) (2025-12-05)
 
 

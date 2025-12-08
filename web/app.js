@@ -16,6 +16,34 @@ function getIsoWeekKey(dStr) {
   return `${year}-W${String(weekNo).padStart(2, '0')}`
 }
 
+function formatDateYMD(d) {
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+function getISOWeekRange(isoYear, isoWeek) {
+  // 找到 ISO 年的第一个周一
+  // ISO 年的第 1 周包含 1 月 4 日
+  const simple = new Date(isoYear, 0, 4)
+  const dayOfWeek = simple.getDay() || 7 // Sunday=7
+  const firstMonday = new Date(simple)
+  firstMonday.setDate(simple.getDate() - dayOfWeek + 1)
+
+  // 计算目标周的周一
+  const monday = new Date(firstMonday)
+  monday.setDate(firstMonday.getDate() + (isoWeek - 1) * 7)
+
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+
+  return {
+    start: formatDateYMD(monday),
+    end: formatDateYMD(sunday)
+  }
+}
+
 async function loadData() {
   try {
     const [
@@ -42,7 +70,15 @@ async function loadData() {
     const latestByDay = latestByDayModule.default || []
     const config = configModule.default || {}
     const authorChanges = authorChangesModule.default || {}
-    return { commits, stats, weekly, monthly, latestByDay, config, authorChanges }
+    return {
+      commits,
+      stats,
+      weekly,
+      monthly,
+      latestByDay,
+      config,
+      authorChanges
+    }
   } catch (err) {
     console.error('Load data failed', err)
     return { commits: [], stats: {}, weekly: [], monthly: [], latestByDay: [] }
@@ -60,8 +96,6 @@ function renderCommitsTablePage() {
   const start = (page - 1) * pageSize
   const end = start + pageSize
   filtered.slice(start, end).forEach((c) => {
-    // FIXME: remove debug log before production
-    console.log('❌', 'c', c);
     const tr = document.createElement('tr')
     tr.innerHTML = `<td>${c.hash.slice(0, 8)}</td><td>${c.author}</td><td>${formatDate(c.date)}</td><td>${c.message}</td><td>${c.changed}</td>`
     tbody.appendChild(tr)
@@ -1244,7 +1278,6 @@ function groupCommitsByHour(commits) {
   return byHour
 }
 
-
 // 基于 latestByDay + cutoff/endHour 统计「最晚加班的一天 / 一周 / 一月」
 function computeAndRenderLatestOvertime(latestByDay) {
   if (!Array.isArray(latestByDay) || latestByDay.length === 0) return
@@ -1337,21 +1370,21 @@ function computeAndRenderLatestOvertime(latestByDay) {
 }
 
 function buildDataset(stats, type) {
-  const dataMap = stats[type]; // { author: { period: changed } }
+  const dataMap = stats[type] // { author: { period: changed } }
 
-  const authors = Object.keys(dataMap);
-  const allPeriods = Array.from(new Set(
-    authors.flatMap(a => Object.keys(dataMap[a]))
-  )).sort();
+  const authors = Object.keys(dataMap)
+  const allPeriods = Array.from(
+    new Set(authors.flatMap((a) => Object.keys(dataMap[a])))
+  ).sort()
 
-  const series = authors.map(a => ({
+  const series = authors.map((a) => ({
     name: a,
     type: 'line',
     smooth: true,
-    data: allPeriods.map(p => dataMap[a][p] || 0)
-  }));
+    data: allPeriods.map((p) => dataMap[a][p] || 0)
+  }))
 
-  return { authors, allPeriods, series };
+  return { authors, allPeriods, series }
 }
 
 const drawChangeTrends = (stats) => {
@@ -1361,6 +1394,7 @@ const drawChangeTrends = (stats) => {
 
   function render(t) {
     const { authors, allPeriods, series } = buildDataset(stats, t)
+
     chart.setOption({
       tooltip: { trigger: 'axis' },
       legend: { data: authors },
@@ -1387,13 +1421,7 @@ const drawChangeTrends = (stats) => {
 }
 
 // ========= 开发者加班趋势（基于 commits 现场计算） =========
-function buildAuthorOvertimeDataset(
-  commits,
-  type,
-  startHour,
-  endHour,
-  cutoff
-) {
+function buildAuthorOvertimeDataset(commits, type, startHour, endHour, cutoff) {
   const byAuthor = new Map()
   const periods = new Set()
 
@@ -1428,7 +1456,7 @@ function buildAuthorOvertimeDataset(
     name: a,
     type: 'line',
     smooth: true,
-    data: allPeriods.map((p) => (byAuthor.get(a)[p] || 0))
+    data: allPeriods.map((p) => byAuthor.get(a)[p] || 0)
   }))
   return { authors, allPeriods, series }
 }
@@ -1456,8 +1484,45 @@ function drawAuthorOvertimeTrends(commits, stats) {
       endHour,
       cutoff
     )
+    ds.rangeMap = {}
+
+    for (const period of ds.allPeriods) {
+      if (period.includes('-W')) {
+        const [yy, ww] = period.split('-W')
+        ds.rangeMap[period] = getISOWeekRange(Number(yy), Number(ww))
+      }
+    }
     chart.setOption({
-      tooltip: { trigger: 'axis' },
+      tooltip: {
+        trigger: 'axis',
+        formatter(params) {
+          if (!params || !params.length) return ''
+
+          const p = params[0]
+          const label = p.axisValue
+          const isWeekly = type === 'weekly'
+
+          let extra = ''
+          if (isWeekly && ds.rangeMap && ds.rangeMap[label]) {
+            const { start, end } = ds.rangeMap[label]
+            extra = `<div style="margin-top:4px;color:#999;font-size:12px">
+            周区间：${start} ~ ${end}
+          </div>`
+          }
+
+          const lines = params
+            .map(
+              (item) => `${item.marker}${item.seriesName}: ${item.data} 小时`
+            )
+            .join('<br/>')
+
+          return `
+          <div>${label}</div>
+          ${extra}
+          ${lines}
+        `
+        }
+      },
       legend: { data: ds.authors },
       xAxis: { type: 'category', data: ds.allPeriods },
       yAxis: { type: 'value' },
@@ -1533,7 +1598,9 @@ function renderWeeklyRiskSummary(
   const curTotal = Array.from(curMap.values()).reduce((a, b) => a + b, 0)
   const prevTotal = Array.from(prevMap.values()).reduce((a, b) => a + b, 0)
   const delta =
-    prevTotal > 0 ? Math.round(((curTotal - prevTotal) / prevTotal) * 100) : null
+    prevTotal > 0
+      ? Math.round(((curTotal - prevTotal) / prevTotal) * 100)
+      : null
 
   // 找当前周最“活跃”的人（加班提交最多），并统计他加班的自然日数
   let topAuthor = null
@@ -1596,7 +1663,9 @@ function computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff) {
       dayKey = d.toISOString().slice(0, 10)
     } else if (h >= 0 && h < cutoff && h < startHour) {
       overtime = 24 - endHour + h
-      const cur = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+      const cur = new Date(
+        Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+      )
       cur.setUTCDate(cur.getUTCDate() - 1)
       dayKey = cur.toISOString().slice(0, 10)
     }
@@ -1618,7 +1687,12 @@ function renderWeeklyDurationRiskSummary(
   if (!box) return
   const now = new Date()
   const curWeek = getIsoWeekKey(now.toISOString().slice(0, 10))
-  const byAuthorDay = computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff)
+  const byAuthorDay = computeAuthorDailyMaxOvertime(
+    commits,
+    startHour,
+    endHour,
+    cutoff
+  )
   const sums = []
   byAuthorDay.forEach((dayMap, author) => {
     let total = 0
@@ -1639,7 +1713,9 @@ function renderWeeklyDurationRiskSummary(
       let level = '轻度'
       if (total >= 12) level = '严重'
       else if (total >= 6) level = '中度'
-      lines.push(`${author} 本周累计加班 ${total.toFixed(2)} 小时（${level}）。`)
+      lines.push(
+        `${author} 本周累计加班 ${total.toFixed(2)} 小时（${level}）。`
+      )
     })
   }
   box.innerHTML = `
@@ -1663,7 +1739,12 @@ function renderMonthlyDurationRiskSummary(
   if (!box) return
   const now = new Date()
   const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  const byAuthorDay = computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff)
+  const byAuthorDay = computeAuthorDailyMaxOvertime(
+    commits,
+    startHour,
+    endHour,
+    cutoff
+  )
   const sums = []
   byAuthorDay.forEach((dayMap, author) => {
     let total = 0
@@ -1684,7 +1765,9 @@ function renderMonthlyDurationRiskSummary(
       let level = '轻度'
       if (total >= 20) level = '严重'
       else if (total >= 10) level = '中度'
-      lines.push(`${author} 本月累计加班 ${total.toFixed(2)} 小时（${level}）。`)
+      lines.push(
+        `${author} 本月累计加班 ${total.toFixed(2)} 小时（${level}）。`
+      )
     })
   }
   box.innerHTML = `
@@ -1707,11 +1790,18 @@ function renderRolling30DurationRiskSummary(
   const box = document.getElementById('rolling30DurationRiskSummary')
   if (!box) return
   const now = new Date()
-  const utcToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+  const utcToday = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  )
   utcToday.setUTCDate(utcToday.getUTCDate() - 29)
   const startKey = utcToday.toISOString().slice(0, 10)
 
-  const byAuthorDay = computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff)
+  const byAuthorDay = computeAuthorDailyMaxOvertime(
+    commits,
+    startHour,
+    endHour,
+    cutoff
+  )
   const sums = []
   byAuthorDay.forEach((dayMap, author) => {
     let total = 0
@@ -1731,7 +1821,9 @@ function renderRolling30DurationRiskSummary(
       let level = '轻度'
       if (total >= 20) level = '严重'
       else if (total >= 10) level = '中度'
-      lines.push(`${author} 最近30天累计加班 ${total.toFixed(2)} 小时（${level}）。`)
+      lines.push(
+        `${author} 最近30天累计加班 ${total.toFixed(2)} 小时（${level}）。`
+      )
     })
   }
   box.innerHTML = `
@@ -1766,7 +1858,8 @@ function renderMonthlyRiskSummary(
     const d = new Date(c.date)
     if (Number.isNaN(d.valueOf())) return
     const h = d.getHours()
-    const isOT = (h >= endHour && h < 24) || (h >= 0 && h < cutoff && h < startHour)
+    const isOT =
+      (h >= endHour && h < 24) || (h >= 0 && h < cutoff && h < startHour)
     if (!isOT) return
 
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -1785,14 +1878,18 @@ function renderMonthlyRiskSummary(
     const mm = monthMax.get(key)
     const cur = mm.get(author)
     const dateStr = d.toISOString().slice(0, 10)
-    if (!cur || overtime > cur.max) mm.set(author, { max: overtime, date: dateStr })
+    if (!cur || overtime > cur.max)
+      mm.set(author, { max: overtime, date: dateStr })
   })
 
   const curMap = monthAuthor.get(curKey) || new Map()
   const prevMap = monthAuthor.get(prevKey) || new Map()
   const curTotal = Array.from(curMap.values()).reduce((a, b) => a + b, 0)
   const prevTotal = Array.from(prevMap.values()).reduce((a, b) => a + b, 0)
-  const delta = prevTotal > 0 ? Math.round(((curTotal - prevTotal) / prevTotal) * 100) : null
+  const delta =
+    prevTotal > 0
+      ? Math.round(((curTotal - prevTotal) / prevTotal) * 100)
+      : null
 
   let topAuthor = null
   let top = { max: -1, date: null }
@@ -1830,7 +1927,9 @@ function renderMonthlyRiskSummary(
         else if (top.max < prevMax) trend2 = '较上月提前'
         else trend2 = '与上月持平'
       }
-      lines.push(`${topAuthor} 本月最晚超出下班 ${top.max.toFixed(2)} 小时（${top.date}），${trend2}。`)
+      lines.push(
+        `${topAuthor} 本月最晚超出下班 ${top.max.toFixed(2)} 小时（${top.date}），${trend2}。`
+      )
       if (top.max >= 2) lines.push('已超过 2 小时，存在严重加班风险。')
       else if (top.max >= 1) lines.push('已超过 1 小时，存在中度加班风险。')
     }
@@ -1850,13 +1949,7 @@ function renderMonthlyRiskSummary(
 }
 
 // ========= 开发者加班“最晚”趋势（每期取最大超时） =========
-function buildAuthorLatestDataset(
-  commits,
-  type,
-  startHour,
-  endHour,
-  cutoff
-) {
+function buildAuthorLatestDataset(commits, type, startHour, endHour, cutoff) {
   const byAuthor = new Map()
   const periods = new Set()
 
@@ -1867,8 +1960,7 @@ function buildAuthorLatestDataset(
 
     let overtime = null
     if (h >= endHour && h < 24) overtime = h - endHour
-    else if (h >= 0 && h < cutoff && h < startHour)
-      overtime = 24 - endHour + h
+    else if (h >= 0 && h < cutoff && h < startHour) overtime = 24 - endHour + h
     if (overtime == null) return
 
     let key
@@ -1889,6 +1981,7 @@ function buildAuthorLatestDataset(
   })
 
   const allPeriods = Array.from(periods).sort()
+
   const authors = Array.from(byAuthor.keys()).sort()
   const series = authors.map((a) => ({
     name: a,
@@ -1922,8 +2015,45 @@ function drawAuthorLatestOvertimeTrends(commits, stats) {
       endHour,
       cutoff
     )
+    ds.rangeMap = {}
+
+    for (const period of ds.allPeriods) {
+      if (period.includes('-W')) {
+        const [yy, ww] = period.split('-W')
+        ds.rangeMap[period] = getISOWeekRange(Number(yy), Number(ww))
+      }
+    }
     chart.setOption({
-      tooltip: { trigger: 'axis' },
+      tooltip: {
+        trigger: 'axis',
+        formatter(params) {
+          if (!params || !params.length) return ''
+
+          const p = params[0]
+          const label = p.axisValue
+          const isWeekly = type === 'weekly'
+
+          let extra = ''
+          if (isWeekly && ds.rangeMap && ds.rangeMap[label]) {
+            const { start, end } = ds.rangeMap[label]
+            extra = `<div style="margin-top:4px;color:#999;font-size:12px">
+            周区间：${start} ~ ${end}
+          </div>`
+          }
+
+          const lines = params
+            .map(
+              (item) => `${item.marker}${item.seriesName}: ${item.data} 小时`
+            )
+            .join('<br/>')
+
+          return `
+          <div>${label}</div>
+          ${extra}
+          ${lines}
+        `
+        }
+      },
       legend: { data: ds.authors },
       xAxis: { type: 'category', data: ds.allPeriods },
       yAxis: {
@@ -1974,8 +2104,7 @@ function renderLatestRiskSummary(
     const h = d.getHours()
     let overtime = null
     if (h >= endHour && h < 24) overtime = h - endHour
-    else if (h >= 0 && h < cutoff && h < startHour)
-      overtime = 24 - endHour + h
+    else if (h >= 0 && h < cutoff && h < startHour) overtime = 24 - endHour + h
     if (overtime == null) return
 
     const wKey = getIsoWeekKey(d.toISOString().slice(0, 10))
@@ -2107,7 +2236,9 @@ function renderLatestMonthlyRiskSummary(
       else if (top.max < prevMax) trend = '较上月提前'
       else trend = '与上月持平'
     }
-    lines.push(`${topAuthor} 本月最晚超出下班 ${top.max.toFixed(2)} 小时（${top.date}），${trend}。`)
+    lines.push(
+      `${topAuthor} 本月最晚超出下班 ${top.max.toFixed(2)} 小时（${top.date}），${trend}。`
+    )
     if (top.max >= 2) {
       lines.push('已超过 2 小时，存在严重加班风险，请关注工作节奏。')
     } else if (top.max >= 1) {
@@ -2137,8 +2268,7 @@ async function main() {
     latestByDay,
     config,
     authorChanges
-  } =
-    await loadData()
+  } = await loadData()
   commitsAll = commits
   filtered = commitsAll.slice()
   window.__overtimeEndHour =
@@ -2184,7 +2314,6 @@ async function main() {
   computeAndRenderLatestOvertime(latestByDay)
   renderKpi(stats)
 }
-
 
 // 抽屉关闭交互（按钮 + 点击遮罩）
 document.getElementById('sidebarClose').onclick = () => {

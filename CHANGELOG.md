@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.28](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.27...v1.0.28) (2025-12-09)
+
+
+### Features
+
+* 🎸 getGitLogs date format iso -> iso-local ([d9b215c](https://github.com/tomatobybike/wukong-gitlog-cli/commit/d9b215ca1479c8337611d4eee3863c0adf14b971))
+* 🎸 package.lock del ([acb73bf](https://github.com/tomatobybike/wukong-gitlog-cli/commit/acb73bf92514770d3646d83a3ef2c0bb0b0d4e4d))
+
 ### [1.0.27](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.26...v1.0.27) (2025-12-09)
 
 

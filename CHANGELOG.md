@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.29](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.28...v1.0.29) (2025-12-09)
+
+
+### Features
+
+* 🎸 drawer title ([20bd05a](https://github.com/tomatobybike/wukong-gitlog-cli/commit/20bd05a2d395f803374845d78628ac0d79c99dfa))
+
 ### [1.0.28](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.27...v1.0.28) (2025-12-09)
 
 

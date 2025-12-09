@@ -4,7 +4,7 @@ export async function getGitLogs(opts) {
   const { author, email, since, until, limit, merges } = opts
 
   const pretty = '%H%x1f%an%x1f%ae%x1f%ad%x1f%s%x1f%B%x1e'
-  const args = ['log', `--pretty=format:${pretty}`, '--date=iso']
+  const args = ['log', `--pretty=format:${pretty}`, '--date=iso-local']
 
   if (author) args.push(`--author=${author}`)
   if (email) args.push(`--author=${email}`)

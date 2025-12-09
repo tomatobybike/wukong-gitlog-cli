@@ -7,6 +7,7 @@ import ora from 'ora'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+// eslint-disable-next-line no-unused-vars
 import { CLI_NAME } from './constants/index.mjs'
 import {
   exportExcel,

@@ -279,13 +279,14 @@ function drawHourlyOvertime(stats, onHourClick) {
 }
 
 // showSideBarForHour 实现
-function showSideBarForHour(hour, commitsOrCount) {
+function showSideBarForHour({ hour, commitsOrCount, titleDrawer }) {
   // 支持传入 number（仅次数）或 array（详细 commit 列表）
   // 统一复用通用详情侧栏 DOM
   const sidebar = document.getElementById('dayDetailSidebar')
   const backdrop = document.getElementById('sidebarBackdrop')
   const titleEl = document.getElementById('sidebarTitle')
   const contentEl = document.getElementById('sidebarContent')
+  const drawerTitleEl = document.getElementById('sidebarDrawerTitle')
 
   // 兼容未传入侧栏 DOM 的情况（优雅降级）
   if (!sidebar || !titleEl || !contentEl) {
@@ -295,6 +296,7 @@ function showSideBarForHour(hour, commitsOrCount) {
     return
   }
 
+  drawerTitleEl.innerHTML = titleDrawer || '🕒 小时详情'
   titleEl.innerHTML = `🕒 ${String(hour).padStart(2, '0')}:00 - ${String(hour).padStart(2, '0')}:59`
 
   // 如果只是 number，显示计数
@@ -382,6 +384,8 @@ function drawDailyTrend(commits, onDayClick) {
   const data = labels.map((l) => map.get(l))
 
   const el = document.getElementById('dailyTrendChart')
+  const titleDrawer = el.getAttribute('data-title') || ''
+
   // eslint-disable-next-line no-undef
   const chart = echarts.init(el)
 
@@ -474,21 +478,29 @@ function drawDailyTrend(commits, onDayClick) {
       const dayCommits = commits.filter(
         (c) => new Date(c.date).toISOString().slice(0, 10) === date
       )
-      onDayClick(date, count, dayCommits)
+      // onDayClick(date, count, dayCommits)
+      onDayClick({
+        date,
+        count,
+        commits: dayCommits,
+        titleDrawer
+      })
     })
   }
 
   return chart
 }
 
-function showSideBarForWeek(period, weeklyItem, commits = []) {
+function showSideBarForWeek({ period, weeklyItem, commits = [], titleDrawer }) {
   // 统一复用通用详情侧栏 DOM
   const sidebar = document.getElementById('dayDetailSidebar')
   const backdrop = document.getElementById('sidebarBackdrop')
   const titleEl = document.getElementById('sidebarTitle')
   const contentEl = document.getElementById('sidebarContent')
+  const drawerTitleEl = document.getElementById('sidebarDrawerTitle')
 
   titleEl.innerHTML = `📅 周期：<b>${period}</b>`
+  drawerTitleEl.innerHTML = titleDrawer || ''
 
   let html = `
     <div style="padding:6px 0;">
@@ -532,6 +544,8 @@ function drawWeeklyTrend(weekly, commits, onWeekClick) {
   const dataCount = weekly.map((w) => w.outsideWorkCount)
 
   const el = document.getElementById('weeklyTrendChart')
+  const titleDrawer = el.getAttribute('data-title') || ''
+
   const chart = echarts.init(el)
 
   chart.setOption({
@@ -634,7 +648,13 @@ function drawWeeklyTrend(weekly, commits, onWeekClick) {
 
     // 回调交给外面决定如何打开侧栏
     if (typeof onWeekClick === 'function') {
-      onWeekClick(w.period, w, weeklyCommits)
+      // onWeekClick(w.period, w, weeklyCommits)
+      onWeekClick({
+        period: w.period,
+        weeklyItem: w,
+        commits: weeklyCommits,
+        titleDrawer
+      })
     }
   })
 
@@ -648,6 +668,7 @@ function drawMonthlyTrend(monthly, commits, onMonthClick) {
   const dataRate = monthly.map((m) => +(m.outsideWorkRate * 100).toFixed(1)) // 0–100%
 
   const el = document.getElementById('monthlyTrendChart')
+  const titleDrawer = el.getAttribute('data-title') || ''
   // eslint-disable-next-line no-undef
   const chart = echarts.init(el)
 
@@ -750,7 +771,13 @@ function drawMonthlyTrend(monthly, commits, onMonthClick) {
         )}`
         return m === ym
       })
-      onMonthClick(ym, monthCommits.length, monthCommits)
+      // onMonthClick(ym, monthCommits.length, monthCommits)
+      onMonthClick({
+        date: ym,
+        count: monthCommits.length,
+        commits: monthCommits,
+        titleDrawer
+      })
     })
   }
 
@@ -787,6 +814,8 @@ function drawLatestHourDaily(latestByDay, commits, onDayClick) {
   const maxV = numericValues.length > 0 ? Math.max(...numericValues) : 0
 
   const el = document.getElementById('latestHourDailyChart')
+  const titleDrawer = el.getAttribute('data-title') || ''
+
   // eslint-disable-next-line no-undef
   const chart = echarts.init(el)
 
@@ -886,7 +915,13 @@ function drawLatestHourDaily(latestByDay, commits, onDayClick) {
       const idx = params.dataIndex
       const date = labels[idx]
       const list = dayCommitsMap[date] || []
-      onDayClick(date, list.length, list)
+      // onDayClick(date, list.length, list)
+      onDayClick({
+        date,
+        count: list.length,
+        commits: list,
+        titleDrawer
+      })
     })
   }
 
@@ -910,6 +945,8 @@ function drawDailySeverity(latestByDay, commits, onDayClick) {
   const sev = raw.map((v) => (v == null ? 0 : Math.max(0, Number(v) - endH)))
 
   const el = document.getElementById('dailySeverityChart')
+  const titleDrawer = el.getAttribute('data-title') || ''
+
   // eslint-disable-next-line no-undef
   const chart = echarts.init(el)
 
@@ -1011,7 +1048,13 @@ function drawDailySeverity(latestByDay, commits, onDayClick) {
       const idx = params.dataIndex
       const date = labels[idx]
       const list = dayCommitsMap[date] || []
-      onDayClick(date, list.length, list)
+      // onDayClick(date, list.length, list)
+      onDayClick({
+        date,
+        count: list.length,
+        commits: list,
+        titleDrawer
+      })
     })
   }
 
@@ -1122,6 +1165,8 @@ function drawDailyTrendSeverity(commits, weekly, onDayClick) {
 
   // ---------- 7. 绘图 ----------
   const el = document.getElementById('dailyTrendChartDog')
+  const titleDrawer = el.getAttribute('data-title') || ''
+
   const chart = echarts.init(el)
 
   chart.setOption({
@@ -1161,7 +1206,13 @@ function drawDailyTrendSeverity(commits, weekly, onDayClick) {
       if (params.componentType === 'series') {
         const date = labels[params.dataIndex]
         const count = data[params.dataIndex]
-        onDayClick(date, count, dayCommitsDetail[date])
+        // onDayClick(date, count, dayCommitsDetail[date])
+        onDayClick({
+          date,
+          count,
+          commits: dayCommitsDetail[date],
+          titleDrawer
+        })
       }
     })
   }
@@ -1176,13 +1227,15 @@ function drawDailyTrendSeverity(commits, weekly, onDayClick) {
   }
 }
 
-function showDayDetailSidebar(date, count, commits) {
+function showDayDetailSidebar({ date, count, commits, titleDrawer }) {
   const sidebar = document.getElementById('dayDetailSidebar')
   const backdrop = document.getElementById('sidebarBackdrop')
   const title = document.getElementById('sidebarTitle')
   const content = document.getElementById('sidebarContent')
+  const drawerTitleEl = document.getElementById('sidebarDrawerTitle')
 
   title.innerHTML = `📅 ${date}（${count} 次提交）`
+  drawerTitleEl.innerHTML = titleDrawer || ''
 
   // 渲染详情
   content.innerHTML = commits
@@ -1392,11 +1445,52 @@ const drawChangeTrends = (stats) => {
   if (!el) return null
   const chart = echarts.init(el)
 
-  function render(t) {
-    const { authors, allPeriods, series } = buildDataset(stats, t)
+  function render(type) {
+    const { authors, allPeriods, series } = buildDataset(stats, type)
+    const ds = { authors, allPeriods, series }
+    ds.rangeMap = {}
 
+    for (const period of ds.allPeriods) {
+      if (period.includes('-W')) {
+        const [yy, ww] = period.split('-W')
+        ds.rangeMap[period] = getISOWeekRange(Number(yy), Number(ww))
+      }
+    }
     chart.setOption({
-      tooltip: { trigger: 'axis' },
+      // tooltip: { trigger: 'axis' },
+      tooltip: {
+        trigger: 'axis',
+        formatter(params) {
+          if (!params || !params.length) return ''
+
+          const p = params[0]
+          const label = p.axisValue
+          const isWeekly = type === 'weekly'
+
+          let extra = ''
+          if (isWeekly && ds.rangeMap && ds.rangeMap[label]) {
+            const { start, end } = ds.rangeMap[label]
+            //   extra = `<div style="margin-top:4px;color:#999;font-size:12px">
+            //   周区间：${start} ~ ${end}
+            // </div>`
+            // TODO: remove debug log before production
+            extra = ''
+          }
+
+          const lines = params
+            .filter((i) => i.data > 0)
+            .map(
+              (item) => `${item.marker}${item.seriesName}: ${item.data} 行变更`
+            )
+            .join('<br/>')
+
+          return `
+          <div>${label}</div>
+          ${extra}
+          ${lines}
+        `
+        }
+      },
       legend: { data: authors },
       xAxis: { type: 'category', data: allPeriods },
       yAxis: { type: 'value' },
@@ -1511,6 +1605,7 @@ function drawAuthorOvertimeTrends(commits, stats) {
           }
 
           const lines = params
+            .filter((i) => i.data > 0)
             .map(
               (item) => `${item.marker}${item.seriesName}: ${item.data} 小时`
             )
@@ -2042,6 +2137,7 @@ function drawAuthorLatestOvertimeTrends(commits, stats) {
           }
 
           const lines = params
+            .filter((i) => i.data > 0)
             .map(
               (item) => `${item.marker}${item.seriesName}: ${item.data} 小时`
             )
@@ -2285,7 +2381,11 @@ async function main() {
     // 使用举例
     const hourCommitsDetail = groupCommitsByHour(commits)
     // 将 commit 列表传给侧栏（若没有详情，则传空数组）
-    showSideBarForHour(hour, hourCommitsDetail[hour] || [])
+    showSideBarForHour({
+      hour,
+      commitsOrCount: hourCommitsDetail[hour] || [],
+      titleDrawer: '每小时加班分布'
+    })
   })
   drawOutsideVsInside(stats)
 

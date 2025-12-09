@@ -25,33 +25,33 @@
       <section id="charts">
         <div class="chart-card">
           <h2>每小时加班分布 (小时 -> 提交数)</h2>
-          <div id="hourlyOvertimeChart" class="echart"></div>
+          <div id="hourlyOvertimeChart" data-title="每小时加班分布" class="echart"></div>
         </div>
 
         <div class="chart-card">
           <h2>按日提交趋势</h2>
-          <div id="dailyTrendChart" class="echart"></div>
+          <div id="dailyTrendChart" data-title="按日提交趋势" class="echart"></div>
         </div>
 
         <div class="chart-card">
           <h2>每周趋势（加班占比）</h2>
-          <div id="weeklyTrendChart" class="echart"></div>
+          <div id="weeklyTrendChart" data-title="每周趋势（加班占比）" class="echart"></div>
         </div>
         <div class="chart-card">
           <h2>每月趋势（加班占比）</h2>
-          <div id="monthlyTrendChart" class="echart"></div>
+          <div id="monthlyTrendChart" data-title="每月趋势（加班占比）" class="echart"></div>
         </div>
         <div class="chart-card">
           <h2>每日最晚提交时间（小时）</h2>
-          <div id="latestHourDailyChart" class="echart"></div>
+          <div id="latestHourDailyChart" data-title="每日最晚提交时间（小时）" class="echart"></div>
         </div>
         <div class="chart-card">
           <h2>每日超过下班的小时数</h2>
-          <div id="dailySeverityChart" class="echart"></div>
+          <div id="dailySeverityChart" data-title="每日超过下班的小时数" class="echart"></div>
         </div>
         <div class="chart-card">
           <h2>按日提交趋势</h2>
-          <div id="dailyTrendChartDog" class="echart"></div>
+          <div id="dailyTrendChartDog" data-title="按日提交趋势"  class="echart"></div>
         </div>
         <div class="chart-card">
           <div id="mostTiredDay"></div>
@@ -147,9 +147,10 @@
     <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
     <div id="dayDetailSidebar" class="sidebar">
       <div class="sidebar-header">
-        <span id="sidebarTitle"></span>
+        <span id="sidebarDrawerTitle"></span>
         <button id="sidebarClose">×</button>
       </div>
+      <div id="sidebarTitle"></div>
       <div id="sidebarContent" class="sidebar-content"></div>
     </div>
 

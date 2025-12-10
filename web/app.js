@@ -113,6 +113,7 @@ function updatePager() {
 
 function applySearch() {
   const q = document.getElementById('searchInput').value.trim().toLowerCase()
+
   if (!q) {
     filtered = commitsAll.slice()
   } else {
@@ -1132,13 +1133,13 @@ function drawDailyTrendSeverity(commits, weekly, onDayClick) {
     silent: true,
     itemStyle: { opacity: 0.15 },
     data: [
-      [{ name: '0–1 小时', yAxis: 0 }, { yAxis: 1 }],
+      [{ name: '0–5 次', yAxis: 0 }, { yAxis: 5 }],
       [
-        { name: '1–2 小时', yAxis: 1 },
-        { yAxis: 2, itemStyle: { color: 'orange', opacity: 0.25 } }
+        { name: '5–10 次', yAxis: 5 },
+        { yAxis: 10, itemStyle: { color: 'orange', opacity: 0.25 } }
       ],
       [
-        { name: '2 小时以上', yAxis: 2 },
+        { name: '10 次以上', yAxis: 10 },
         { yAxis: 999, itemStyle: { color: 'red', opacity: 0.25 } }
       ]
     ]
@@ -1607,7 +1608,7 @@ function drawAuthorOvertimeTrends(commits, stats) {
           const lines = params
             .filter((i) => i.data > 0)
             .map(
-              (item) => `${item.marker}${item.seriesName}: ${item.data} 小时`
+              (item) => `${item.marker}${item.seriesName}: ${item.data} 次提交`
             )
             .join('<br/>')
 
@@ -1620,7 +1621,9 @@ function drawAuthorOvertimeTrends(commits, stats) {
       },
       legend: { data: ds.authors },
       xAxis: { type: 'category', data: ds.allPeriods },
-      yAxis: { type: 'value' },
+      // 把 y 轴名称改为提交数
+      yAxis: { type: 'value', name: '提交数 (次)' },
+
       series: ds.series
     })
   }

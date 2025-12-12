@@ -97,9 +97,10 @@ function renderCommitsTablePage() {
   const end = start + pageSize
   filtered.slice(start, end).forEach((c) => {
     const tr = document.createElement('tr')
-    tr.innerHTML = `<td>${c.hash.slice(0, 8)}</td><td>${c.author}</td><td>${formatDate(c.date)}</td><td>${c.message}</td><td>${c.changed}</td>`
+    tr.innerHTML = `<td>${c.hash.slice(0, 8)}</td><td>${c.author}</td><td>${c.email}</td><td>${formatDate(c.date)}</td><td>${c.message}</td><td>${c.changed}</td>`
     tbody.appendChild(tr)
   })
+  document.getElementById('commitsTotal').textContent = `共${filtered.length}条记录`
 }
 
 function updatePager() {
@@ -120,9 +121,10 @@ function applySearch() {
     filtered = commitsAll.filter((c) => {
       const h = c.hash.toLowerCase()
       const a = String(c.author || '').toLowerCase()
+      const e = String(c.email || '').toLowerCase()
       const m = String(c.message || '').toLowerCase()
       const d = formatDate(c.date).toLowerCase()
-      return h.includes(q) || a.includes(q) || m.includes(q) || d.includes(q)
+      return h.includes(q) || a.includes(q)|| e.includes(q) || m.includes(q) || d.includes(q)
     })
   }
   page = 1

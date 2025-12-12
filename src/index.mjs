@@ -16,6 +16,7 @@ import {
 } from './excel.mjs'
 import { getGitLogsFast } from './git.mjs'
 import { renderAuthorChangesJson } from './json.mjs'
+import { setConfig } from './lib/configStore.mjs'
 import {
   analyzeOvertime,
   renderOvertimeCsv,
@@ -26,12 +27,14 @@ import { renderAuthorMapText } from './renderAuthorMapText.mjs'
 import { startServer } from './server.mjs'
 import { renderChangedLinesText, renderText } from './text.mjs'
 import { checkUpdateWithPatch } from './utils/checkUpdate.mjs'
+import { handleSuccess } from './utils/handleSuccess.mjs'
 import {
   groupRecords,
   outputFilePath,
   writeJSON,
   writeTextFile
 } from './utils/index.mjs'
+import { logDev } from './utils/logDev.mjs'
 import { showVersionInfo } from './utils/showVersionInfo.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -78,6 +81,8 @@ export function getWeekRange(periodStr) {
 }
 
 const main = async () => {
+  const startTime = performance.now()
+
   const program = new Command()
 
   program
@@ -179,6 +184,8 @@ const main = async () => {
     .parse()
 
   const opts = program.opts()
+  setConfig('debug', opts.debug === true)
+
   // compute output directory root early (so serve-only can use it)
   const outDir = opts.outParent
     ? path.resolve(process.cwd(), '..', 'output-wukong')
@@ -331,7 +338,7 @@ const main = async () => {
       const file = opts.out || 'overtime.json'
       const filepath = outputFilePath(file, outDir)
       writeJSON(filepath, stats)
-      console.log(chalk.green(`overtime JSON 已导出: ${filepath}`))
+      logDev(`overtime JSON 已导出: ${filepath}`)
     }
     // Always write human readable overtime text to file (default: overtime.txt)
     const outBase = opts.out
@@ -348,9 +355,9 @@ const main = async () => {
     const overtimeCsvFileName = `overtime_${outBase}.csv`
     const overtimeCsvFile = outputFilePath(overtimeCsvFileName, outDir)
     writeTextFile(overtimeCsvFile, renderOvertimeCsv(stats))
-    console.log(chalk.green(`Overtime text 已导出: ${overtimeFile}`))
-    console.log(chalk.green(`Overtime table (tabs) 已导出: ${overtimeTabFile}`))
-    console.log(chalk.green(`Overtime CSV 已导出: ${overtimeCsvFile}`))
+    logDev(`Overtime text 已导出: ${overtimeFile}`)
+    logDev(`Overtime table (tabs) 已导出: ${overtimeTabFile}`)
+    logDev(`Overtime CSV 已导出: ${overtimeCsvFile}`)
 
     // If serve mode is enabled, write data modules and launch the web server
     if (opts.serve) {
@@ -594,9 +601,7 @@ const main = async () => {
           const perMonthFileName = `month/overtime_${outBase}_${k}.txt`
           const perMonthFile = outputFilePath(perMonthFileName, outDir)
           writeTextFile(perMonthFile, renderOvertimeText(s))
-          console.log(
-            chalk.green(`Overtime 月度(${k}) 已导出: ${perMonthFile}`)
-          )
+          logDev(`Overtime 月度(${k}) 已导出: ${perMonthFile}`)
           // per-period CSV / Tab format (按需生成)
           if (perPeriodFormats.includes('csv')) {
             try {
@@ -605,10 +610,8 @@ const main = async () => {
                 outputFilePath(perMonthCsvName, outDir),
                 renderOvertimeCsv(s)
               )
-              console.log(
-                chalk.green(
-                  `Overtime 月度(CSV)(${k}) 已导出: ${outputFilePath(perMonthCsvName, outDir)}`
-                )
+              logDev(
+                `Overtime 月度(CSV)(${k}) 已导出: ${outputFilePath(perMonthCsvName, outDir)}`
               )
             } catch (err) {
               console.warn(
@@ -624,10 +627,8 @@ const main = async () => {
                 outputFilePath(perMonthTabName, outDir),
                 renderOvertimeTab(s)
               )
-              console.log(
-                chalk.green(
-                  `Overtime 月度(Tab)(${k}) 已导出: ${outputFilePath(perMonthTabName, outDir)}`
-                )
+              logDev(
+                `Overtime 月度(Tab)(${k}) 已导出: ${outputFilePath(perMonthTabName, outDir)}`
               )
             } catch (err) {
               console.warn(
@@ -645,7 +646,7 @@ const main = async () => {
       })
       if (!opts.perPeriodOnly) {
         writeTextFile(monthlyFile, monthlyContent)
-        console.log(chalk.green(`Overtime 月度汇总 已导出: ${monthlyFile}`))
+        logDev(`Overtime 月度汇总 已导出: ${monthlyFile}`)
       }
       // per-period Excel (sheets or files)
       if (perPeriodFormats.includes('xlsx')) {
@@ -658,9 +659,7 @@ const main = async () => {
               stats: opts.stats,
               gerrit: opts.gerrit
             })
-            console.log(
-              chalk.green(`Overtime 月度(XLSX) 已导出: ${monthXlsxFile}`)
-            )
+            logDev(`Overtime 月度(XLSX) 已导出: ${monthXlsxFile}`)
           } catch (err) {
             console.warn(
               'Export month XLSX (sheets) failed:',
@@ -725,7 +724,9 @@ const main = async () => {
           const perWeekFileName = `week/overtime_${outBase}_${k}.txt`
           const perWeekFile = outputFilePath(perWeekFileName, outDir)
           writeTextFile(perWeekFile, renderOvertimeText(s))
-          console.log(chalk.green(`Overtime 周度(${k}) 已导出: ${perWeekFile}`))
+          // console.log(chalk.green(`Overtime 周度(${k}) 已导出: ${perWeekFile}`))
+          logDev(`Overtime 周度(${k}) 已导出: ${perWeekFile}`)
+
           // eslint-disable-next-line no-shadow
           const perPeriodFormats = String(opts.perPeriodFormats || '')
             .split(',')
@@ -743,10 +744,8 @@ const main = async () => {
                 outputFilePath(perWeekCsvName, outDir),
                 renderOvertimeCsv(s)
               )
-              console.log(
-                chalk.green(
-                  `Overtime 周度(CSV)(${k}) 已导出: ${outputFilePath(perWeekCsvName, outDir)}`
-                )
+              logDev(
+                `Overtime 周度(CSV)(${k}) 已导出: ${outputFilePath(perWeekCsvName, outDir)}`
               )
             } catch (err) {
               console.warn(
@@ -762,10 +761,8 @@ const main = async () => {
                 outputFilePath(perWeekTabName, outDir),
                 renderOvertimeTab(s)
               )
-              console.log(
-                chalk.green(
-                  `Overtime 周度(Tab)(${k}) 已导出: ${outputFilePath(perWeekTabName, outDir)}`
-                )
+              logDev(
+                `Overtime 周度(Tab)(${k}) 已导出: ${outputFilePath(perWeekTabName, outDir)}`
               )
             } catch (err) {
               console.warn(
@@ -782,7 +779,7 @@ const main = async () => {
         }
       })
       writeTextFile(weeklyFile, weeklyContent)
-      console.log(chalk.green(`Overtime 周度汇总 已导出: ${weeklyFile}`))
+      logDev(`Overtime 周度汇总 已导出: ${weeklyFile}`)
     } catch (err) {
       console.warn(
         'Generate weekly overtime failed:',
@@ -798,8 +795,10 @@ const main = async () => {
     writeJSON(filepath, groups || records)
     const jsonText = renderAuthorChangesJson(records)
     writeJSON(outputFilePath('author-changes.json', outDir), jsonText)
-    console.log(chalk.green(`JSON 已导出: ${filepath}`))
-    spinner.succeed('Done')
+    logDev(`JSON 已导出: ${filepath}`)
+    handleSuccess({ startTime, spinner })
+    // TODO: remove debug log before production
+    console.log('✅', 'SON/TEXT/EXCEL')
     return
   }
 
@@ -814,8 +813,11 @@ const main = async () => {
     )
 
     console.log(text)
-    console.log(chalk.green(`文本已导出: ${filepath}`))
-    spinner.succeed('Done')
+    logDev(`文本已导出: ${filepath}`)
+    
+    handleSuccess({ startTime, spinner })
+    console.log('✅', `opts.format === 'text'`)
+
     return
   }
 
@@ -835,9 +837,12 @@ const main = async () => {
     )
     const text = renderText(records, groups)
     writeTextFile(txtPath, text)
-    console.log(chalk.green(`Excel 已导出: ${excelPath}`))
-    console.log(chalk.green(`文本已自动导出: ${txtPath}`))
-    spinner.succeed('Done')
+    logDev(`Excel 已导出: ${excelPath}`)
+    logDev(`文本已自动导出: ${txtPath}`)
+
+    handleSuccess({ startTime, spinner })
+
+    console.log('✅', `opts.format === 'excel'`)
   }
 
   await autoCheckUpdate()

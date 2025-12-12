@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.36](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.35...v1.0.36) (2025-12-12)
+
+
+### Bug Fixes
+
+* 🐛 createAuthorNormalizer ([12f70ba](https://github.com/tomatobybike/wukong-gitlog-cli/commit/12f70ba10013cbba988d3ae1d7fed6f0949c6cbc))
+
 ### [1.0.35](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.34...v1.0.35) (2025-12-12)
 
 

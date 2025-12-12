@@ -200,8 +200,8 @@ export async function getGitLogsFast(opts = {}) {
   const commits = []
 
   // 匹配每个 commit header + numstat
-  // eslint-disable-next-line no-control-regex
   const commitRegex =
+    // eslint-disable-next-line no-control-regex
     /([0-9a-f]+)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([\s\S]*?)(?=(?:[0-9a-f]{7,40}\x1f)|\x1e$)/g
   let match
 

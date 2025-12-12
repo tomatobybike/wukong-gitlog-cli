@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.37](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.36...v1.0.37) (2025-12-12)
+
+
+### Features
+
+* 🎸 add logDev ([a85905b](https://github.com/tomatobybike/wukong-gitlog-cli/commit/a85905b038014fb62c7fd21713f63e2405e3cfa7))
+* 🎸 createOvertimeStats ([abb0051](https://github.com/tomatobybike/wukong-gitlog-cli/commit/abb0051efc91cceb9845a1c5c9a00f9d6747baf4))
+* 🎸 logDev ([e122042](https://github.com/tomatobybike/wukong-gitlog-cli/commit/e12204203a077630784caa16b01c566fdd72b84a))
+* 🎸 logger debug ([32a55fe](https://github.com/tomatobybike/wukong-gitlog-cli/commit/32a55fe8d191969ca887cb46789d14b65b446f6d))
+
 ### [1.0.36](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.35...v1.0.36) (2025-12-12)
 
 

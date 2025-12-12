@@ -1,26 +1,20 @@
-// authorNormalizer.js
 /**
  * 按邮箱自动归一化作者名字
- * - 优先使用中文姓名
- * - 如果同邮箱出现多个非中文名，保持第一个
- * - 自动清理空格与不可见字符
+ * - 中文名优先覆盖
+ * - 同邮箱多个英文名保持第一个
  * - 保留原始 author 以便 debug
  */
 export function createAuthorNormalizer() {
   const map = {} // email -> canonical name
-  const originalMap = {} // email -> 原始所有 author 名
+  const originalMap = {} // email -> Set of original author names
 
   function isChinese(str) {
     return /[\u4e00-\u9fa5]/.test(str)
   }
 
   function cleanName(str) {
-    if (!str) return ''
-    return str
-      // eslint-disable-next-line no-misleading-character-class
-      .replace(/[\u200B\u200C\u200D\uFEFF]/g, '') // 去零宽空格
-      .replace(/\s+/g, ' ') // 多空格 -> 单空格
-      .trim()
+    // eslint-disable-next-line no-misleading-character-class
+    return (str || '').replace(/[\u200B\u200C\u200D\uFEFF]/g, '').trim()
   }
 
   function cleanEmail(str) {
@@ -28,31 +22,30 @@ export function createAuthorNormalizer() {
   }
 
   function getAuthor(name, email) {
-    const cleanedName = cleanName(name)
-    const cleanedEmail = cleanEmail(email)
+    const n = cleanName(name)
+    const e = cleanEmail(email)
 
-    if (!cleanedEmail) return cleanedName || 'Unknown'
+    if (!e) return n || 'Unknown'
 
-    // 记录原始 author 便于 debug
-    if (!originalMap[cleanedEmail]) originalMap[cleanedEmail] = new Set()
-    if (cleanedName) originalMap[cleanedEmail].add(cleanedName)
+    // 记录原始 author
+    if (!originalMap[e]) originalMap[e] = new Set()
+    if (n) originalMap[e].add(n)
 
-    const canonical = map[cleanedEmail]
+    const prev = map[e]
 
-    // 首次遇到这个邮箱 → 记录当前作者名
-    if (!canonical) {
-      map[cleanedEmail] = cleanedName || cleanedEmail
-      return map[cleanedEmail]
+    // 中文名优先覆盖
+    if (isChinese(n)) {
+      map[e] = n
+      return n
     }
 
-    // 新名是中文 → 覆盖旧的
-    if (isChinese(cleanedName)) {
-      map[cleanedEmail] = cleanedName
-      return map[cleanedEmail]
-    }
+    // 已有中文名 → 返回中文
+    if (prev && isChinese(prev)) return prev
 
-    // 新名非中文 → 保留已有中文或旧名
-    return canonical
+    // 首次出现英文名 → 记录
+    if (!prev) map[e] = n
+
+    return map[e]
   }
 
   return {

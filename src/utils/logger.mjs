@@ -104,10 +104,6 @@ const writeToFile = (level, msg, newline) => {
 // 主函数工厂，支持 { write: true } 控制是否写文件
 function createLogger(level, colorFn, outFn = console.log) {
   return (...args) => {
-    if (level === 'debug' && !(process.env.DEBUG || process.env.WUKONG_DEBUG)) {
-      return
-    }
-
     let options = {}
     if (
       args.length &&

@@ -176,6 +176,7 @@ const main = async () => {
       (v) => parseInt(v, 10),
       3000
     )
+    .option('--debug', 'enable debug logs')
     .option(
       '--serve-only',
       '仅启动 web 服务，不导出或分析数据（使用 output-wukong/data 中已有的数据）'
@@ -184,6 +185,8 @@ const main = async () => {
     .parse()
 
   const opts = program.opts()
+  // FIXME: remove debug log before production
+  console.log('❌', 'opts.debug === true', opts.debug === true)
   setConfig('debug', opts.debug === true)
 
   // compute output directory root early (so serve-only can use it)
@@ -332,7 +335,7 @@ const main = async () => {
     const authorMapText = renderAuthorMapText(authorMap)
     console.log('\n Developers:\n', authorMapText, '\n')
     writeTextFile(outputFilePath('authors.text', outDir), authorMapText)
-    
+
     // if user requested json format, write stats to file
     if (opts.json || opts.format === 'json') {
       const file = opts.out || 'overtime.json'
@@ -797,8 +800,6 @@ const main = async () => {
     writeJSON(outputFilePath('author-changes.json', outDir), jsonText)
     logDev(`JSON 已导出: ${filepath}`)
     handleSuccess({ startTime, spinner })
-    // TODO: remove debug log before production
-    console.log('✅', 'SON/TEXT/EXCEL')
     return
   }
 
@@ -812,11 +813,11 @@ const main = async () => {
       renderChangedLinesText(records)
     )
 
-    console.log(text)
+    console.log('\n Commits List:\n', text, '\n')
+
     logDev(`文本已导出: ${filepath}`)
-    
+
     handleSuccess({ startTime, spinner })
-    console.log('✅', `opts.format === 'text'`)
 
     return
   }

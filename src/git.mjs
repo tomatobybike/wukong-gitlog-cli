@@ -76,21 +76,20 @@ export async function getGitLogsSlow(opts) {
     }
   }
 
-  return commits
+  return { commits, authorMap: {} }
 }
 
 export async function getGitLogsQuick(opts) {
   const { author, email, since, until, limit, merges } = opts
 
-  const pretty =
-    `${[
-      '%H', // hash
-      '%an', // author name
-      '%ae', // email
-      '%ad', // date
-      '%s', // subject
-      '%B' // body
-    ].join('%x1f')  }%x1e`
+  const pretty = `${[
+    '%H', // hash
+    '%an', // author name
+    '%ae', // email
+    '%ad', // date
+    '%s', // subject
+    '%B' // body
+  ].join('%x1f')}%x1e`
 
   const args = [
     'log',
@@ -177,11 +176,16 @@ export async function getGitLogsFast(opts = {}) {
     '%an', // author name
     '%ae', // email
     '%ad', // date
-    '%s',  // subject
-    '%B'   // body
-  ].join('%x1f')  }%x1e`
+    '%s', // subject
+    '%B' // body
+  ].join('%x1f')}%x1e`
 
-  const args = ['log', `--pretty=format:${pretty}`, '--date=iso-local', '--numstat']
+  const args = [
+    'log',
+    `--pretty=format:${pretty}`,
+    '--date=iso-local',
+    '--numstat'
+  ]
 
   if (author) args.push(`--author=${author}`)
   if (email) args.push(`--author=${email}`)
@@ -197,12 +201,14 @@ export async function getGitLogsFast(opts = {}) {
 
   // 匹配每个 commit header + numstat
   // eslint-disable-next-line no-control-regex
-  const commitRegex = /([0-9a-f]+)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([\s\S]*?)(?=(?:[0-9a-f]{7,40}\x1f)|\x1e$)/g
+  const commitRegex =
+    /([0-9a-f]+)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([\s\S]*?)(?=(?:[0-9a-f]{7,40}\x1f)|\x1e$)/g
   let match
 
   for (const ns of raw.matchAll(commitRegex)) {
     const [_, hash, authorName, emailAddr, date, subject, bodyAndNumstat] = ns
-    const [, changeId] = bodyAndNumstat.match(/Change-Id:\s*(I[0-9a-fA-F]+)/) || []
+    const [, changeId] =
+      bodyAndNumstat.match(/Change-Id:\s*(I[0-9a-fA-F]+)/) || []
 
     const c = {
       hash,

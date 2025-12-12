@@ -14,7 +14,7 @@ import {
   exportExcelAuthorChangeStats,
   exportExcelPerPeriodSheets
 } from './excel.mjs'
-import { getGitLogs } from './git.mjs'
+import { getGitLogsFast } from './git.mjs'
 import { renderAuthorChangesJson } from './json.mjs'
 import {
   analyzeOvertime,
@@ -22,6 +22,7 @@ import {
   renderOvertimeTab,
   renderOvertimeText
 } from './overtime.mjs'
+import { renderAuthorMapText } from './renderAuthorMapText.mjs'
 import { startServer } from './server.mjs'
 import { renderChangedLinesText, renderText } from './text.mjs'
 import { checkUpdateWithPatch } from './utils/checkUpdate.mjs'
@@ -203,8 +204,9 @@ const main = async () => {
 
   const spinner = ora('Loading...').start()
 
-  let records = await getGitLogs(opts)
-
+  const gitCommits = await getGitLogsFast(opts)
+  let { commits: records } = gitCommits
+  const { authorMap } = gitCommits
   // compute output directory root if user provided one or wants parent
 
   // --- Gerrit 地址处理（若提供） ---
@@ -319,6 +321,11 @@ const main = async () => {
     // Output to console
     console.log('\n--- Overtime analysis ---\n')
     console.log(renderOvertimeText(stats))
+
+    const authorMapText = renderAuthorMapText(authorMap)
+    console.log('\n Developers:\n', authorMapText, '\n')
+    writeTextFile(outputFilePath('authors.text', outDir), authorMapText)
+    
     // if user requested json format, write stats to file
     if (opts.json || opts.format === 'json') {
       const file = opts.out || 'overtime.json'
@@ -352,7 +359,10 @@ const main = async () => {
         const commitsModule = `export default ${JSON.stringify(records, null, 2)};\n`
         writeTextFile(dataCommitsFile, commitsModule)
 
-        const dataCommitsChangedFile = outputFilePath('data/author-changes.mjs', outDir)
+        const dataCommitsChangedFile = outputFilePath(
+          'data/author-changes.mjs',
+          outDir
+        )
         const jsonText = renderAuthorChangesJson(records)
 
         const commitsChangedModule = `export default ${JSON.stringify(jsonText, null, 2)};\n`
@@ -802,6 +812,7 @@ const main = async () => {
       outputFilePath('author-changes.text', outDir),
       renderChangedLinesText(records)
     )
+
     console.log(text)
     console.log(chalk.green(`文本已导出: ${filepath}`))
     spinner.succeed('Done')

@@ -3,8 +3,10 @@ import { buildAuthorChangeStats } from './stats.mjs'
 
 export function renderText(records, groups = null, opts = {}) {
   const { showGerrit = false } = opts
-  const pad = (s, n) =>
-    s.length >= n ? `${s.slice(0, n - 1)}…` : s + ' '.repeat(n - s.length)
+  const pad = (s, n) => {
+    return s.length >= n ? `${s.slice(0, n - 1)}…` : s + ' '.repeat(n - s.length)
+  }
+
 
   const baseHeader = `${pad('Hash', 10)} | ${pad('Author', 18)} | ${pad(
     'Date',

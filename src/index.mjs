@@ -185,8 +185,7 @@ const main = async () => {
     .parse()
 
   const opts = program.opts()
-  // FIXME: remove debug log before production
-  console.log('❌', 'opts.debug === true', opts.debug === true)
+
   setConfig('debug', opts.debug === true)
 
   // compute output directory root early (so serve-only can use it)
@@ -411,7 +410,7 @@ const main = async () => {
         )
         const weeklyModule = `export default ${JSON.stringify(weeklySeries, null, 2)};\n`
         writeTextFile(dataWeeklyFile, weeklyModule)
-        console.log(chalk.green(`Weekly series 已导出: ${dataWeeklyFile}`))
+        logDev(`Weekly series 已导出: ${dataWeeklyFile}`)
 
         // 新增：每月趋势数据（用于前端图表）
         const monthGroups2 = groupRecords(records, 'month')
@@ -441,7 +440,7 @@ const main = async () => {
         )
         const monthlyModule = `export default ${JSON.stringify(monthlySeries, null, 2)};\n`
         writeTextFile(dataMonthlyFile, monthlyModule)
-        console.log(chalk.green(`Monthly series 已导出: ${dataMonthlyFile}`))
+        logDev(`Monthly series 已导出: ${dataMonthlyFile}`)
 
         // 新增：每日最晚提交小时（用于显著展示加班严重程度）
         const dayGroups2 = groupRecords(records, 'day')
@@ -539,9 +538,7 @@ const main = async () => {
         )
         const latestByDayModule = `export default ${JSON.stringify(latestByDay, null, 2)};\n`
         writeTextFile(dataLatestByDayFile, latestByDayModule)
-        console.log(
-          chalk.green(`Latest-by-day series 已导出: ${dataLatestByDayFile}`)
-        )
+        logDev(`Latest-by-day series 已导出: ${dataLatestByDayFile}`)
 
         // 导出配置（供前端显示）
         try {
@@ -557,7 +554,7 @@ const main = async () => {
             configFile,
             `export default ${JSON.stringify(cfg, null, 2)};\n`
           )
-          console.log(chalk.green(`Config 已导出: ${configFile}`))
+          logDev(`Config 已导出: ${configFile}`)
         } catch (e) {
           console.warn('Export config failed:', e && e.message ? e.message : e)
         }
@@ -842,8 +839,6 @@ const main = async () => {
     logDev(`文本已自动导出: ${txtPath}`)
 
     handleSuccess({ startTime, spinner })
-
-    console.log('✅', `opts.format === 'excel'`)
   }
 
   await autoCheckUpdate()

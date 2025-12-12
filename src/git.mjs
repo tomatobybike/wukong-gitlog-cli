@@ -83,14 +83,14 @@ export async function getGitLogsQuick(opts) {
   const { author, email, since, until, limit, merges } = opts
 
   const pretty =
-    [
+    `${[
       '%H', // hash
       '%an', // author name
       '%ae', // email
       '%ad', // date
       '%s', // subject
       '%B' // body
-    ].join('%x1f') + '%x1e'
+    ].join('%x1f')  }%x1e`
 
   const args = [
     'log',
@@ -113,12 +113,15 @@ export async function getGitLogsQuick(opts) {
 
   for (const raw of rawCommits) {
     const block = raw.replace(/\r/g, '').trim()
+    // eslint-disable-next-line no-continue
     if (!block) continue
 
     // header: 6 个字段用 \x1f 分隔
     const headerMatch = block.match(
+      // eslint-disable-next-line no-control-regex
       /^([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([\s\S]*)$/
     )
+    // eslint-disable-next-line no-continue
     if (!headerMatch) continue
 
     const [, hash, authorName, emailAddr, date, subject, body] = headerMatch

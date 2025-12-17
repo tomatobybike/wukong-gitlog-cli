@@ -44,7 +44,8 @@ logs
 .husky/
 lint-staged.config.js
 
-
+md-structure.config
+STRUCTURE.md
 
 # Miscellaneous
 *.tgz

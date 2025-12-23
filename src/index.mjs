@@ -37,7 +37,11 @@ import {
   writeTextFile
 } from './utils/index.mjs'
 import { logDev } from './utils/logDev.mjs'
+import { createProfiler } from './utils/profiler.mjs'
 import { showVersionInfo } from './utils/showVersionInfo.mjs'
+import { createScopeTimer } from './utils/time/scopeTimer.mjs'
+import { createTimer } from './utils/time/timer.mjs'
+import { withTimer } from './utils/time/withTimer.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -49,6 +53,8 @@ dayjs.extend(isoWeek)
 
 const PKG_NAME = pkg.name
 const VERSION = pkg.version
+
+let profiler
 
 const autoCheckUpdate = async () => {
   // === CLI 主逻辑完成后提示更新 ===
@@ -83,8 +89,7 @@ export function getWeekRange(periodStr) {
 }
 
 const main = async () => {
-  const startTime = performance.now()
-
+  const boot = createScopeTimer('CLI bootstrap')
   const program = new Command()
 
   program
@@ -185,11 +190,21 @@ const main = async () => {
       '仅启动 web 服务，不导出或分析数据（使用 output-wukong/data 中已有的数据）'
     )
     .option('--version', 'show version information')
+    .option('--profile', '输出性能分析 JSON')
+    .option('--verbose', '显示详细性能日志')
+    .option('--flame', '显示 flame-like 日志')
     .parse()
 
   const opts = program.opts()
 
   const config = parseOptions(opts)
+
+  profiler = createProfiler({
+    enabled: opts.profile,
+    verbose: opts.verbose,
+    flame: opts.flame,
+    slowThreshold: 500
+  })
 
   // ❗只创建一次缓存实例
   const getOvertimeStats = createOvertimeStats(config)
@@ -324,6 +339,7 @@ const main = async () => {
 
   // --- 分组 ---
   const groups = opts.groupBy ? groupRecords(records, opts.groupBy) : null
+  profiler.step('load config')
 
   // If serve mode is enabled, write data modules and launch the web server
   if (opts.serve) {
@@ -333,6 +349,8 @@ const main = async () => {
   // --- Overtime analysis ---
   if (opts.overtime) {
     const stats = getOvertimeStats(records)
+
+    profiler.step('load getOvertimeStats')
     // Output to console
     console.log('\n--- Overtime analysis ---\n')
     console.log(renderOvertimeText(stats))
@@ -579,7 +597,7 @@ const main = async () => {
     const jsonText = renderAuthorChangesJson(records)
     writeJSON(outputFilePath('author-changes.json', outDir), jsonText)
     logDev(`JSON 已导出: ${filepath}`)
-    handleSuccess({ startTime, spinner })
+    handleSuccess({ spinner })
     return
   }
 
@@ -593,11 +611,11 @@ const main = async () => {
       renderChangedLinesText(records)
     )
 
-    console.log('\n Commits List:\n', text, '\n')
+    // console.log('\n Commits List:\n', text, '\n')
 
     logDev(`文本已导出: ${filepath}`)
 
-    handleSuccess({ startTime, spinner })
+    handleSuccess({ spinner })
 
     return
   }
@@ -621,10 +639,32 @@ const main = async () => {
     logDev(`Excel 已导出: ${excelPath}`)
     logDev(`文本已自动导出: ${txtPath}`)
 
-    handleSuccess({ startTime, spinner })
+    handleSuccess({ spinner })
   }
 
   await autoCheckUpdate()
+
+  handleSuccess({ spinner })
 }
 
-main()
+try {
+  await main()
+} catch (err) {
+  console.error(err)
+  process.exitCode = 1
+} finally {
+  if (profiler) {
+    const result = profiler.end('git-commits')
+
+    // --profile 时输出 JSON
+    if (process.argv.includes('--profile')) {
+      const json = {
+        command: 'git-commits',
+        version: VERSION,
+        timestamp: Date.now(),
+        profile: result
+      }
+      console.log(JSON.stringify(json, null, 2))
+    }
+  }
+}

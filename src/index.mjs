@@ -40,8 +40,7 @@ import { logDev } from './utils/logDev.mjs'
 import { createProfiler } from './utils/profiler.mjs'
 import { showVersionInfo } from './utils/showVersionInfo.mjs'
 import { createScopeTimer } from './utils/time/scopeTimer.mjs'
-import { createTimer } from './utils/time/timer.mjs'
-import { withTimer } from './utils/time/withTimer.mjs'
+
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -89,7 +88,7 @@ export function getWeekRange(periodStr) {
 }
 
 const main = async () => {
-  const boot = createScopeTimer('CLI bootstrap')
+
   const program = new Command()
 
   program
@@ -193,6 +192,7 @@ const main = async () => {
     .option('--profile', '输出性能分析 JSON')
     .option('--verbose', '显示详细性能日志')
     .option('--flame', '显示 flame-like 日志')
+    .option('--hot-threshold <n>', 'HOT 比例阈值', parseFloat, 0.8)
     .parse()
 
   const opts = program.opts()
@@ -203,7 +203,8 @@ const main = async () => {
     enabled: opts.profile,
     verbose: opts.verbose,
     flame: opts.flame,
-    slowThreshold: 500
+    slowThreshold: 500,
+    hotThreshold: opts.hotThreshold
   })
 
   // ❗只创建一次缓存实例

@@ -47,5 +47,8 @@ lint-staged.config.js
 md-structure.config
 STRUCTURE.md
 
+profile.json
+trace.json
+
 # Miscellaneous
 *.tgz

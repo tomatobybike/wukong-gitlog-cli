@@ -37,9 +37,8 @@ import {
   writeTextFile
 } from './utils/index.mjs'
 import { logDev } from './utils/logDev.mjs'
-import { createProfiler } from './utils/profiler.mjs'
+import { createProfiler } from './utils/profiler/index.mjs'
 import { showVersionInfo } from './utils/showVersionInfo.mjs'
-import { createScopeTimer } from './utils/time/scopeTimer.mjs'
 
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -88,7 +87,6 @@ export function getWeekRange(periodStr) {
 }
 
 const main = async () => {
-
   const program = new Command()
 
   program
@@ -192,7 +190,11 @@ const main = async () => {
     .option('--profile', '输出性能分析 JSON')
     .option('--verbose', '显示详细性能日志')
     .option('--flame', '显示 flame-like 日志')
+    .option('--trace <file>', '生成 Chrome Trace')
     .option('--hot-threshold <n>', 'HOT 比例阈值', parseFloat, 0.8)
+    .option('--fail-on-hot', 'HOT 时 CI 失败')
+    .option('--diff-base <file>', '基线 profile.json')
+    .option('--diff-threshold <n>', '回归阈值', parseFloat, 0.2)
     .parse()
 
   const opts = program.opts()
@@ -203,8 +205,11 @@ const main = async () => {
     enabled: opts.profile,
     verbose: opts.verbose,
     flame: opts.flame,
-    slowThreshold: 500,
-    hotThreshold: opts.hotThreshold
+    traceFile: opts.trace,
+    hotThreshold: opts.hotThreshold,
+    failOnHot: opts.failOnHot,
+    diffBaseFile: opts.diffBase,
+    diffThreshold: opts.diffThreshold
   })
 
   // ❗只创建一次缓存实例

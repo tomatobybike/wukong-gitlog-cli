@@ -24,6 +24,7 @@
     "consistent-return": "off",
     "no-await-in-loop": "warn",
     "no-unused-vars": "warn",
+    "no-nested-ternary": "warn",
     "no-console": "off",
     "no-plusplus": "off",
     "no-unresolved": "off",

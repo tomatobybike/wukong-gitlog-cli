@@ -617,7 +617,7 @@ const main = async () => {
       renderChangedLinesText(records)
     )
 
-    // console.log('\n Commits List:\n', text, '\n')
+    console.log('\n Commits List:\n', text, '\n')
 
     logDev(`文本已导出: ${filepath}`)
 

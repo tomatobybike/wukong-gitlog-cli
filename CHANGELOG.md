@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.38](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.37...v1.0.38) (2025-12-27)
+
+
+### Features
+
+* 🎸 增加性能分析 ([ec925cc](https://github.com/tomatobybike/wukong-gitlog-cli/commit/ec925cc3d20be2a0eee6e20aaee99b4449eff9be))
+* 🎸 flame 和 显示 flame-like 日志 ([7b1a00c](https://github.com/tomatobybike/wukong-gitlog-cli/commit/7b1a00c26afa1757637e6c4a3a2be92d74e0ad65))
+* 🎸 ignore ([eb3e5bc](https://github.com/tomatobybike/wukong-gitlog-cli/commit/eb3e5bc89183e0722056036f14f74806e3c3b1e3))
+* 🎸 profiler ([48fd0a5](https://github.com/tomatobybike/wukong-gitlog-cli/commit/48fd0a5a8b25b55bbca7bbdbd2df11158049adcd))
+* 🎸 Profiler ([a7f4623](https://github.com/tomatobybike/wukong-gitlog-cli/commit/a7f4623a162947d31f25702052f54a4ff0406fcb))
+
 ### [1.0.37](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.36...v1.0.37) (2025-12-12)
 
 

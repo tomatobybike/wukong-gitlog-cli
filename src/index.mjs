@@ -6,6 +6,7 @@ import fs from 'fs'
 import ora from 'ora'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { createProfiler } from 'wukong-profiler'
 
 import { parseOptions } from './cli/parseOptions.mjs'
 // eslint-disable-next-line no-unused-vars
@@ -37,9 +38,7 @@ import {
   writeTextFile
 } from './utils/index.mjs'
 import { logDev } from './utils/logDev.mjs'
-import { createProfiler } from './utils/profiler/index.mjs'
 import { showVersionInfo } from './utils/showVersionInfo.mjs'
-
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -354,6 +353,9 @@ const main = async () => {
 
   // --- Overtime analysis ---
   if (opts.overtime) {
+    await profiler.stepAsync('getOvertimeStats', async () => {
+      await getOvertimeStats(records)
+    })
     const stats = getOvertimeStats(records)
 
     profiler.step('load getOvertimeStats')
@@ -617,7 +619,7 @@ const main = async () => {
       renderChangedLinesText(records)
     )
 
-    console.log('\n Commits List:\n', text, '\n')
+    // console.log('\n Commits List:\n', text, '\n')
 
     logDev(`文本已导出: ${filepath}`)
 

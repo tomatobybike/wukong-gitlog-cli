@@ -198,7 +198,9 @@ Example JSON output including `changeId`/`gerrit` when `--gerrit` uses `{{change
 生成数据并启动本地仪表盘（默认端口 3000）：
 
 ```bash
-node ./src/cli.mjs --serve --overtime --limit 200 --out commits.txt
+node ./src/index.mjs --serve --overtime --limit 200 --out commits.txt
+
+> 推荐：使用子命令 `node ./src/index.mjs serve` 或 `node ./src/cli.mjs overtime`（原 `--serve` / `--overtime` 仍然支持，但会显示弃用提示）
 # 或
 npm run cli:serve
 ```
@@ -206,7 +208,7 @@ npm run cli:serve
 指定端口：
 
 ```bash
-node ./src/cli.mjs --serve --port 8080 --overtime --limit 200 --out commits.txt
+node ./src/index.mjs --serve --port 8080 --overtime --limit 200 --out commits.txt
 
 ```
 

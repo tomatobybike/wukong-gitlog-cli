@@ -55,6 +55,8 @@ wukong-gitlog-cli --help
 
 ```bash
 wukong-gitlog-cli --overtime  --serve --port 5555
+
+> 推荐：使用子命令 `wukong-gitlog-cli serve` 或 `wukong-gitlog-cli overtime`（原 `--serve` / `--overtime` 仍然支持，但会显示弃用提示）
 ```
 
 ```bash

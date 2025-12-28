@@ -44,6 +44,7 @@ logs
 .husky/
 lint-staged.config.js
 
+md-structure.config.json
 md-structure.config
 STRUCTURE.md
 

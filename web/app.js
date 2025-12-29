@@ -3,6 +3,22 @@
 /* global echarts */
 const formatDate = (d) => new Date(d).toLocaleString()
 
+function filterByDate(commits) {
+  const start = document.getElementById('startDate')?.value
+  const end = document.getElementById('endDate')?.value
+
+  if (!start && !end) return commits
+
+  const startTime = start ? new Date(`${start}T00:00:00`).getTime() : -Infinity
+
+  const endTime = end ? new Date(`${end}T23:59:59`).getTime() : Infinity
+
+  return commits.filter((c) => {
+    const t = new Date(c.date).getTime()
+    return t >= startTime && t <= endTime
+  })
+}
+
 // ISO 周 key：YYYY-Www
 function getIsoWeekKey(dStr) {
   const d = new Date(dStr)
@@ -100,7 +116,8 @@ function renderCommitsTablePage() {
     tr.innerHTML = `<td>${c.hash.slice(0, 8)}</td><td>${c.author}</td><td>${c.email}</td><td>${formatDate(c.date)}</td><td>${c.message}</td><td>${c.changed}</td>`
     tbody.appendChild(tr)
   })
-  document.getElementById('commitsTotal').textContent = `共${filtered.length}条记录`
+  document.getElementById('commitsTotal').textContent =
+    `共${filtered.length}条记录`
 }
 
 function updatePager() {
@@ -115,16 +132,25 @@ function updatePager() {
 function applySearch() {
   const q = document.getElementById('searchInput').value.trim().toLowerCase()
 
+  // ① 先做日期过滤
+  const base = filterByDate(commitsAll)
+
   if (!q) {
-    filtered = commitsAll.slice()
+    filtered = base.slice()
   } else {
-    filtered = commitsAll.filter((c) => {
+    filtered = base.filter((c) => {
       const h = c.hash.toLowerCase()
       const a = String(c.author || '').toLowerCase()
       const e = String(c.email || '').toLowerCase()
       const m = String(c.message || '').toLowerCase()
       const d = formatDate(c.date).toLowerCase()
-      return h.includes(q) || a.includes(q)|| e.includes(q) || m.includes(q) || d.includes(q)
+      return (
+        h.includes(q) ||
+        a.includes(q) ||
+        e.includes(q) ||
+        m.includes(q) ||
+        d.includes(q)
+      )
     })
   }
   page = 1
@@ -134,6 +160,13 @@ function applySearch() {
 
 function initTableControls() {
   document.getElementById('searchInput').addEventListener('input', applySearch)
+  document.getElementById('startDate')?.addEventListener('change', applySearch)
+  document.getElementById('endDate')?.addEventListener('change', applySearch)
+  document.getElementById('clearDate')?.addEventListener('click', () => {
+    document.getElementById('startDate').value = ''
+    document.getElementById('endDate').value = ''
+    applySearch()
+  })
   document.getElementById('pageSize').addEventListener('change', (e) => {
     pageSize = parseInt(e.target.value, 10) || 10
     page = 1

@@ -139,6 +139,45 @@ td {
   box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.15);
   outline: none;
 }
+#tableControls input[type='date'] {
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #fafafa;
+  font-size: 13px;
+  color: #111827;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+#tableControls input[type='date']:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.15);
+  outline: none;
+}
+/* 清除日期按钮 ------------------------------------------ */
+#clearDate {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #64748b; /* slate-500 */
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+#clearDate:hover {
+  color: #ef4444; /* red-500 */
+  background: rgba(239, 68, 68, 0.08);
+}
+
+#clearDate:active {
+  background: rgba(239, 68, 68, 0.16);
+}
 
 /* 按钮 — MUI Button 风格 */
 .pager button {

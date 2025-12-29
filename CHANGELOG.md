@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.39](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.38...v1.0.39) (2025-12-29)
+
+
+### Features
+
+* 🎸 web report add date filter ([d5968d8](https://github.com/tomatobybike/wukong-gitlog-cli/commit/d5968d8222aa1129e60894234ac9fca6c91e5a73))
+* 🎸 wukong-gitlog command entry ([48b5698](https://github.com/tomatobybike/wukong-gitlog-cli/commit/48b569842114cd11336ee23580104048342e085b))
+
 ### [1.0.38](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.37...v1.0.38) (2025-12-27)
 
 

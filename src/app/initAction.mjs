@@ -46,51 +46,48 @@ export async function initAction(options) {
   console.log(`\n🚀 ${'Wukong GitLog'} 配置文件初始化\n`);
 
   try {
-    // 1. 选择格式
     const format = await select({
       message: '请选择要生成的配置文件格式:',
       choices: [
-        { name: 'YAML (推荐，支持注释)', value: 'yaml' },
+        { name: 'ES Module (.mjs)', value: 'mjs' },
+        { name: 'JavaScript (.js)', value: 'js' },
+        { name: 'YAML', value: 'yml' },
         { name: 'JSON', value: 'json' }
       ]
     });
 
-    const isYaml = format === 'yaml';
-    const fileName = isYaml ? '.wukonggitlogrc.yml' : '.wukonggitlogrc.json';
+    const fileName = `.wukonggitlogrc.${format}`;
     const targetPath = path.join(process.cwd(), fileName);
 
-    // 2. 检查冲突
     if (fs.existsSync(targetPath) && !options.force) {
       console.error(`\n❌ 错误: 当前目录已存在 ${fileName}`);
-      console.log(`💡 使用 --force 参数可强制覆盖，或先手动删除该文件。`);
       return;
     }
 
-    // 3. 生成内容
     let content = '';
-    if (isYaml) {
-      const commentBefore = `# Wukong GitLog Configuration\n# 生成时间: ${new Date().toLocaleString()}\n\n`;
-      content = commentBefore + yaml.stringify(DEFAULT_CONFIG);
-    } else {
-      content = JSON.stringify(DEFAULT_CONFIG, null, 2);
+    const headerComment = `// Wukong GitLog Config\n// Generated at ${new Date().toLocaleString()}\n\n`;
+
+    switch (format) {
+      case 'mjs':
+      case 'js':
+        content = `${headerComment}export default ${JSON.stringify(DEFAULT_CONFIG, null, 2)};`;
+        break;
+      case 'yaml':
+        content = `# Wukong GitLog Config\n${yaml.stringify(DEFAULT_CONFIG)}`;
+        break;
+      case 'json':
+        content = JSON.stringify(DEFAULT_CONFIG, null, 2);
+        break;
     }
 
-    // 4. 写入文件
     fs.writeFileSync(targetPath, content, 'utf8');
     console.log(`✅ 成功生成配置: ${fileName}`);
 
-    // 5. 自动维护 .gitignore
     await manageGitignore(DEFAULT_CONFIG.output.dir);
-
-    console.log(`\n✨ 初始化完成！你可以开始运行 'wukong-gitlog analyze' 了。\n`);
+    console.log(`\n✨ 初始化完成！\n`);
 
   } catch (err) {
-    // 处理用户按下 Ctrl+C 强行退出的情况
-    if (err.name === 'ExitPromptError') {
-      console.log('\n👋 已取消初始化');
-    } else {
-      console.error(`\n❌ 初始化失败: ${err.message}`);
-    }
+    if (err.name === 'ExitPromptError') console.log('\n👋 已取消');
+    else console.error(`\n❌ 失败: ${err.message}`);
   }
 }
-

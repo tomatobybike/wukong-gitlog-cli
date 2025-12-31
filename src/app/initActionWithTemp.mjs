@@ -1,5 +1,5 @@
 /**
- * @file: initAction.mjs
+ * @file: initActionWithTemp.mjs
  * @description: 使用 @inquirer/prompts 初始化带详细注释的配置文件
  * @author: King Monkey
  */
@@ -8,6 +8,9 @@ import fs from 'fs'
 import path from 'path'
 
 import { DEFAULT_CONFIG } from '../infra/configStore.mjs'
+
+
+
 
 // 定义带注释的 YAML 模板，提升用户体验
 const YAML_TEMPLATE = `# ---------------------------------------------------------
@@ -59,50 +62,84 @@ output:
 debug: false
 `
 
-export async function initAction(options) {
+// JS 模板 (支持逻辑，适合高级用户)
+const JS_TEMPLATE = `/**
+ * Wukong GitLog 配置文件 (.wukonggitlogrc.js)
+ * 生成时间: ${new Date().toLocaleString()}
+ */
+export default {
+  // 作者统计配置
+  author: {
+    include: [],    // 只统计这些作者
+    exclude: []     // 排除这些作者
+  },
+
+  // Git 提取配置
+  git: {
+    noMerges: true,
+    limit: 5000
+  },
+
+  // 工作时间与加班计算
+  worktime: {
+    country: 'CN',
+    start: 9,
+    end: 18,
+    lunch: { start: 12, end: 14 },
+    overnightCutoff: 6
+  },
+
+  // 输出与报告
+  output: {
+    dir: 'output-wukong',
+    formats: ['text', 'excel'],
+    perPeriod: { enabled: true, excelMode: 'sheets' }
+  }
+};
+`
+
+
+
+export async function initActionWithTemp(options) {
   console.log(`\n🚀 ${'Wukong GitLog'} 配置文件初始化\n`)
 
   try {
-    // 1. 选择格式
     const format = await select({
       message: '请选择要生成的配置文件格式:',
       choices: [
+        { name: 'JavaScript (灵活，支持逻辑)', value: 'js' },
         { name: 'YAML (推荐，带详细中文注释)', value: 'yaml' },
-        { name: 'JSON (标准格式，无注释)', value: 'json' }
+        { name: 'JSON (标准格式)', value: 'json' }
       ]
     })
 
-    const isYaml = format === 'yaml'
-    const fileName = isYaml ? '.wukonggitlogrc.yml' : '.wukonggitlogrc.json'
+    const fileNameMap = {
+      js: '.wukonggitlogrc.js',
+      yaml: '.wukonggitlogrc.yml',
+      json: '.wukonggitlogrc.json'
+    }
+
+    const fileName = fileNameMap[format]
     const targetPath = path.join(process.cwd(), fileName)
 
-    // 2. 检查冲突
     if (fs.existsSync(targetPath) && !options.force) {
       console.error(`\n❌ 错误: 当前目录已存在 ${fileName}`)
-      console.log(`💡 使用 --force 参数可强制覆盖。`)
       return
     }
 
-    // 3. 生成内容
-    const content = isYaml
-      ? YAML_TEMPLATE
-      : JSON.stringify(DEFAULT_CONFIG, null, 2)
+    let content = ''
+    if (format === 'js') content = JS_TEMPLATE
+    else if (format === 'yaml') content = YAML_TEMPLATE
+    else content = JSON.stringify(DEFAULT_CONFIG, null, 2)
 
-    // 4. 写入文件
     fs.writeFileSync(targetPath, content, 'utf8')
     console.log(`✅ 成功生成配置: ${fileName}`)
 
-    // 5. 自动维护 .gitignore
-    // eslint-disable-next-line no-use-before-define
     await manageGitignore(DEFAULT_CONFIG.output.dir)
-
-    console.log(`\n✨ 初始化完成！建议根据项目需求微调该配置文件。\n`)
+    console.log(`\n✨ 初始化完成！\n`)
   } catch (err) {
-    if (err.name === 'ExitPromptError') {
-      console.log('\n👋 已取消初始化')
-    } else {
-      console.error(`\n❌ 初始化失败: ${err.message}`)
-    }
+    if (err.name === 'ExitPromptError') console.log('\n👋 已取消初始化')
+    else console.error(`\n❌ 初始化失败: ${err.message}`)
   }
 }
 

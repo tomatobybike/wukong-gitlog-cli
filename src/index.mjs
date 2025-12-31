@@ -4,12 +4,19 @@ import { Command } from 'commander'
 import { analyzeAction } from './app/analyzeAction.mjs'
 import { exportAction } from './app/exportAction.mjs'
 import { initAction } from './app/initAction.mjs'
+// import { initActionWithTemp } from './app/initActionWithTemp.mjs'
 import { overtimeAction } from './app/overtimeAction.mjs'
 import { serveAction } from './app/serveAction.mjs'
 import { versionAction } from './app/versionAction.mjs'
 import { defineOptions } from './cli/defineOptions.mjs'
+import { loadRcConfig } from './infra/configStore.mjs'
+
+// 引入加载器
 
 const main = async () => {
+  // 【关键优化】在一切开始前，先异步加载 RC 配置
+  // 这样后续 parseOptions 内部的 cachedConfig 就有值了
+  await loadRcConfig()
   const program = new Command()
 
   // 1. 先定义配置，以便能通过 program.opts() 获取解析结果

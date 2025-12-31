@@ -39,7 +39,7 @@ export function defineOptions(program) {
 
     .option('--overtime')
 
-    .option('--country <code>', '节假日国家：CN 或 US，默认为 CN', 'CN')
+    .option('--country <code>', '节假日国家：CN 或 US，默认为 CN')
     .option(
       '--work-start <hour>',
       '上班开始小时，默认 9',

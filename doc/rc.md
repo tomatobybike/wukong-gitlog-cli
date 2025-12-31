@@ -1038,3 +1038,88 @@ wukong report --template monthly
 
 ---
 
+支持 .wukonggitlogrc.js（或 .cjs / .mjs）是高级 CLI 工具（如 Tailwind, Vite, Prettier）的标配。
+
+使用 .js 后缀最大的优势在于：它允许用户在配置中使用逻辑（例如通过 process.env 获取当前用户，或者动态计算日期）。
+
+3. 为什么支持 .js 很有用？
+支持 .js 配置文件后，用户可以玩出很多花样。例如，用户可以根据不同的分支动态设置统计范围：
+
+```JavaScript
+
+// 用户项目中的 .wukonggitlogrc.js
+import { execSync } from 'child_process';
+
+const currentBranch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
+
+export default {
+  output: {
+    // 自动根据分支名命名输出目录
+    dir: `output-wukong-${currentBranch}`,
+    formats: currentBranch === 'master' ? ['excel', 'json'] : ['text']
+  }
+};
+```
+注意事项：
+ESM vs CommonJS：如果你的工具包是 "type": "module"，那么生成的 .js 默认就是 ESM，需要用 export default。
+
+异步加载：因为 import() 是异步的，你的 loadRcConfig 和 main 函数必须使用 async/await。
+
+支持 .js 之后，你的配置系统就达到了像 Webpack 或 Vite 那样的专业水准了。你是否已经准备好处理 git log 的数据抓取部分？
+
+这是一个非常经典的争论。简单直接的结论是：**两者在技术上完全等价，但目前社区的共识和工业标准更倾向于使用 `.yml`。**
+
+以下是深度对比和选择建议：
+
+### 1. 历史渊源
+
+- **`.yaml`**：这是 YAML 官方推荐的后缀。YAML 代表 "YAML Ain't Markup Language"。按照文件类型的命名规范，四位后缀能更完整地代表其身份。
+- **`.yml`**：起源于早期的 Windows 系统（DOS 时代），当时限制文件后缀名只能有 3 位（即著名的 8.3 文件名格式，如 `.html` 必须写成 `.htm`）。
+
+### 2. 现状：谁在用什么？
+
+目前主流开源项目和工具的偏好如下：
+
+| **工具/平台**        | **默认/推荐后缀**                                            |
+| -------------------- | ------------------------------------------------------------ |
+| **GitHub Actions**   | 必须使用 `.yml` 或 `.yaml` (两者都识别，但文档示例多为 `.yml`) |
+| **Docker Compose**   | 官方文档常用 `docker-compose.yml`                            |
+| **Ansible**          | 官方文档明确推荐使用 `.yml`                                  |
+| **Kubernetes (k8s)** | 大多数示例使用 `.yaml`                                       |
+| **PNPM / Prettier**  | 默认生成或查找 `.yml`                                        |
+
+### 3. 为什么在 Node.js/CLI 开发中推荐 `.yml`？
+
+作为 `wukong-gitlog` 的开发者，建议你优先推荐 `.yml`，理由有三：
+
+1. **输入更短**：在终端手动输入文件名时，少一个字母确实更高效。
+2. **社区惯例**：在 JS/TS 生态中（如 `pnpm-lock.yaml` 除外），大多数配置文件（如 `.prettierrc.yml`, `.esslintrc.yml`）习惯用 3 位。
+3. **视觉统一**：很多开发者觉得 3 位后缀（.js, .ts, .md, .py, .rb）在文件列表中看起来更整齐。
+
+------
+
+### 4. 你的代码应该如何兼容？（生产级建议）
+
+既然你是写 CLI 工具，**绝对不要让用户做选择题**。你的程序应该表现出“大度”：**同时支持两者，但文档引导用一种。**
+
+你之前的 `configStore.mjs` 已经做得很好了，但我建议微调 `RC_NAMES` 的顺序，把最可能的排在前面以提高搜索效率：
+
+JavaScript
+
+```
+// 推荐的查找顺序：JS优先（因为灵活），然后是常用的 yml
+const RC_NAMES = [
+  '.wukonggitlogrc.js',
+  '.wukonggitlogrc.mjs',
+  '.wukonggitlogrc.yml',  // 放在 .yaml 前面，因为更常用
+  '.wukonggitlogrc.yaml',
+  '.wukonggitlogrc.json',
+  '.wukonggitlogrc'       // 无后缀放在最后
+]
+```
+
+### 总结建议
+
+- **你的文档/Help说明**：统一写 `.wukonggitlogrc.yml`。
+- **你的 `init` 命令**：默认生成 `.wukonggitlogrc.yml`。
+- **你的代码逻辑**：保持对两者的兼容，这样用户从别处拷贝过来的 `.yaml` 文件也不至于报错。

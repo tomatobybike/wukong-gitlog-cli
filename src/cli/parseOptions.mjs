@@ -1,3 +1,10 @@
+/**
+ * @file: parseOptions.mjs
+ * @description: 
+ * @author: King Monkey
+ * @created: 2025-12-31 17:24
+ */
+
 import { loadRcConfig } from '../infra/configStore.mjs'
 
 export function parseOptions(cliOpts) {

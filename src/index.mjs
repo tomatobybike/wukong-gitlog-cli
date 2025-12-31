@@ -34,26 +34,35 @@ const main = async () => {
   program
     .command('overtime')
     .description('Analysis of Overtime Culture')
-    .action(overtimeAction)
+    .action((cmdOpts) => {
+      const globalOpts = program.opts()
+      const finalOpts = { ...globalOpts, ...cmdOpts }
+      overtimeAction(finalOpts)
+    })
 
   // # 导出（excel / csv / json）
   program
     .command('export')
     .description('export （excel / csv / json）')
-    .action(exportAction)
+    // .option('-f, --format <type>', '导出格式') // 局部参数
+    .action((cmdOpts, command) => {
+      // globalOpts 拿到 author, since 等
+      const globalOpts = command.parent.opts()
+      // 合并全局和局部参数
+      const finalOpts = { ...globalOpts, ...cmdOpts }
+      exportAction(finalOpts)
+    })
 
   // # Web 服务
-  program.command('serve').description('Start web server').action(serveAction)
+  program.command('serve').description('Start web server').action((cmdOpts) => {
+      const globalOpts = program.opts()
+      const finalOpts = { ...globalOpts, ...cmdOpts }
+      serveAction(finalOpts)
+    })
   program.parse(process.argv)
 
   const opts = program.opts()
-  console.log('✅ Global Opts:', opts)
-  // 默认行为：如果没有任何参数，显示帮助
-  // if (process.argv.length === 2) {
-  //   program.help()
-  // }
-
-  // await program.parseAsync(process.argv)
+  console.log('✅ Cli Opts:', opts)
 }
 
 try {

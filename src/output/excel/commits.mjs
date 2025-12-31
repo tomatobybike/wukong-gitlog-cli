@@ -1,4 +1,4 @@
-import { exportExcel } from '../../excel.mjs'
+import { exportExcel } from '../excel.mjs'
 
 export async function outputCommitsExcel(result, config) {
   await exportExcel(result.records, null, {

@@ -1,50 +1,12 @@
-import { writeJson } from '../utils/writeFile.mjs'
+import fs from 'fs'
+import path from 'path'
+
 import { outFile } from '../utils/outputPath.mjs'
-import pkg from '../../../package.json' assert { type: 'json' }
+import { writeJson } from '../utils/writeFile.mjs'
 
-export function writeServeData(result, config) {
-  const baseDir = `${config.dir}/data`
-
-  const files = {}
-
-  files.commits = write(
-    baseDir,
-    'commits.json',
-    result.records
-  )
-
-  files.authorMap = write(
-    baseDir,
-    'authorMap.json',
-    result.authorMap
-  )
-
-  if (result.overtime) {
-    files.overtime = write(
-      baseDir,
-      'overtime.json',
-      result.overtime
-    )
-  }
-
-  if (result.overtimeByMonth) {
-    files.overtimeByMonth = write(
-      baseDir,
-      'overtime.month.json',
-      result.overtimeByMonth
-    )
-  }
-
-  if (result.overtimeByWeek) {
-    files.overtimeByWeek = write(
-      baseDir,
-      'overtime.week.json',
-      result.overtimeByWeek
-    )
-  }
-
-  writeSchema(baseDir, files)
-}
+const pkg = JSON.parse(
+  fs.readFileSync(new URL('../../../package.json', import.meta.url), 'utf-8')
+)
 
 /* ---------------- helpers ---------------- */
 
@@ -77,4 +39,37 @@ function writeSchema(dir, files) {
   }
 
   writeJson(outFile(dir, 'data.schema.json'), schema)
+}
+
+
+export function writeServeData(result, config) {
+  const baseDir = `${config.dir}/data`
+
+  const files = {}
+
+  files.commits = write(baseDir, 'commits.json', result.records)
+
+  files.authorMap = write(baseDir, 'authorMap.json', result.authorMap)
+
+  if (result.overtime) {
+    files.overtime = write(baseDir, 'overtime.json', result.overtime)
+  }
+
+  if (result.overtimeByMonth) {
+    files.overtimeByMonth = write(
+      baseDir,
+      'overtime.month.json',
+      result.overtimeByMonth
+    )
+  }
+
+  if (result.overtimeByWeek) {
+    files.overtimeByWeek = write(
+      baseDir,
+      'overtime.week.json',
+      result.overtimeByWeek
+    )
+  }
+
+  writeSchema(baseDir, files)
 }

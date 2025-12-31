@@ -1,6 +1,6 @@
 import path from 'path'
 
-import { exportExcelPerPeriodSheets , exportExcel } from '../../excel.mjs'
+import { exportExcelPerPeriodSheets , exportExcel } from '../excel.mjs'
 
 export async function outputOvertimeExcelPerPeriod(map, period, config) {
   if (config.mode === 'sheets') {

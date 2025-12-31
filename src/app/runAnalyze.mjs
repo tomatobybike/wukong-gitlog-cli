@@ -1,11 +1,11 @@
 import ora from 'ora'
 import path from 'path'
+import { createProfiler } from 'wukong-profiler'
 
 import { parseOptions } from '../cli/parseOptions.mjs'
 import { getGitLogsFast } from '../domain/git/getGitLogs.mjs'
 import { analyzeOvertime } from '../domain/overtime/analyze.mjs'
 import { outputAll } from '../output/index.mjs'
-import { createProfiler } from '../utils/profiler.mjs'
 
 export async function runAnalyze(rawOpts = {}) {
   const opts = parseOptions(rawOpts)
@@ -14,9 +14,8 @@ export async function runAnalyze(rawOpts = {}) {
   const profiler = createProfiler(opts.profile)
 
   // 1️⃣ 拉 git 记录
-  const { commits, authorMap } = await profiler.stepAsync(
-    'getGitLogs',
-    () => getGitLogsFast(opts)
+  const { commits, authorMap } = await profiler.stepAsync('getGitLogs', () =>
+    getGitLogsFast(opts)
   )
 
   const result = {
@@ -26,20 +25,17 @@ export async function runAnalyze(rawOpts = {}) {
 
   // 2️⃣ 加班分析（可选）
   if (opts.overtime) {
-    result.overtime = await profiler.stepAsync(
-      'overtime',
-      () => analyzeOvertime(commits, opts.worktime)
+    result.overtime = await profiler.stepAsync('overtime', () =>
+      analyzeOvertime(commits, opts.worktime)
     )
   }
 
   // 3️⃣ 输出
-  await profiler.stepAsync(
-    'output',
-    () =>
-      outputAll(result, {
-        format: opts.format,
-        outDir: opts.outDir || path.resolve('output-wukong')
-      })
+  await profiler.stepAsync('output', () =>
+    outputAll(result, {
+      format: opts.format,
+      outDir: opts.outDir || path.resolve('output-wukong')
+    })
   )
 
   spinner.succeed('Done')

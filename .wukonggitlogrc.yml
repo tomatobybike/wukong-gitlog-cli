@@ -1,0 +1,23 @@
+# Wukong GitLog Configuration
+# 生成时间: 2026/1/1 01:33:08
+
+git:
+  noMerges: true
+  limit: 5000
+period:
+  groupBy: month
+worktime:
+  country: CN
+  start: 9
+  end: 18
+  lunch:
+    start: 12
+    end: 14
+  overnightCutoff: 6
+output:
+  dir: output-wukong
+  formats:
+    - text
+  perPeriod:
+    enabled: true
+    excelMode: sheets

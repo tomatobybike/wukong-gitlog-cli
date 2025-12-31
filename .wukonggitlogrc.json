@@ -1,0 +1,49 @@
+{
+  "author": {
+    "include": [],
+    "exclude": []
+  },
+  "git": {
+    "noMerges": true,
+    "limit": 5000
+  },
+  "period": {
+    "groupBy": "month",
+    "since": "2024-01-01",
+    "until": "2024-12-31"
+  },
+  "gerrit": {
+    "prefix": "https://gerrit.xxx.com/c/{{changeNumber}}",
+    "api": "https://gerrit.xxx.com",
+    "auth": "token-or-user:pass"
+  },
+  "worktime": {
+    "country": "CN",
+    "start": 9,
+    "end": 18,
+    "lunch": {
+      "start": 12,
+      "end": 14
+    },
+    "overnightCutoff": 6
+  },
+  "output": {
+    "dir": "output-wukong",
+    "formats": ["text", "json", "excel"],
+    "perPeriod": {
+      "enabled": true,
+      "formats": ["csv", "tab", "xlsx"],
+      "excelMode": "sheets",
+      "only": false
+    }
+  },
+  "serve": {
+    "enabled": false,
+    "port": 3000
+  },
+  "profile": {
+    "enabled": false,
+    "hotThreshold": 0.8,
+    "diffThreshold": 0.2
+  }
+}

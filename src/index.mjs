@@ -3,6 +3,7 @@ import { Command } from 'commander'
 
 import { analyzeAction } from './app/analyzeAction.mjs'
 import { exportAction } from './app/exportAction.mjs'
+import { initAction } from './app/initAction.mjs'
 import { overtimeAction } from './app/overtimeAction.mjs'
 import { serveAction } from './app/serveAction.mjs'
 import { versionAction } from './app/versionAction.mjs'
@@ -24,6 +25,17 @@ const main = async () => {
   }
 
   // 3. 注册子命令
+
+  program
+    .command('init')
+    .description('在当前目录初始化 .wukonggitlogrc.yml 配置文件模板')
+    .option('-f, --force', '强制覆盖已存在的配置文件（慎用）') // 生产工具建议加个强制参数
+    .action(async (options) => {
+      // 如果你不想抽离到 app 层，也可以直接写这里
+      // 但推荐抽离以保持架构一致性
+      await initAction(options)
+    })
+
   // # 核心分析（默认）
   program
     .command('analyze')
@@ -54,7 +66,10 @@ const main = async () => {
     })
 
   // # Web 服务
-  program.command('serve').description('Start web server').action((cmdOpts) => {
+  program
+    .command('serve')
+    .description('Start web server')
+    .action((cmdOpts) => {
       const globalOpts = program.opts()
       const finalOpts = { ...globalOpts, ...cmdOpts }
       serveAction(finalOpts)
@@ -62,7 +77,7 @@ const main = async () => {
   program.parse(process.argv)
 
   const opts = program.opts()
-  console.log('✅ Cli Opts:', opts)
+  // console.log('✅ Cli Opts:', opts)
 }
 
 try {

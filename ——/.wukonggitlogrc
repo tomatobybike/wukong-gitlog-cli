@@ -1,0 +1,53 @@
+# ------------------------------
+# .wukonggitlogrc
+# Wukong GitLog 配置示例
+# ------------------------------
+
+author:
+  include: []    # 只统计这些作者，留空表示全部
+  exclude: []    # 排除这些作者
+
+git:
+  noMerges: true     # 是否排除 merge commit
+  limit: 5000        # 最大拉取提交数
+
+period:
+  groupBy: month     # 统计周期: day | week | month
+  since: 2024-01-01  # 起始日期
+  until: 2024-12-31  # 截止日期
+
+gerrit:
+  prefix: https://gerrit.xxx.com/c/{{changeNumber}} # change 链接模板
+  api: https://gerrit.xxx.com                       # Gerrit API 地址
+  auth: token-or-user:pass                          # token 或 user:pass
+
+worktime:
+  country: CN       # 国家（影响节假日和周末计算）
+  start: 9          # 工作日开始时间（小时）
+  end: 18           # 工作日结束时间（小时）
+  lunch:
+    start: 12       # 午休开始时间
+    end: 14         # 午休结束时间
+  overnightCutoff: 6 # 凌晨时间计算截止点（0~6点归前一天）
+
+output:
+  dir: output-wukong      # 输出目录
+  formats:
+    - text
+    - json
+    - excel
+  perPeriod:
+    enabled: true          # 是否按周期生成单独文件
+    formats: [csv, tab, xlsx] # 分周期输出格式
+    excelMode: sheets      # sheets: 每周期一 sheet
+    only: false            # true: 仅输出 perPeriod，不生成总统计
+
+serve:
+  enabled: false   # 是否启动 Web 实时服务
+  port: 3000       # 服务端口
+
+profile:
+  enabled: false       # 是否启用代码 profile 分析
+  hotThreshold: 0.8    # 热点提交阈值
+  diffThreshold: 0.2   # 差异阈值
+

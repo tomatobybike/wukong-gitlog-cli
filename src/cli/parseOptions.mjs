@@ -1,30 +1,84 @@
 /**
  * @file: parseOptions.mjs
- * @description: 
+ * @description:
  * @author: King Monkey
  * @created: 2025-12-31 17:24
  */
 
 import { loadRcConfig } from '../infra/configStore.mjs'
 
-export function parseOptions(cliOpts) {
-  const rc = loadRcConfig()
-
-  return {
-    ...rc,
-
-    // CLI 强覆盖
-    ...cliOpts,
-
-    // 深层合并（示意）
-    worktime: {
-      ...rc.worktime,
-      ...cliOpts.worktime
-    },
-
-    output: {
-      ...rc.output,
-      ...cliOpts.output
+/**
+ * 深度合并辅助函数 (如果你的项目里没引入 lodash，可以直接用这个)
+ */
+function deepMerge(target, source) {
+  const result = { ...target }
+  for (const key in source) {
+    if (source[key] instanceof Object && key in target) {
+      result[key] = deepMerge(target[key], source[key])
+    } else if (source[key] !== undefined) {
+      result[key] = source[key]
     }
   }
+  return result
+}
+
+export function parseOptions(cliOpts) {
+  // 1. 加载“底座”配置（此时已包含：出厂默认 + RC文件）
+  const baseConfig = loadRcConfig()
+
+  // 2. 将扁平的 CLI 参数映射为嵌套结构 (与 RC 结构对齐)
+  // 注意：只有当 CLI 确实传了值时，才映射到对象里，否则保持 undefined
+  const mappedCli = {
+    author: {
+      include: cliOpts.author ? [cliOpts.author] : undefined,
+    },
+    git: {
+      noMerges: cliOpts.noMerges,
+      limit: cliOpts.limit,
+    },
+    period: {
+      groupBy: cliOpts.groupBy,
+      since: cliOpts.since,
+      until: cliOpts.until,
+    },
+    worktime: {
+      country: cliOpts.country,
+      start: cliOpts.workStart,
+      end: cliOpts.workEnd,
+      overnightCutoff: cliOpts.overnightCutoff,
+      // 只有当传了任何一个午休参数时才生成 lunch 对象
+      lunch: (cliOpts.lunchStart || cliOpts.lunchEnd) ? {
+        start: cliOpts.lunchStart,
+        end: cliOpts.lunchEnd
+      } : undefined
+    },
+    output: {
+      // 特殊逻辑：处理 outParent 优先级
+      dir: cliOpts.outParent ? '../output-wukong' : (cliOpts.outDir || cliOpts.out),
+      formats: cliOpts.format ? cliOpts.format : undefined,
+      perPeriod: {
+        formats: cliOpts.perPeriodFormats?.split(','),
+        excelMode: cliOpts.perPeriodExcelMode,
+        only: cliOpts.perPeriodOnly,
+      }
+    },
+    serve: {
+        port: cliOpts.port
+    },
+    profile: {
+      hotThreshold: cliOpts.hotThreshold,
+      diffThreshold: cliOpts.diffThreshold,
+    }
+  }
+
+  // 3. 终极合并：用映射后的 CLI 配置 覆盖 底座配置
+  const finalConfig = deepMerge(baseConfig, mappedCli)
+
+  // 4. 最后做一点“路径标准化”或“格式转换”
+  // 例如：如果 format 选了 json，自动勾选 cliOpts.json
+  if (cliOpts.json) {
+    finalConfig.output.formats = Array.from(new Set([...finalConfig.output.formats, 'json']))
+  }
+
+  return finalConfig
 }

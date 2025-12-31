@@ -7,7 +7,7 @@ import { getGitLogsFast } from '../domain/git/getGitLogs.mjs'
 import { analyzeOvertime } from '../domain/overtime/analyze.mjs'
 import { outputAll } from '../output/index.mjs'
 
-export async function runAnalyze(rawOpts = {}) {
+export async function analyzeAction(rawOpts = {}) {
   const opts = parseOptions(rawOpts)
   const spinner = ora('Analyzing git commits...').start()
 

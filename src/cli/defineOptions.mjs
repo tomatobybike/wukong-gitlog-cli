@@ -1,6 +1,11 @@
+import { getPackage } from '../utils/getPackage.mjs'
+
 export function defineOptions(program) {
+  const pkg = getPackage()
   program
     .name('wukong-gitlog')
+    .version(pkg.version, '-v')
+    .description('Advanced Git commit log exporter.')
     .option('--author <name>')
     .option('--since <date>')
     .option('--until <date>')
@@ -15,4 +20,5 @@ export function defineOptions(program) {
     .option('--debug')
     .option('--profile')
     .option('--trace <file>')
+    .option('--version', 'show version information')
 }

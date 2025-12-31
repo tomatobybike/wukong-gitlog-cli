@@ -1,7 +1,7 @@
 import { readServeData } from '../output/data/readData.mjs'
 import { startServer } from '../serve/startServer.mjs'
 
-export async function runServe(opts) {
+export async function serveAction(opts) {
   const dir = opts.outDir || 'output-wukong'
 
   const data = readServeData(dir)

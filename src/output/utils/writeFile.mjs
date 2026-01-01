@@ -5,5 +5,5 @@ export function writeText(file, content) {
 }
 
 export function writeJson(file, data) {
-  fs.writeFileSync(file, JSON.stringify(data, null, 2))
+  fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8')
 }

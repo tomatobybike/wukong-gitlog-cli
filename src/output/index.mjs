@@ -1,17 +1,17 @@
-import { resolveOutDir } from './utils/outputPath.mjs'
-import { writeServeData } from './data/writeData.mjs'
-
-import { outputCommitsText } from './text/commits.mjs'
-import { outputCommitsExcel } from './excel/commits.mjs'
-import { outputOvertimeText } from './text/overtime.mjs'
-import { outputOvertimeJson } from './json/overtime.mjs'
 import { outputOvertimeCsvByPeriod } from './csv/overtime.mjs'
-import { outputOvertimeTabByPeriod } from './tab/overtime.mjs'
+import { writeServeData } from './data/writeData.mjs'
+import { outputCommitsExcel } from './excel/commits.mjs'
 import { outputOvertimeExcelPerPeriod } from './excel/perPeriod.mjs'
+import { outputOvertimeJson } from './json/overtime.mjs'
+import { outputOvertimeTabByPeriod } from './tab/overtime.mjs'
+import { outputCommitsText } from './text/commits.mjs'
+import { outputOvertimeText } from './text/overtime.mjs'
+import { resolveOutDir } from './utils/outputPath.mjs'
 
 export async function outputAll(result, config) {
   const dir = resolveOutDir(config.dir)
   const base = config.base || 'commits'
+
 
   /* ---------- serve data（永远写） ---------- */
   writeServeData(result, { dir })
@@ -35,27 +35,26 @@ export async function outputAll(result, config) {
 
   if (result.overtimeByMonth) {
     if (config.perPeriod.formats.includes('csv')) {
-      outputOvertimeCsvByPeriod(
-        result.overtimeByMonth,
-        'month',
-        { dir, base }
-      )
+      outputOvertimeCsvByPeriod(result.overtimeByMonth, 'month', { dir, base })
     }
 
     if (config.perPeriod.formats.includes('tab')) {
-      outputOvertimeTabByPeriod(
-        result.overtimeByMonth,
-        'month',
-        { dir, base }
-      )
+      outputOvertimeTabByPeriod(result.overtimeByMonth, 'month', { dir, base })
     }
 
     if (config.perPeriod.formats.includes('xlsx')) {
-      await outputOvertimeExcelPerPeriod(
-        result.overtimeByMonth,
-        'month',
-        { dir, base, mode: config.perPeriod.excelMode }
-      )
+      await outputOvertimeExcelPerPeriod(result.overtimeByMonth, 'month', {
+        dir,
+        base,
+        mode: config.perPeriod.excelMode
+      })
     }
   }
+}
+
+export async function outputData(result, config) {
+  const dir = resolveOutDir(config.dir)
+
+  /* ---------- serve data（永远写） ---------- */
+  writeServeData(result, { dir })
 }

@@ -5,7 +5,8 @@ import { createProfiler } from 'wukong-profiler'
 import { parseOptions } from '../cli/parseOptions.mjs'
 import { getGitLogsFast } from '../domain/git/getGitLogs.mjs'
 import { analyzeOvertime } from '../domain/overtime/analyze.mjs'
-import { outputAll } from '../output/index.mjs'
+import { writeServeData } from '../output/data/writeData.mjs'
+import { outputAll,outputData } from '../output/index.mjs'
 
 export async function analyzeAction(rawOpts = {}) {
   const opts = parseOptions(rawOpts)
@@ -31,12 +32,11 @@ export async function analyzeAction(rawOpts = {}) {
   }
 
   // 3️⃣ 输出
-  await profiler.stepAsync('output', () =>
-    outputAll(result, {
-      format: opts.format,
-      outDir: opts.outDir || path.resolve('output-wukong')
+  await profiler.stepAsync('output', () => {
+    outputData(result, {
+      dir: opts.outDir || path.resolve('output-wukong')
     })
-  )
+  })
 
   spinner.succeed('Done')
   profiler.end('analyze')

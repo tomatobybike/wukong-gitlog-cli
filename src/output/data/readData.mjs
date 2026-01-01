@@ -31,6 +31,7 @@ export function readServeData(dir) {
   const result = {}
 
   for (const [key, meta] of Object.entries(schema.data)) {
+    // eslint-disable-next-line no-continue
     if (!meta.file) continue
 
     const file = path.join(dataDir, meta.file)
@@ -38,6 +39,7 @@ export function readServeData(dir) {
       if (meta.required) {
         throw new Error(`Missing required data file: ${meta.file}`)
       }
+      // eslint-disable-next-line no-continue
       continue
     }
 

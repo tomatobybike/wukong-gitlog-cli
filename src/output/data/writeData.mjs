@@ -41,13 +41,12 @@ function writeSchema(dir, files) {
   writeJson(outFile(dir, 'data.schema.json'), schema)
 }
 
-
 export function writeServeData(result, config) {
   const baseDir = `${config.dir}/data`
 
   const files = {}
 
-  files.commits = write(baseDir, 'commits.json', result.records)
+  files.commits = write(baseDir, 'commits.json', result.commits)
 
   files.authorMap = write(baseDir, 'authorMap.json', result.authorMap)
 

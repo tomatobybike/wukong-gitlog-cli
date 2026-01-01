@@ -47,7 +47,11 @@ const main = async () => {
   program
     .command('analyze')
     .description('Analyze git commits')
-    .action(analyzeAction)
+    .action((cmdOpts) => {
+      const globalOpts = program.opts()
+      const finalOpts = { ...globalOpts, ...cmdOpts }
+      analyzeAction(finalOpts)
+    })
 
   // # 加班文化分析
   program

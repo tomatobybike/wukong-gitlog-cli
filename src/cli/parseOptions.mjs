@@ -71,8 +71,22 @@ export async function parseOptions(cliOpts) {
       port: cliOpts.port
     },
     profile: {
-      hotThreshold: cliOpts.hotThreshold,
-      diffThreshold: cliOpts.diffThreshold
+      enabled: cliOpts.profile ,
+      flame: cliOpts.flame || true,
+      traceFile: cliOpts.traceFile || 'trace.json',
+      hotThreshold: cliOpts.hotThreshold || 0.8,
+      diffThreshold: cliOpts.diffThreshold || 0.2,
+      failOnHot: cliOpts.failOnHot || true,
+      diffBaseFile: cliOpts.diffBaseFile || 'baseline.json'
+      /*
+      enabled: true,
+      flame: true,
+      traceFile: 'trace.json',
+      hotThreshold: 0.8,
+      failOnHot: true,
+      diffBaseFile: 'baseline.json',
+      diffThreshold: 0.2
+      */
     }
   }
 

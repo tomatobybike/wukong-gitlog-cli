@@ -88,7 +88,7 @@ async function loadData() {
     safeImport('/data/overtime-monthly.mjs', []),
     safeImport('/data/overtime-latest-by-day.mjs', []),
     safeImport('/data/config.mjs', {}),
-    safeImport('/data/author-changes.mjs', {})
+    safeImport('/data/author.changes.mjs', {})
   ]);
 
   return { commits, stats, weekly, monthly, latestByDay, config, authorChanges };

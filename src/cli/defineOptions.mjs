@@ -115,10 +115,10 @@ export function defineOptions(program) {
     .option('--verbose', '显示详细性能日志')
     .option('--flame', '显示 flame-like 日志')
     .option('--trace <file>', '生成 Chrome Trace')
-    .option('--hot-threshold <n>', 'HOT 比例阈值', parseFloat, 0.8)
+    .option('--hot-threshold <n>', 'HOT 比例阈值', parseFloat)
     .option('--fail-on-hot', 'HOT 时 CI 失败')
     .option('--diff-base <file>', '基线 profile.json')
-    .option('--diff-threshold <n>', '回归阈值', parseFloat, 0.2)
+    .option('--diff-threshold <n>', '回归阈值', parseFloat)
 
     .option('--version', 'show version information')
 }

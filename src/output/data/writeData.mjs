@@ -92,6 +92,14 @@ export function writeServeDataMjs(result, config) {
     getEsmJs(result.authorMap)
   )
 
+  if (result.authorChanges) {
+    files.authorChanges = writeTxtFile(
+      baseDir,
+      'author.changes.mjs',
+      getEsmJs(result.authorChanges)
+    )
+  }
+
   if (result.overtime) {
     files.overtime = writeTxtFile(
       baseDir,

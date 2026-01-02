@@ -1,11 +1,12 @@
 import ora from 'ora'
 import path from 'path'
+import { start } from 'repl'
 import { createProfiler } from 'wukong-profiler'
 
 import { parseOptions } from '../cli/parseOptions.mjs'
 import { getAuthorChangeStats } from '../domain/author/analyze.mjs'
 import { getGitLogsFast } from '../domain/git/getGitLogs.mjs'
-import { analyzeOvertime } from '../domain/overtime/analyze.mjs'
+import { getWorkOvertimeStats } from '../domain/overtime/analyze.mjs'
 import { outputAll, outputData } from '../output/index.mjs'
 
 export async function analyzeAction(rawOpts = {}) {
@@ -39,11 +40,21 @@ export async function analyzeAction(rawOpts = {}) {
     authorChanges
   }
 
+  // TODO: remove debug log before production
+  console.log(' 🟢', 'opts', opts)
   // 2️⃣ 加班分析（可选）
   if (opts.overtime) {
-    result.overtime = await profiler.stepAsync('overtime', () =>
-      analyzeOvertime(commits, opts.worktime)
-    )
+    result.overtime = await profiler.stepAsync('overtime', () => {
+      // startHour = 9, endHour = 18, lunchStart = 12, lunchEnd = 14, country = 'CN'
+      const options = {
+        startHour: opts.worktime.start,
+        endHour: opts.worktime.end,
+        lunchStart: opts.worktime.lunch.start,
+        lunchEnd: opts.worktime.lunch.end,
+        country: opts.worktime.country
+      }
+      return getWorkOvertimeStats(commits, options)
+    })
   }
 
   // 3️⃣ 输出

@@ -41,6 +41,7 @@ export async function parseOptions(cliOpts) {
       since: cliOpts.since,
       until: cliOpts.until
     },
+    overtime: cliOpts.overtime,
     worktime: {
       country: cliOpts.country,
       start: cliOpts.workStart,

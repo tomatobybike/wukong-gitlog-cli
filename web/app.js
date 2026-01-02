@@ -83,7 +83,7 @@ async function loadData() {
     authorChanges
   ] = await Promise.all([
     safeImport('/data/commits.mjs', []),
-    safeImport('/data/overtime-stats.mjs', {}),
+    safeImport('/data/overtime.mjs', {}),
     safeImport('/data/overtime-weekly.mjs', []),
     safeImport('/data/overtime-monthly.mjs', []),
     safeImport('/data/overtime-latest-by-day.mjs', []),

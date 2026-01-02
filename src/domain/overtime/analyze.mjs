@@ -1,3 +1,5 @@
+import { createOvertimeStats } from './createOvertimeStats.mjs'
+
 // export function analyzeOvertime(records, worktime) {
 //   // 你现在的 createOvertimeStats 逻辑
 //   return {
@@ -7,8 +9,7 @@
 //   }
 // }
 
-
-export function analyzeOvertime(records, worktime) {
+export function analyzeOvertime3(records, worktime) {
   const stats = {
     total: records.length,
     offWork: 0,
@@ -37,4 +38,11 @@ export function analyzeOvertime(records, worktime) {
   })
 
   return stats
+}
+
+export const getWorkOvertimeStats = (records, opts) => {
+  // ❗只创建一次缓存实例
+  const getOvertimeStats = createOvertimeStats(opts)
+  const overtime = getOvertimeStats(records)
+  return overtime
 }

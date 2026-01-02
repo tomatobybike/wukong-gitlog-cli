@@ -1,5 +1,5 @@
 import { outputOvertimeCsvByPeriod } from './csv/overtime.mjs'
-import { writeServeData } from './data/writeData.mjs'
+import { writeServeData, writeServeDataMjs } from './data/writeData.mjs'
 import { outputCommitsExcel } from './excel/commits.mjs'
 import { outputOvertimeExcelPerPeriod } from './excel/perPeriod.mjs'
 import { outputOvertimeJson } from './json/overtime.mjs'
@@ -11,7 +11,6 @@ import { resolveOutDir } from './utils/outputPath.mjs'
 export async function outputAll(result, config) {
   const dir = resolveOutDir(config.dir)
   const base = config.base || 'commits'
-
 
   /* ---------- serve data（永远写） ---------- */
   writeServeData(result, { dir })
@@ -56,5 +55,5 @@ export async function outputData(result, config) {
   const dir = resolveOutDir(config.dir)
 
   /* ---------- serve data（永远写） ---------- */
-  writeServeData(result, { dir })
+  writeServeDataMjs(result, { dir })
 }

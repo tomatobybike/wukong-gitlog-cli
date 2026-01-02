@@ -6,11 +6,11 @@ export async function serveAction(opts) {
 
   const data = readServeData(dir)
 
-  if (!data.records) {
+  if (!data) {
     throw new Error(
       'No serve data found. Please run `wukong-gitlog analyze` first.'
     )
   }
 
-  await startServer(opts.port || 3000, data)
+  await startServer(opts.port || 3000, dir, data)
 }

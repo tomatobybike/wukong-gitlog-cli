@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import { pathToFileURL } from 'url';
 
 /* ---------------- validation ---------------- */
 
@@ -14,40 +15,41 @@ function validateSchema(schema) {
 }
 
 
-export function readServeData(dir) {
-  const dataDir = path.join(dir, 'data')
-  const schemaFile = path.join(dataDir, 'data.schema.json')
+export async function readServeData(dir) {
+  const dataDir = path.join(dir, 'data');
+  const schemaFile = path.join(dataDir, 'data.schema.json');
 
-  if (!fs.existsSync(schemaFile)) {
-    throw new Error('Missing data.schema.json')
-  }
+  if (!fs.existsSync(schemaFile)) throw new Error('Missing data.schema.json');
 
-  const schema = JSON.parse(
-    fs.readFileSync(schemaFile, 'utf8')
-  )
+  // 读取 schema 依然可以用 fs，因为它是配置文件
+  const schema = JSON.parse(fs.readFileSync(schemaFile, 'utf8'));
+  validateSchema(schema);
 
-  validateSchema(schema)
-
-  const result = {}
+  const result = {};
 
   for (const [key, meta] of Object.entries(schema.data)) {
-    // eslint-disable-next-line no-continue
-    if (!meta.file) continue
+    if (!meta.file) continue;
 
-    const file = path.join(dataDir, meta.file)
-    if (!fs.existsSync(file)) {
-      if (meta.required) {
-        throw new Error(`Missing required data file: ${meta.file}`)
-      }
-      // eslint-disable-next-line no-continue
-      continue
+    const filePath = path.join(dataDir, meta.file);
+    if (!fs.existsSync(filePath)) {
+      if (meta.required) throw new Error(`Missing: ${meta.file}`);
+      continue;
     }
 
-    result[key] = JSON.parse(
-      fs.readFileSync(file, 'utf8')
-    )
+    // 关键点：将绝对路径转换为 file:// URL 以支持 Windows 和 dynamic import
+    const fileUrl = pathToFileURL(filePath).href;
+
+    if (filePath.endsWith('.mjs')) {
+      const module = await import(fileUrl);
+      result[key] = module.default;
+    } else {
+      // JSON 文件处理
+      const raw = fs.readFileSync(filePath, 'utf8');
+      result[key] = JSON.parse(raw);
+    }
   }
 
-  return result
+  // TODO: remove debug log before production
+  // console.log('✅', 'result', result);
+  return result;
 }
-

@@ -61,44 +61,37 @@ function getISOWeekRange(isoYear, isoWeek) {
 }
 
 async function loadData() {
-  try {
-    const [
-      commitsModule,
-      statsModule,
-      weeklyModule,
-      monthlyModule,
-      latestByDayModule,
-      configModule,
-      authorChangesModule
-    ] = await Promise.all([
-      import('/data/commits.mjs'),
-      import('/data/overtime-stats.mjs'),
-      import('/data/overtime-weekly.mjs'),
-      import('/data/overtime-monthly.mjs').catch(() => ({ default: [] })),
-      import('/data/overtime-latest-by-day.mjs').catch(() => ({ default: [] })),
-      import('/data/config.mjs').catch(() => ({ default: {} })),
-      import('/data/author-changes.mjs').catch(() => ({ default: {} }))
-    ])
-    const commits = commitsModule.default || []
-    const stats = statsModule.default || {}
-    const weekly = weeklyModule.default || []
-    const monthly = monthlyModule.default || []
-    const latestByDay = latestByDayModule.default || []
-    const config = configModule.default || {}
-    const authorChanges = authorChangesModule.default || {}
-    return {
-      commits,
-      stats,
-      weekly,
-      monthly,
-      latestByDay,
-      config,
-      authorChanges
+  // 定义加载函数，包装 import 以便添加错误处理
+  const safeImport = async (path, defaultValue) => {
+    try {
+      const module = await import(path);
+      return module.default || defaultValue;
+    } catch (e) {
+      console.warn(`文件加载失败: ${path}`, e);
+      return defaultValue;
     }
-  } catch (err) {
-    console.error('Load data failed', err)
-    return { commits: [], stats: {}, weekly: [], monthly: [], latestByDay: [] }
-  }
+  };
+
+  // 并行加载所有静态模块
+  const [
+    commits,
+    stats,
+    weekly,
+    monthly,
+    latestByDay,
+    config,
+    authorChanges
+  ] = await Promise.all([
+    safeImport('/data/commits.mjs', []),
+    safeImport('/data/overtime-stats.mjs', {}),
+    safeImport('/data/overtime-weekly.mjs', []),
+    safeImport('/data/overtime-monthly.mjs', []),
+    safeImport('/data/overtime-latest-by-day.mjs', []),
+    safeImport('/data/config.mjs', {}),
+    safeImport('/data/author-changes.mjs', {})
+  ]);
+
+  return { commits, stats, weekly, monthly, latestByDay, config, authorChanges };
 }
 
 let commitsAll = []

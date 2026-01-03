@@ -14,7 +14,7 @@ import { outputAll, outputData } from '../output/index.mjs'
 import { getWeekRange } from '../utils/getWeekRange.mjs'
 import { groupRecords } from '../utils/groupRecords.mjs'
 
-const getWorkTimeConfig = (opts) => {
+export const getWorkTimeConfig = (opts) => {
   // startHour = 9, endHour = 18, lunchStart = 12, lunchEnd = 14, country = 'CN'
   return {
     startHour: opts.worktime.start,
@@ -26,7 +26,7 @@ const getWorkTimeConfig = (opts) => {
   }
 }
 
-const getOvertimeByWeek = (commits) => {
+export const getOvertimeByWeek = (commits) => {
   // 新增：每周趋势数据（用于前端图表）
   const weekGroups = groupRecords(commits, 'week')
   const weekKeys = Object.keys(weekGroups).sort()
@@ -45,7 +45,7 @@ const getOvertimeByWeek = (commits) => {
   return weeklySeries
 }
 
-const getOvertimeByMonth = (commits) => {
+export const getOvertimeByMonth = (commits) => {
   // 新增：每月趋势数据（用于前端图表）
   const monthGroups = groupRecords(commits, 'month')
   const monthKeys = Object.keys(monthGroups).sort()
@@ -64,7 +64,7 @@ const getOvertimeByMonth = (commits) => {
 }
 
 // 每日最晚提交小时（用于显著展示加班严重程度）
-const getLatestCommitByDay = ({ commits, opts }) => {
+export const getLatestCommitByDay = ({ commits, opts }) => {
   // 新增：每日最晚提交小时（用于显著展示加班严重程度）
   const dayGroups2 = groupRecords(commits, 'day')
   const dayKeys2 = Object.keys(dayGroups2).sort()
@@ -155,103 +155,4 @@ const getLatestCommitByDay = ({ commits, opts }) => {
     }
   })
   return latestByDay
-}
-
-export async function analyzeAction(rawOpts = {}) {
-  const opts = await parseOptions(rawOpts)
-  // TODO: remove debug log before production
-  // console.log('✅', 'rawOpts', rawOpts);
-  // console.log('✅', 'opts.profile', opts.profile)
-  // const spinner = ora('Analyzing git commits...').start()
-
-  const profiler = createProfiler({
-    ...opts.profile
-  })
-
-  const mb = createMultiBar()
-  const bar = mb.create(100, {
-    prefix: chalk.cyan('Build'),
-    format: 'Build [:bar] :percent :current/:total'
-  })
-
-  // 1️⃣ 拉 git 记录
-  const { commits, authorMap } = await profiler.stepAsync('getGitLogs', () =>
-    getGitLogsFast(opts)
-  )
-  bar.tick(10)
-
-  // 2️⃣ 分析作者变更统计
-  const { authorChanges } = await profiler.stepAsync(
-    'analyzeAuthorChanges',
-    () => {
-      // 分析作者变更统计
-      const result = getAuthorChangeStats(commits)
-      return { authorChanges: result }
-    }
-  )
-
-  const result = {
-    commits,
-    authorMap,
-    authorChanges
-  }
-
-  // TODO: remove debug log before production
-  // console.log(' 🟢', 'opts', opts)
-  // 2️⃣ 加班分析（可选）
-  if (opts.overtime) {
-    const overtime = await profiler.stepAsync('overtime', () => {
-      const worktimeOptions = getWorkTimeConfig(opts)
-      return getWorkOvertimeStats(commits, worktimeOptions)
-    })
-    bar.tick(20)
-
-    // 新增：每周趋势数据（用于前端图表）
-    const overtimeByWeek = await profiler.stepAsync('overtimeByWeek', () => {
-      return getOvertimeByWeek(commits)
-    })
-    bar.tick(40)
-
-    // 新增：每月趋势数据（用于前端图表）
-    const overtimeByMonth = await profiler.stepAsync('overtimeByMonth', () => {
-      return getOvertimeByMonth(commits)
-    })
-    bar.tick(60)
-
-    // 新增：每日最晚提交小时（用于显著展示加班严重程度）
-    const overtimeLatestCommitByDay = await profiler.stepAsync(
-      'overtimeLatestCommitByDay',
-      () => {
-        const worktimeOptions = getWorkTimeConfig(opts)
-        return getLatestCommitByDay({
-          commits,
-          opts: {
-            ...worktimeOptions
-          }
-        })
-      }
-    )
-    bar.tick(80)
-
-    result.overtime = overtime
-    result.overtimeByWeek = overtimeByWeek
-    result.overtimeByMonth = overtimeByMonth
-    result.overtimeLatestCommitByDay = overtimeLatestCommitByDay
-  }
-
-  // 3️⃣ 输出
-  await profiler.stepAsync('output', async () => {
-    const worktimeOptions = getWorkTimeConfig(opts)
-
-    await outputData(result, {
-      dir: opts.outDir || path.resolve('output-wukong'),
-      worktimeOptions
-    })
-    return null
-  })
-
-  profiler.end('analyze')
-  // spinner.succeed('Done')
-  mb.stop()
-  return result
 }

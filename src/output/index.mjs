@@ -55,5 +55,5 @@ export async function outputData(result, config) {
   const dir = resolveOutDir(config.dir)
 
   /* ---------- serve data（永远写） ---------- */
-  writeServeDataMjs(result, { dir })
+  writeServeDataMjs(result, { dir, worktimeOptions: config.worktimeOptions })
 }

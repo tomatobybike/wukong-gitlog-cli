@@ -1,5 +1,4 @@
 import fs from 'fs'
-import path from 'path'
 
 import { getEsmJs } from '../utils/getEsmJs.mjs'
 import { outFile } from '../utils/outputPath.mjs'
@@ -79,10 +78,17 @@ export function writeServeData(result, config) {
   writeSchema(baseDir, files)
 }
 
+
 export function writeServeDataMjs(result, config) {
   const baseDir = `${config.dir}/data`
 
   const files = {}
+
+  files.config = writeTxtFile(
+    baseDir,
+    'config.mjs',
+    getEsmJs(config.worktimeOptions)
+  )
 
   files.commits = writeTxtFile(baseDir, 'commits.mjs', getEsmJs(result.commits))
 
@@ -121,6 +127,13 @@ export function writeServeDataMjs(result, config) {
       baseDir,
       'overtime.week.mjs',
       getEsmJs(result.overtimeByWeek)
+    )
+  }
+  if (result.overtimeLatestCommitByDay) {
+    files.overtimeLatestCommitByDay = writeTxtFile(
+      baseDir,
+      'overtime.latest.commit.day.mjs',
+      getEsmJs(result.overtimeLatestCommitByDay)
     )
   }
 

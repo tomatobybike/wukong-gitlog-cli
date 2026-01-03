@@ -5,6 +5,7 @@
  * @created: 2025-12-31 17:24
  */
 import { loadRcConfig } from '../infra/configStore.mjs'
+import { resolveBool,resolveValue } from '#src/utils/resolve.mjs'
 
 /**
  * 深度合并辅助函数 (如果你的项目里没引入 lodash，可以直接用这个)
@@ -26,6 +27,10 @@ export async function parseOptions(cliOpts) {
   // 确保拿到 baseConfig
   const baseConfig = await loadRcConfig()
 
+  const overtime = resolveBool(cliOpts.overtime, baseConfig?.overtime, false)
+
+  const country = resolveValue(cliOpts.country, baseConfig?.worktime?.country, 'CN')
+
   // 2. 将扁平的 CLI 参数映射为嵌套结构 (与 RC 结构对齐)
   // 注意：只有当 CLI 确实传了值时，才映射到对象里，否则保持 undefined
   const mappedCli = {
@@ -41,9 +46,9 @@ export async function parseOptions(cliOpts) {
       since: cliOpts.since,
       until: cliOpts.until
     },
-    overtime: cliOpts.overtime,
+    overtime,
     worktime: {
-      country: cliOpts.country,
+      country,
       start: cliOpts.workStart,
       end: cliOpts.workEnd,
       overnightCutoff: cliOpts.overnightCutoff,

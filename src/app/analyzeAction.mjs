@@ -25,14 +25,14 @@ export async function analyzeAction(rawOpts = {}) {
   // 初始化 MultiBar
   const mb = createMultiBar()
   const bar = mb.create(100, {
-    prefix: chalk.cyan('Create Report'),
+    prefix: chalk.cyan('Analyze'),
     format: ' [:bar] :percent :current/:total'
   })
 
   // 辅助函数：内部更新进度并修改描述文字
   const step = (tickValue, taskName) => {
     bar.state.prefix =
-      chalk.cyan('Create Report') + chalk.green(` [${taskName}]`)
+      chalk.cyan('Analyze') + chalk.green(` [${taskName}]`)
     bar.tick(tickValue)
   }
   const result = {}

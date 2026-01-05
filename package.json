@@ -112,7 +112,7 @@
     "semver": "6.3.1",
     "string-width": "5.1.2",
     "wukong-profiler": "^1.0.6",
-    "wukong-progress": "^0.1.1",
+    "wukong-progress": "^0.1.2",
     "zx": "7.2.4"
   },
   "devDependencies": {

@@ -26,29 +26,24 @@ export async function analyzeAction(rawOpts = {}) {
   const mb = createMultiBar()
   const bar = mb.create(100, {
     prefix: chalk.cyan('Analyze'),
-    format: ' [:bar] :percent :current/:total'
+    format: ' [:bar] :percent :payload'
   })
 
-  // 辅助函数：内部更新进度并修改描述文字
-  const step = (tickValue, taskName) => {
-    bar.state.prefix =
-      chalk.cyan('Analyze') + chalk.green(` [${taskName}]`)
-    bar.tick(tickValue)
-  }
+
   const result = {}
 
   try {
     // 1️⃣ 拉取 Git 记录
-    step(5, '正在提取 Git 提交记录...')
+    bar.step(5, '正在提取 Git 提交记录...')
     const { commits, authorMap } = await profiler.stepAsync('getGitLogs', () =>
       getGitLogsFast(opts)
     )
     result.commits = commits
     result.authorMap = authorMap
-    step(15, 'Git 记录提取完成')
+    bar.step(15, 'Git 记录提取完成')
 
     // 2️⃣ 分析作者变更
-    step(10, '正在分析作者代码贡献...')
+    bar.step(10, '正在分析作者代码贡献...')
     const authorChanges = await profiler.stepAsync(
       'analyzeAuthorChanges',
       () => {
@@ -61,26 +56,26 @@ export async function analyzeAction(rawOpts = {}) {
     if (opts.overtime) {
       const worktimeOptions = getWorkTimeConfig(opts)
 
-      step(10, '正在计算加班概况...')
+      bar.step(10, '正在计算加班概况...')
       result.overtime = await profiler.stepAsync('overtime', () => {
         return getWorkOvertimeStats(commits, worktimeOptions)
       })
 
-      step(20, '正在生成周/月趋势数据...')
+      bar.step(20, '正在生成周/月趋势数据...')
       result.overtimeByWeek = await getOvertimeByWeek(commits)
       result.overtimeByMonth = await getOvertimeByMonth(commits)
 
-      step(20, '正在标记每日最晚提交点...')
+      bar.step(20, '正在标记每日最晚提交点...')
       result.overtimeLatestCommitByDay = await getLatestCommitByDay({
         commits,
         opts: worktimeOptions
       })
     } else {
-      step(50, '跳过加班数据分析')
+      bar.step(50, '跳过加班数据分析')
     }
 
     // 4️⃣ 数据输出
-    step(10, '正在持久化分析结果...')
+    bar.step(10, '正在持久化分析结果...')
     await profiler.stepAsync('output', async () => {
       const worktimeOptions = getWorkTimeConfig(opts)
       await outputData(result, {
@@ -89,7 +84,7 @@ export async function analyzeAction(rawOpts = {}) {
       })
     })
 
-    step(10, '分析任务全部完成！')
+    bar.step(100, '分析任务全部完成！')
   } catch (error) {
     // 异常处理：停止进度条并打印红色错误
     mb.stop()

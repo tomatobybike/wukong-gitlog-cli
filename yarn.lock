@@ -4606,10 +4606,10 @@ wukong-profiler@^1.0.6:
     commander "^14.0.2"
     open "^11.0.0"
 
-wukong-progress@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.npmjs.org/wukong-progress/-/wukong-progress-0.1.1.tgz#b44543bca74a0b9de2b59bdd3dd0a2a3715020f4"
-  integrity sha512-EoBPvBtkZ4BPZ8fZmIISJEqi67NBFCZWIt3ZXKtC1AQirM6g3mmRaXbV8nRaonJah1szRtC7bEMn0WLkyiEt6A==
+wukong-progress@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.npmjs.org/wukong-progress/-/wukong-progress-0.1.2.tgz#52ab270a1a529967652929b15411569b214e18d6"
+  integrity sha512-pqMKHHGk9Gm9V2CqlCUxe+DsW1ONGea/WsmxlORddi/aTYf/m+kIeP218R4PwXQtOVYNi+STQEha58UHhCj6MQ==
   dependencies:
     chalk "^5.3.0"
 

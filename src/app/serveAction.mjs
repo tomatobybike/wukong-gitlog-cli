@@ -1,8 +1,10 @@
 import { readServeData } from '../output/data/readData.mjs'
 import { startServer } from '../serve/startServer.mjs'
+import { parseOptions } from '../cli/parseOptions.mjs'
 
-export async function serveAction(opts) {
-  const dir = opts.outDir || 'output-wukong'
+export async function serveAction(rawOpts = {}) {
+  const opts = await parseOptions(rawOpts)
+  const dir = opts.output.dir || 'output-wukong'
 
   const data = readServeData(dir)
 

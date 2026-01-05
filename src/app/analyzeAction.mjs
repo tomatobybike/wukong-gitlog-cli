@@ -19,6 +19,7 @@ import {
 
 export async function analyzeAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
+
   const profiler = createProfiler({ ...opts.profile })
 
   // 未来 可考虑将 MultiBar 抽离到更高层，支持所有 action 共用，wukong-progress 需要支持自定义子任务占位符
@@ -79,7 +80,7 @@ export async function analyzeAction(rawOpts = {}) {
     await profiler.stepAsync('output', async () => {
       const worktimeOptions = getWorkTimeConfig(opts)
       await outputData(result, {
-        dir: opts.outDir || path.resolve('output-wukong'),
+        dir: opts.output.dir || path.resolve('output-wukong'),
         worktimeOptions
       })
     })

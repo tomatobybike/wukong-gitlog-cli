@@ -78,6 +78,8 @@ export async function initAction(options) {
       case 'json':
         content = JSON.stringify(DEFAULT_CONFIG, null, 2);
         break;
+      default:
+        throw new Error('Unsupported format selected.');
     }
 
     fs.writeFileSync(targetPath, content, 'utf8');

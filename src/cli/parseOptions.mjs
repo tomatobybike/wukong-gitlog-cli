@@ -4,8 +4,9 @@
  * @author: King Monkey
  * @created: 2025-12-31 17:24
  */
+import { resolveBool, resolveValue } from '#src/utils/resolve.mjs'
+
 import { loadRcConfig } from '../infra/configStore.mjs'
-import { resolveBool,resolveValue } from '#src/utils/resolve.mjs'
 
 /**
  * 深度合并辅助函数 (如果你的项目里没引入 lodash，可以直接用这个)
@@ -29,7 +30,11 @@ export async function parseOptions(cliOpts) {
 
   const overtime = resolveBool(cliOpts.overtime, baseConfig?.overtime, false)
 
-  const country = resolveValue(cliOpts.country, baseConfig?.worktime?.country, 'CN')
+  const country = resolveValue(
+    cliOpts.country,
+    baseConfig?.worktime?.country,
+    'CN'
+  )
 
   // 2. 将扁平的 CLI 参数映射为嵌套结构 (与 RC 结构对齐)
   // 注意：只有当 CLI 确实传了值时，才映射到对象里，否则保持 undefined
@@ -62,10 +67,8 @@ export async function parseOptions(cliOpts) {
           : undefined
     },
     output: {
-      // 特殊逻辑：处理 outParent 优先级
-      dir: cliOpts.outParent
-        ? '../output-wukong'
-        : cliOpts.outDir || cliOpts.out,
+      out: cliOpts.out, // export 导出文件名
+      dir: cliOpts.outParent ? '../output-wukong' : cliOpts.outDir,
       formats: cliOpts.format ? cliOpts.format : undefined,
       perPeriod: {
         formats: cliOpts.perPeriodFormats?.split(','),
@@ -77,7 +80,7 @@ export async function parseOptions(cliOpts) {
       port: cliOpts.port
     },
     profile: {
-      enabled: cliOpts.profile ,
+      enabled: cliOpts.profile,
       flame: cliOpts.flame || true,
       traceFile: cliOpts.traceFile || 'trace.json',
       hotThreshold: cliOpts.hotThreshold || 0.8,

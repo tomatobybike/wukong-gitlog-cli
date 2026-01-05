@@ -12,7 +12,7 @@ export function defineOptions(program) {
     .name('wukong-gitlog')
     .version(pkg.version, '-v')
     .description('Advanced Git commit log exporter.')
-    .option('--author <name>', '指定 author 名')
+    .option('--author <name>', '指定 author')
     .option('--email <email>', '指定 email')
     .option('--since <date>', '起始日期')
     .option('--until <date>', '结束日期')
@@ -37,7 +37,7 @@ export function defineOptions(program) {
       '可选：Gerrit API 授权，格式为 `user:pass` 或 `TOKEN`（表示 Bearer token）'
     )
 
-    .option('--overtime')
+    .option('--overtime', '启用加班文化分析')
 
     .option('--country <code>', '节假日国家：CN 或 US，默认为 CN')
     .option(

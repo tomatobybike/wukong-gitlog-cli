@@ -4,7 +4,7 @@
 export default {
   "git": {
     "noMerges": true,
-    "limit": 5000
+    "limit": undefined
   },
   "period": {
     "groupBy": "month"

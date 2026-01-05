@@ -3,6 +3,28 @@
 /* global echarts */
 const formatDate = (d) => new Date(d).toLocaleString()
 
+// 综合判断函数，考虑多种情况
+function isEmptyObject(obj) {
+  // 1. 检查是否为对象
+  if (obj === null || typeof obj !== 'object') {
+    return false
+  }
+
+  // 2. 检查是否是空对象
+  return Object.keys(obj).length === 0
+}
+
+// 根据对象内容隐藏对应图表卡片
+function hideElementByObj({ el, objectName }) {
+  const isEmpty = isEmptyObject(objectName)
+  if (isEmpty) {
+    const chartCard = el?.closest('.chart-card')
+    chartCard.style.display = 'none'
+    return true
+  }
+  return isEmpty
+}
+
 function filterByDate(commits) {
   const start = document.getElementById('startDate')?.value
   const end = document.getElementById('endDate')?.value
@@ -64,34 +86,27 @@ async function loadData() {
   // 定义加载函数，包装 import 以便添加错误处理
   const safeImport = async (path, defaultValue) => {
     try {
-      const module = await import(path);
-      return module.default || defaultValue;
+      const module = await import(path)
+      return module.default || defaultValue
     } catch (e) {
-      console.warn(`文件加载失败: ${path}`, e);
-      return defaultValue;
+      console.warn(`文件加载失败: ${path}`, e)
+      return defaultValue
     }
-  };
+  }
 
   // 并行加载所有静态模块
-  const [
-    commits,
-    stats,
-    weekly,
-    monthly,
-    latestByDay,
-    config,
-    authorChanges
-  ] = await Promise.all([
-    safeImport('/data/commits.mjs', []),
-    safeImport('/data/overtime.mjs', {}),
-    safeImport('/data/overtime.week.mjs', []),
-    safeImport('/data/overtime.month.mjs', []),
-    safeImport('/data/overtime.latest.commit.day.mjs', []),
-    safeImport('/data/config.mjs', {}),
-    safeImport('/data/author.changes.mjs', {})
-  ]);
+  const [commits, stats, weekly, monthly, latestByDay, config, authorChanges] =
+    await Promise.all([
+      safeImport('/data/commits.mjs', []),
+      safeImport('/data/overtime.mjs', {}),
+      safeImport('/data/overtime.week.mjs', []),
+      safeImport('/data/overtime.month.mjs', []),
+      safeImport('/data/overtime.latest.commit.day.mjs', []),
+      safeImport('/data/config.mjs', {}),
+      safeImport('/data/author.changes.mjs', {})
+    ])
 
-  return { commits, stats, weekly, monthly, latestByDay, config, authorChanges };
+  return { commits, stats, weekly, monthly, latestByDay, config, authorChanges }
 }
 
 let commitsAll = []
@@ -185,6 +200,12 @@ function initTableControls() {
 
 function drawHourlyOvertime(stats, onHourClick) {
   const el = document.getElementById('hourlyOvertimeChart')
+  // TODO: remove debug log before production
+  console.log('✅', 'stats', stats)
+  const isEmpty = hideElementByObj({ el, objectName: stats })
+  if (isEmpty) {
+    return false
+  }
   const chart = echarts.init(el)
 
   const commits = stats.hourlyOvertimeCommits || []
@@ -566,13 +587,22 @@ function showSideBarForWeek({ period, weeklyItem, commits = [], titleDrawer }) {
 }
 
 function drawWeeklyTrend(weekly, commits, onWeekClick) {
-  if (!Array.isArray(weekly) || weekly.length === 0) return null
+  const el = document.getElementById('weeklyTrendChart')
+  const isEmpty = hideElementByObj({ el, objectName: weekly })
+  if (isEmpty) {
+    return null
+  }
+  if (!Array.isArray(weekly) || weekly.length === 0) {
+    return null
+  }
 
   const labels = weekly.map((w) => w.period)
   const dataRate = weekly.map((w) => +(w.outsideWorkRate * 100).toFixed(1)) // %
   const dataCount = weekly.map((w) => w.outsideWorkCount)
 
-  const el = document.getElementById('weeklyTrendChart')
+  // TODO: remove debug log before production
+  console.log('✅', 'weekly', weekly)
+
   const titleDrawer = el.getAttribute('data-title') || ''
 
   const chart = echarts.init(el)
@@ -691,12 +721,16 @@ function drawWeeklyTrend(weekly, commits, onWeekClick) {
 }
 
 function drawMonthlyTrend(monthly, commits, onMonthClick) {
+  const el = document.getElementById('monthlyTrendChart')
+  const isEmpty = hideElementByObj({ el, objectName: monthly })
+  if (isEmpty) {
+    return null
+  }
   if (!Array.isArray(monthly) || monthly.length === 0) return null
 
   const labels = monthly.map((m) => m.period)
   const dataRate = monthly.map((m) => +(m.outsideWorkRate * 100).toFixed(1)) // 0–100%
 
-  const el = document.getElementById('monthlyTrendChart')
   const titleDrawer = el.getAttribute('data-title') || ''
   // eslint-disable-next-line no-undef
   const chart = echarts.init(el)
@@ -814,6 +848,11 @@ function drawMonthlyTrend(monthly, commits, onMonthClick) {
 }
 
 function drawLatestHourDaily(latestByDay, commits, onDayClick) {
+  const el = document.getElementById('latestHourDailyChart')
+  const isEmpty = hideElementByObj({ el, objectName: latestByDay })
+  if (isEmpty) {
+    return null
+  }
   if (!Array.isArray(latestByDay) || latestByDay.length === 0) return null
 
   const labels = latestByDay.map((d) => d.date)
@@ -842,7 +881,6 @@ function drawLatestHourDaily(latestByDay, commits, onDayClick) {
   const numericValues = raw.filter((v) => typeof v === 'number')
   const maxV = numericValues.length > 0 ? Math.max(...numericValues) : 0
 
-  const el = document.getElementById('latestHourDailyChart')
   const titleDrawer = el.getAttribute('data-title') || ''
 
   // eslint-disable-next-line no-undef
@@ -958,6 +996,11 @@ function drawLatestHourDaily(latestByDay, commits, onDayClick) {
 }
 
 function drawDailySeverity(latestByDay, commits, onDayClick) {
+  const el = document.getElementById('dailySeverityChart')
+  const isEmpty = hideElementByObj({ el, objectName: latestByDay })
+  if (isEmpty) {
+    return null
+  }
   if (!Array.isArray(latestByDay) || latestByDay.length === 0) return null
 
   const labels = latestByDay.map((d) => d.date)
@@ -973,7 +1016,6 @@ function drawDailySeverity(latestByDay, commits, onDayClick) {
   // 这里按 0 小时加班处理，保证折线连续。
   const sev = raw.map((v) => (v == null ? 0 : Math.max(0, Number(v) - endH)))
 
-  const el = document.getElementById('dailySeverityChart')
   const titleDrawer = el.getAttribute('data-title') || ''
 
   // eslint-disable-next-line no-undef
@@ -1131,7 +1173,7 @@ function drawDailyTrendSeverity(commits, weekly, onDayClick) {
 
   // ---------- 3. 自动分析「最累的一周」 ----------
   let maxWeek = null
-  if (Array.isArray(weekly)) {
+  if (Array.isArray(weekly) && weekly.length > 0) {
     maxWeek = weekly.reduce((a, b) =>
       a.outsideWorkCount > b.outsideWorkCount ? a : b
     )
@@ -1338,8 +1380,11 @@ function renderKpi(stats) {
       (latestOut ? new Date(latestOut.date).getHours() : null)
   }
 
+  const htmlLatest = latest
+    ? `<div>最晚一次提交时间：${latest ? formatDate(latest.date) : '-'}${typeof latestHour === 'number' ? `（${String(latestHour).padStart(2, '0')}:00）` : ''} <div class="author">${latest?.author}</div> <div> ${latest?.message} <div></div>`
+    : ``
   const html = [
-    `<div>最晚一次提交时间：${latest ? formatDate(latest.date) : '-'}${typeof latestHour === 'number' ? `（${String(latestHour).padStart(2, '0')}:00）` : ''} <div class="author">${latest.author}</div> <div> ${latest.message} <div></div>`,
+    htmlLatest,
     `<div class="hr"></div>`,
     `<div>加班最晚一次提交时间：${latestOut ? formatDate(latestOut.date) : '-'}${typeof latestOutHour === 'number' ? `（${String(latestOutHour).padStart(2, '0')}:00）` : ''} <div class="author">${latestOut.author}</div> <div>${latestOut.message}</div> </div>`,
     `<div class="hr"></div>`,

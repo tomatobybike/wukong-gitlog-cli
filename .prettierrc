@@ -1,8 +1,9 @@
 {
   "bracketSpacing": true,
   "importOrder": [
+
     "^./conf(.*)(?<!.css)$",
-    "^(#|#company|#command|#ui|components|#utils|#constants||#lib|utils|config|vendored-lib)(/(.*)(?<!.css)$)",
+    "^(#|#company|#command|#ui|#src|components|#utils|#constants||#lib|utils|config|vendored-lib)(/(.*)(?<!.css)$)",
     "^(src|@)/(.*)(?<!.css)$",
     "^[./]",
     "^api/(.*)(?<!.css)$",

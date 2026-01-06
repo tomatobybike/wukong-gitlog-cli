@@ -1,24 +1,11 @@
 import fs from 'fs'
 
 import { getEsmJs } from '../utils/getEsmJs.mjs'
-import { outFile } from '../utils/outputPath.mjs'
-import { writeJson, writeText } from '../utils/writeFile.mjs'
+import { writeJsonFile, writeTxtFile } from '../utils/index.mjs'
 
 const pkg = JSON.parse(
   fs.readFileSync(new URL('../../../package.json', import.meta.url), 'utf-8')
 )
-
-/* ---------------- helpers ---------------- */
-
-function writeJsonFile(dir, name, data) {
-  writeJson(outFile(dir, name), data)
-  return name
-}
-
-function writeTxtFile(dir, name, data) {
-  writeText(outFile(dir, name), data)
-  return name
-}
 
 function writeSchema(dir, files) {
   const schema = {
@@ -43,7 +30,7 @@ function writeSchema(dir, files) {
     }
   }
 
-  writeJson(outFile(dir, 'data.schema.json'), schema)
+  writeJsonFile(dir, 'data.schema.json', schema)
 }
 
 export function writeServeData(result, config) {
@@ -77,7 +64,6 @@ export function writeServeData(result, config) {
 
   writeSchema(baseDir, files)
 }
-
 
 export function writeServeDataMjs(result, config) {
   const baseDir = `${config.dir}/data`

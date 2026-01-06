@@ -43,7 +43,7 @@ const main = async () => {
       await initAction(options)
     })
 
-  // # 核心分析（默认）
+  // # 核心分析（默认） 分析 git 提交记录
   program
     .command('analyze')
     .description('Analyze git commits')

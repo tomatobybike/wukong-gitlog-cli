@@ -52,6 +52,11 @@ export async function parseOptions(cliOpts) {
       until: cliOpts.until
     },
     overtime,
+    gerrit: {
+      prefix: cliOpts.gerrit,
+      api: cliOpts.gerritApi,
+      auth: cliOpts.gerritAuth,
+    },
     worktime: {
       country,
       start: cliOpts.workStart,
@@ -85,7 +90,7 @@ export async function parseOptions(cliOpts) {
       traceFile: cliOpts.traceFile || 'trace.json',
       hotThreshold: cliOpts.hotThreshold || 0.8,
       diffThreshold: cliOpts.diffThreshold || 0.2,
-      failOnHot: cliOpts.failOnHot || true,
+      failOnHot: cliOpts.failOnHot || false,
       diffBaseFile: cliOpts.diffBaseFile || 'baseline.json'
       /*
       enabled: true,

@@ -21,7 +21,6 @@ export function defineOptions(program) {
 
     .option('--group-by <type>', '按日期分组: day | month | week')
     .option('--format <type>', '输出格式: text | excel | json', 'text')
-    .option('--json', '输出 JSON')
 
     .option('--stats', '输出每日统计数据')
     .option(

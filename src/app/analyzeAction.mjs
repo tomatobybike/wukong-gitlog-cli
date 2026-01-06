@@ -6,6 +6,7 @@ import { createMultiBar } from 'wukong-progress'
 import { parseOptions } from '../cli/parseOptions.mjs'
 import { getAuthorChangeStats } from '../domain/author/analyze.mjs'
 import { getGitLogsFast } from '../domain/git/getGitLogs.mjs'
+import { resolveGerrit } from '../domain/git/resolveGerrit.mjs'
 import { getWorkOvertimeStats } from '../domain/overtime/analyze.mjs'
 import { outputAll, outputData } from '../output/index.mjs'
 import {
@@ -21,7 +22,7 @@ export async function analyzeAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
 
   // TODO: remove debug log before production
-  console.log('✅', 'opts', opts);
+  console.log('✅', 'opts', opts)
   const profiler = createProfiler({ ...opts.profile })
 
   // 未来 可考虑将 MultiBar 抽离到更高层，支持所有 action 共用，wukong-progress 需要支持自定义子任务占位符
@@ -31,7 +32,6 @@ export async function analyzeAction(rawOpts = {}) {
     prefix: chalk.cyan('Analyze'),
     format: ' [:bar] :percent :payload'
   })
-
 
   const result = {}
 
@@ -45,12 +45,21 @@ export async function analyzeAction(rawOpts = {}) {
     result.authorMap = authorMap
     bar.step(15, 'Git 记录提取完成')
 
+    const records = result.commits
+
+    // 2️⃣ Gerrit enrich（公共）
+    const enrichedRecords = opts.gerrit
+      ? await resolveGerrit(records, opts)
+      : records
+
+
+
     // 2️⃣ 分析作者变更
     bar.step(10, '正在分析作者代码贡献...')
     const authorChanges = await profiler.stepAsync(
       'analyzeAuthorChanges',
       () => {
-        return getAuthorChangeStats(commits)
+        return getAuthorChangeStats(enrichedRecords)
       }
     )
     result.authorChanges = authorChanges
@@ -61,16 +70,16 @@ export async function analyzeAction(rawOpts = {}) {
 
       bar.step(10, '正在计算加班概况...')
       result.overtime = await profiler.stepAsync('overtime', () => {
-        return getWorkOvertimeStats(commits, worktimeOptions)
+        return getWorkOvertimeStats(enrichedRecords, worktimeOptions)
       })
 
       bar.step(20, '正在生成周/月趋势数据...')
-      result.overtimeByWeek = await getOvertimeByWeek(commits)
-      result.overtimeByMonth = await getOvertimeByMonth(commits)
+      result.overtimeByWeek = await getOvertimeByWeek(enrichedRecords)
+      result.overtimeByMonth = await getOvertimeByMonth(enrichedRecords)
 
       bar.step(20, '正在标记每日最晚提交点...')
       result.overtimeLatestCommitByDay = await getLatestCommitByDay({
-        commits,
+        commits:enrichedRecords,
         opts: worktimeOptions
       })
     } else {

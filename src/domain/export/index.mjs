@@ -8,5 +8,6 @@ export const handleExportOvertimeMain = ({ name, opts, result }) => {
   const config = { dir: opts.output.dir || path.resolve('output-wukong') }
   const baseDir = `${config.dir}/${EXPORT_DIR}`
   writeJsonFile(baseDir, `${name}.json`, result)
-  logger.success(`overtime JSON 已导出 `, name)
+  const file = `${baseDir}/${name}.json`
+  logger.success(`overtime JSON 已导出 `, file)
 }

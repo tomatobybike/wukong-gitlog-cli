@@ -15,6 +15,7 @@ import {
   handleExportOvertimeTxt,
   handleExportOvertimeCsv
 } from '#src/domain/export/index.mjs'
+import {handleExportByMonth} from "#src/domain/export/exportByMonth.mjs"
 
 import { parseOptions } from '../cli/parseOptions.mjs'
 import { getGitLogsFast } from '../domain/git/getGitLogs.mjs'
@@ -118,6 +119,13 @@ export async function exportAction(rawOpts = {}) {
       fileName: 'overtime_commits.csv',
       opts,
       result: overtimeCsvResult
+    })
+
+    // 导出 每月数据
+    handleExportByMonth({
+      opts,
+      records: commits,
+      worktimeOptions
     })
 
   } catch (error) {

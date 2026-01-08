@@ -12,7 +12,8 @@ import { createMultiBar } from 'wukong-progress'
 import {
   handleExportOvertimeMain,
   handleExportOvertimeTabTxt,
-  handleExportOvertimeTxt
+  handleExportOvertimeTxt,
+  handleExportOvertimeCsv
 } from '#src/domain/export/index.mjs'
 
 import { parseOptions } from '../cli/parseOptions.mjs'
@@ -21,7 +22,8 @@ import { resolveGerrit } from '../domain/git/resolveGerrit.mjs'
 import { getWorkOvertimeStats } from '../domain/overtime/analyze.mjs'
 import {
   renderOvertimeTab,
-  renderOvertimeText
+  renderOvertimeText,
+  renderOvertimeCsv
 } from '../domain/overtime/overtime.mjs'
 import { outputAll, outputData } from '../output/index.mjs'
 import {
@@ -89,7 +91,7 @@ export async function exportAction(rawOpts = {}) {
 
     bar.step(100, '分析任务全部完成！')
     handleExportOvertimeMain({
-      name: 'overtime',
+      fileName: 'overtime.json',
       opts,
       result: result.overtime
     })
@@ -97,7 +99,7 @@ export async function exportAction(rawOpts = {}) {
     // 导出 overtime_commits.txt
     const overtimeTxtResult = renderOvertimeText(result.overtime)
     handleExportOvertimeTxt({
-      name: 'commits',
+      fileName: 'overtime_commits.txt',
       opts,
       result: overtimeTxtResult
     })
@@ -105,10 +107,19 @@ export async function exportAction(rawOpts = {}) {
     // 导出 overtime_commits.tab.txt
     const overtimeTabTxtResult = renderOvertimeTab(result.overtime)
     handleExportOvertimeTabTxt({
-      name: 'commits',
+      fileName: 'overtime_commits.tab.txt',
       opts,
       result: overtimeTabTxtResult
     })
+
+    // 导出 overtime_commits.csv
+    const overtimeCsvResult = renderOvertimeCsv(result.overtime)
+    handleExportOvertimeCsv({
+      fileName: 'overtime_commits.csv',
+      opts,
+      result: overtimeCsvResult
+    })
+
   } catch (error) {
     // 异常处理：停止进度条并打印红色错误
     mb.stop()

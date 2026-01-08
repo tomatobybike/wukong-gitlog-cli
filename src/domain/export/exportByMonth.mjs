@@ -34,15 +34,11 @@ export const handleExportByMonth = async ({
   const outBase = opts.output.out || 'commits'
   const config = { dir: opts.output.dir || path.resolve('output-wukong') }
   const baseDir = `${config.dir}/${EXPORT_DIR_MONTH}`
+
+  // TODO: remove debug log before production
+  console.log('✅', 'opts', opts)
   // 按月输出 ... 保持原逻辑
-  const perPeriodFormats = String(opts.perPeriodFormats || '')
-    .split(',')
-    .map((s) =>
-      String(s || '')
-        .trim()
-        .toLowerCase()
-    )
-    .filter(Boolean)
+  const perPeriodFormats = opts.output.perPeriod.formats
   try {
     const monthGroups = groupRecords(records, 'month')
     const monthlyFileName = `overtime_${outBase}_monthly.txt`

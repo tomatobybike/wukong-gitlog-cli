@@ -55,7 +55,7 @@ export async function parseOptions(cliOpts) {
     gerrit: {
       prefix: cliOpts.gerrit,
       api: cliOpts.gerritApi,
-      auth: cliOpts.gerritAuth,
+      auth: cliOpts.gerritAuth
     },
     worktime: {
       country,
@@ -76,7 +76,15 @@ export async function parseOptions(cliOpts) {
       dir: cliOpts.outParent ? '../output-wukong' : cliOpts.outDir,
       formats: cliOpts.format ? cliOpts.format : undefined,
       perPeriod: {
-        formats: cliOpts.perPeriodFormats?.split(','),
+        // formats: cliOpts.perPeriodFormats?.split(','),
+        formats: String(cliOpts.perPeriodFormats || '')
+          .split(',')
+          .map((s) =>
+            String(s || '')
+              .trim()
+              .toLowerCase()
+          )
+          .filter(Boolean),
         excelMode: cliOpts.perPeriodExcelMode,
         only: cliOpts.perPeriodOnly
       }

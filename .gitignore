@@ -33,6 +33,7 @@ yarn-error.log*
 # Dependency directories
 /output/
 output-wukong/
+output-hello/
 dist/
 build/
 backup

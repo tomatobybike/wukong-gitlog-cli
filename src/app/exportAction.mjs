@@ -9,12 +9,20 @@ import path from 'path'
 import { createProfiler } from 'wukong-profiler'
 import { createMultiBar } from 'wukong-progress'
 
-import { handleExportOvertimeMain } from '#src/domain/export/index.mjs'
+import {
+  handleExportOvertimeMain,
+  handleExportOvertimeTabTxt,
+  handleExportOvertimeTxt
+} from '#src/domain/export/index.mjs'
 
 import { parseOptions } from '../cli/parseOptions.mjs'
 import { getGitLogsFast } from '../domain/git/getGitLogs.mjs'
 import { resolveGerrit } from '../domain/git/resolveGerrit.mjs'
 import { getWorkOvertimeStats } from '../domain/overtime/analyze.mjs'
+import {
+  renderOvertimeTab,
+  renderOvertimeText
+} from '../domain/overtime/overtime.mjs'
 import { outputAll, outputData } from '../output/index.mjs'
 import {
   getLatestCommitByDay,
@@ -84,6 +92,22 @@ export async function exportAction(rawOpts = {}) {
       name: 'overtime',
       opts,
       result: result.overtime
+    })
+
+    // 导出 overtime_commits.txt
+    const overtimeTxtResult = renderOvertimeText(result.overtime)
+    handleExportOvertimeTxt({
+      name: 'commits',
+      opts,
+      result: overtimeTxtResult
+    })
+
+    // 导出 overtime_commits.tab.txt
+    const overtimeTabTxtResult = renderOvertimeTab(result.overtime)
+    handleExportOvertimeTabTxt({
+      name: 'commits',
+      opts,
+      result: overtimeTabTxtResult
     })
   } catch (error) {
     // 异常处理：停止进度条并打印红色错误

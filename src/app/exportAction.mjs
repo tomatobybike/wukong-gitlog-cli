@@ -9,22 +9,23 @@ import path from 'path'
 import { createProfiler } from 'wukong-profiler'
 import { createMultiBar } from 'wukong-progress'
 
+import { handleExportByMonth } from '#src/domain/export/exportByMonth.mjs'
+import { handleExportByWeek } from '#src/domain/export/exportByWeek.mjs'
 import {
+  handleExportOvertimeCsv,
   handleExportOvertimeMain,
   handleExportOvertimeTabTxt,
-  handleExportOvertimeTxt,
-  handleExportOvertimeCsv
+  handleExportOvertimeTxt
 } from '#src/domain/export/index.mjs'
-import {handleExportByMonth} from "#src/domain/export/exportByMonth.mjs"
 
 import { parseOptions } from '../cli/parseOptions.mjs'
 import { getGitLogsFast } from '../domain/git/getGitLogs.mjs'
 import { resolveGerrit } from '../domain/git/resolveGerrit.mjs'
 import { getWorkOvertimeStats } from '../domain/overtime/analyze.mjs'
 import {
+  renderOvertimeCsv,
   renderOvertimeTab,
-  renderOvertimeText,
-  renderOvertimeCsv
+  renderOvertimeText
 } from '../domain/overtime/overtime.mjs'
 import { outputAll, outputData } from '../output/index.mjs'
 import {
@@ -128,6 +129,12 @@ export async function exportAction(rawOpts = {}) {
       worktimeOptions
     })
 
+    // 导出 每周数据
+    handleExportByWeek({
+      opts,
+      records: commits,
+      worktimeOptions
+    })
   } catch (error) {
     // 异常处理：停止进度条并打印红色错误
     mb.stop()

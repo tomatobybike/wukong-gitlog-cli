@@ -23,7 +23,7 @@ import { getWorkOvertimeStats } from '../overtime/analyze.mjs'
  * @function handleExportByMonth
  * @description 按月导出
  * @param {type}
- * @returns {type} // TODO: Describe return value
+ * @returns {type} 
  */
 export const handleExportByMonth = async ({
   opts,

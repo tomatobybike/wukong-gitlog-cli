@@ -11,6 +11,7 @@ import { createMultiBar } from 'wukong-progress'
 
 import { handleExportByMonth } from '#src/domain/export/exportByMonth.mjs'
 import { handleExportByWeek } from '#src/domain/export/exportByWeek.mjs'
+import { handleExportCommits } from '#src/domain/export/exportCommits.mjs'
 import {
   handleExportOvertimeCsv,
   handleExportOvertimeMain,
@@ -134,6 +135,13 @@ export async function exportAction(rawOpts = {}) {
       opts,
       records: commits,
       worktimeOptions
+    })
+
+    // 导出 commit logs
+    handleExportCommits({
+      opts,
+      records: commits,
+      fileName: 'commits.txt'
     })
   } catch (error) {
     // 异常处理：停止进度条并打印红色错误

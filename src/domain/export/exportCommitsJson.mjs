@@ -2,24 +2,29 @@ import path from 'path'
 
 import { EXPORT_DIR } from '#src/constants/index.mjs'
 import { renderText } from '#src/output/text.mjs'
-import { writeTxtFile } from '#src/output/utils/index.mjs'
+import { writeJsonFile } from '#src/output/utils/index.mjs'
 
 /**
- * @function handleExportCommits
+ * @function handleExportCommitsJson
  * @description 按周导出
  * @param {type}
  * @returns {type}
  */
-export const handleExportCommits = async ({ opts, records, fileName }) => {
+export const handleExportCommitsJson = async ({
+  opts,
+  records,
+  fileName,
+  groups
+}) => {
   const config = { dir: opts.output.dir || path.resolve('output-wukong') }
   const baseDir = `${config.dir}/${EXPORT_DIR}`
 
   try {
-    const commitFileName = fileName || `commits.txt`
-    writeTxtFile(baseDir, commitFileName, renderText(records))
+    const commitFileName = fileName || `commits.json`
+    writeJsonFile(baseDir, commitFileName, groups || records)
   } catch (err) {
     console.warn(
-      'handleExportCommits failed:',
+      'handleExportCommitsJson failed:',
       err && err.message ? err.message : err
     )
   }

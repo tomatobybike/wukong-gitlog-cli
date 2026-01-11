@@ -9,15 +9,20 @@ import path from 'path'
 import { createProfiler } from 'wukong-profiler'
 import { createMultiBar } from 'wukong-progress'
 
+import { handleExportAuthorChanges } from '#src/domain/export/exportAuthorChanges.mjs'
 import { handleExportByMonth } from '#src/domain/export/exportByMonth.mjs'
 import { handleExportByWeek } from '#src/domain/export/exportByWeek.mjs'
 import { handleExportCommits } from '#src/domain/export/exportCommits.mjs'
+import { handleExportCommitsExcel } from '#src/domain/export/exportCommitsExcel.mjs'
+import { handleExportCommitsJson } from '#src/domain/export/exportCommitsJson.mjs'
+import { handleExportAuthorChangesJson } from '#src/domain/export/exportAuthorChangesJson.mjs'
 import {
   handleExportOvertimeCsv,
   handleExportOvertimeMain,
   handleExportOvertimeTabTxt,
   handleExportOvertimeTxt
 } from '#src/domain/export/index.mjs'
+import { groupRecords } from '#utils/groupRecords.mjs'
 
 import { parseOptions } from '../cli/parseOptions.mjs'
 import { getGitLogsFast } from '../domain/git/getGitLogs.mjs'
@@ -143,6 +148,37 @@ export async function exportAction(rawOpts = {}) {
       records: commits,
       fileName: 'commits.txt'
     })
+
+    // 导出 commit logs
+    handleExportAuthorChanges({
+      opts,
+      records: commits,
+      fileName: 'author-changes.txt'
+    })
+
+    // --- 分组 ---
+    const groups = opts.groupBy ? groupRecords(records, opts.groupBy) : null
+
+    handleExportCommitsExcel({
+      opts,
+      records: commits,
+      fileName: 'commits.xlsx',
+      groups
+    })
+
+    handleExportCommitsJson({
+      opts,
+      records: commits,
+      fileName: 'commits.json',
+      groups
+    })
+    handleExportAuthorChangesJson({
+      opts,
+      records: commits,
+      fileName: 'author-changes.json',
+
+    })
+
   } catch (error) {
     // 异常处理：停止进度条并打印红色错误
     mb.stop()

@@ -1,15 +1,31 @@
 /**
- * 高性能 git log + numstat 获取 commit
+ * 高性能 git log + numstat 获取 commit（无 shell / 无 WSL 版本）
+ *
+ * 特点：
+ * - 使用 execFile 直接调用 git（不经过 shell）
+ * - Windows / macOS / Linux 行为一致
+ * - 避免 zx / WSL / bash 相关问题
+ * - 支持大仓库（超大 stdout buffer）
  */
-import { $ } from 'zx'
+
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 
 import { createAuthorNormalizer } from '#utils/authorNormalizer.mjs'
 
+const execFileAsync = promisify(execFile)
 const normalizer = createAuthorNormalizer()
 
+/**
+ * 获取 git commit 列表（高性能版）
+ */
 export async function getGitLogsFast(opts = {}) {
   const { author, email, since, until, limit, merges } = opts
 
+  /**
+   * git pretty format
+   * 使用不可见分隔符，方便后续正则解析
+   */
   const pretty = `${[
     '%H', // hash
     '%an', // author name
@@ -19,6 +35,9 @@ export async function getGitLogsFast(opts = {}) {
     '%B' // body
   ].join('%x1f')}%x1e`
 
+  /**
+   * git log 参数（数组形式，避免 shell）
+   */
   const args = [
     'log',
     `--pretty=format:${pretty}`,
@@ -31,25 +50,68 @@ export async function getGitLogsFast(opts = {}) {
   if (since) args.push(`--since=${since}`)
   if (until) args.push(`--until=${until}`)
   if (merges === false) args.push(`--no-merges`)
-  if (limit) args.push('-n', `${limit}`)
+  if (limit) args.push('-n', String(limit))
 
-  const { stdout } = await $`git ${args}`.quiet()
+  let stdout
+
+  try {
+    /**
+     * execFile 直接执行 git：
+     * - 不使用 shell
+     * - 不会触发 WSL / bash
+     * - maxBuffer 放大，防止大仓库 stdout 溢出
+     */
+    const result = await execFileAsync('git', args, {
+      maxBuffer: 1024 * 1024 * 200 // 200MB（Windows 大仓库友好）
+    })
+
+    stdout = result.stdout
+  } catch (err) {
+    /**
+     * 统一错误出口，方便 CLI 层捕获
+     */
+    const message =
+      err?.stderr ||
+      err?.message ||
+      'Failed to execute git log'
+
+    const error = new Error(message)
+    error.cause = err
+    throw error
+  }
+
+  /**
+   * Windows 下 git 输出可能带 \r
+   */
   const raw = stdout.replace(/\r/g, '')
 
   const commits = []
 
-  // 匹配每个 commit header + numstat
+  /**
+   * 匹配每个 commit header + body + numstat
+   */
   const commitRegex =
     // eslint-disable-next-line no-control-regex
     /([0-9a-f]+)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([\s\S]*?)(?=(?:[0-9a-f]{7,40}\x1f)|\x1e$)/g
-  let match
 
-  for (const ns of raw.matchAll(commitRegex)) {
-    const [_, hash, authorName, emailAddr, date, subject, bodyAndNumstat] = ns
+  for (const match of raw.matchAll(commitRegex)) {
+    const [
+      _,
+      hash,
+      authorName,
+      emailAddr,
+      date,
+      subject,
+      bodyAndNumstat
+    ] = match
+
+    /**
+     * Gerrit Change-Id（如存在）
+     */
     const [, changeId] =
       bodyAndNumstat.match(/Change-Id:\s*(I[0-9a-fA-F]+)/) || []
 
-    const c = {
+    const commit = {
       hash,
       author: normalizer.getAuthor(authorName, emailAddr),
       originalAuthor: authorName,
@@ -64,22 +126,28 @@ export async function getGitLogsFast(opts = {}) {
       files: []
     }
 
-    // 匹配 numstat
+    /**
+     * 解析 numstat
+     */
     const numstatRegex = /^(\d+)\s+(\d+)\s+(.+)$/gm
     for (const m of bodyAndNumstat.matchAll(numstatRegex)) {
       const added = parseInt(m[1], 10) || 0
       const deleted = parseInt(m[2], 10) || 0
       const file = m[3]
-      c.added += added
-      c.deleted += deleted
-      c.changed += added + deleted
-      c.files.push({ file, added, deleted })
+
+      commit.added += added
+      commit.deleted += deleted
+      commit.changed += added + deleted
+      commit.files.push({ file, added, deleted })
     }
 
-    commits.push(c)
+    commits.push(commit)
   }
 
-  // 最终统一覆盖 author，保证所有 commit 都使用中文名（如存在）
+  /**
+   * 最终统一覆盖 author
+   * 确保同一 email 使用同一个（中文）作者名
+   */
   const finalMap = normalizer.getMap()
   for (const c of commits) {
     if (c.email && finalMap[c.email]) {

@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
 
+import { runGitPreflight } from '#src/domain/git/index.mjs'
+
 import { analyzeAction } from './app/analyzeAction.mjs'
 import { exportAction } from './app/exportAction.mjs'
 import { initAction } from './app/initAction.mjs'
@@ -14,6 +16,7 @@ import { loadRcConfig } from './infra/configStore.mjs'
 // 引入加载器
 
 const main = async () => {
+  await runGitPreflight()
   // 【关键优化】在一切开始前，先异步加载 RC 配置
   // 这样后续 parseOptions 内部的 cachedConfig 就有值了
   await loadRcConfig()

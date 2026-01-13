@@ -22,7 +22,7 @@ export async function analyzeAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
 
   // TODO: remove debug log before production
-  console.log('✅', 'opts', opts)
+  // console.log('✅', 'opts', opts)
   const profiler = createProfiler({ ...opts.profile })
 
   // 未来 可考虑将 MultiBar 抽离到更高层，支持所有 action 共用，wukong-progress 需要支持自定义子任务占位符

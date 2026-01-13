@@ -75,10 +75,10 @@ export const runGitPreflight = async () => {
   console.log(`✔ Git detected: ${result.git.version}`)
   console.log(`✔ platform: ${result.git.platform}`)
 
-  console.log('root', result.repo.root)
-  console.log('user', result.user.name)
-  console.log('email', result.user.email)
-  console.log('features', result.features)
+  console.log('✔ root', result.repo.root)
+  console.log('✔ user', result.user.name)
+  console.log('✔ email', result.user.email)
+  console.log('✔ features', result.features)
   console.log(`-`.repeat(50), '\n')
 
   return result

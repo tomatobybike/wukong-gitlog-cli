@@ -1585,6 +1585,45 @@ const drawChangeTrends = (stats) => {
     })
   })
 
+  // 点击事件：点击某个作者在某个周期的点，打开侧栏显示该作者在该周期的 commits
+  chart.on('click', (p) => {
+    try {
+      if (!p || p.componentType !== 'series') return
+      const label = p.axisValue || p.name
+      const author = p.seriesName
+      if (!label || !author) return
+      const type = document.querySelector('#tabs button.active')?.dataset.type || 'daily'
+
+      const filteredCommits = (Array.isArray(commitsAll) ? commitsAll : []).filter((c) => {
+        const a = c.author || 'unknown'
+        if (a !== author) return false
+        const d = new Date(c.date)
+        if (Number.isNaN(d.valueOf())) return false
+        if (type === 'daily') return d.toISOString().slice(0, 10) === label
+        if (type === 'weekly') {
+          if (!label.includes('-W')) return false
+          const [yy, ww] = label.split('-W')
+          const range = getISOWeekRange(Number(yy), Number(ww))
+          const day = d.toISOString().slice(0, 10)
+          return day >= range.start && day <= range.end
+        }
+        const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        return month === label
+      })
+
+      filteredCommits.sort((a, b) => new Date(a.date) - new Date(b.date))
+
+      if (type === 'weekly') {
+        const weeklyItem = { outsideWorkCount: filteredCommits.length, outsideWorkRate: 0 }
+        showSideBarForWeek({ period: label, weeklyItem, commits: filteredCommits, titleDrawer: `${author} 变更量 ${type} 详情` })
+      } else {
+        showDayDetailSidebar({ date: label, count: filteredCommits.length, commits: filteredCommits, titleDrawer: `${author} 变更量 ${type} 详情` })
+      }
+    } catch (err) {
+      console.warn('Change chart click handler error', err)
+    }
+  })
+
   return chart
 }
 
@@ -1720,6 +1759,49 @@ function drawAuthorOvertimeTrends(commits, stats) {
   renderWeeklyDurationRiskSummary(commits, { startHour, endHour, cutoff })
   renderMonthlyDurationRiskSummary(commits, { startHour, endHour, cutoff })
   renderRolling30DurationRiskSummary(commits, { startHour, endHour, cutoff })
+
+  // 点击事件：点击某个作者在某周期的点，打开侧栏显示该作者在该周期内的下班后提交（加班）明细
+  chart.on('click', (p) => {
+    try {
+      if (!p || p.componentType !== 'series') return
+      const label = p.axisValue || p.name
+      const author = p.seriesName
+      if (!label || !author) return
+      const type = document.querySelector('#tabsOvertime button.active')?.dataset.type || 'daily'
+
+      const filteredCommits = commits.filter((c) => {
+        const a = c.author || 'unknown'
+        if (a !== author) return false
+        const d = new Date(c.date)
+        if (Number.isNaN(d.valueOf())) return false
+        const h = d.getHours()
+        const isOT = (h >= endHour && h < 24) || (h >= 0 && h < cutoff && h < startHour)
+        if (!isOT) return false
+
+        if (type === 'daily') return d.toISOString().slice(0, 10) === label
+        if (type === 'weekly') {
+          if (!label.includes('-W')) return false
+          const [yy, ww] = label.split('-W')
+          const range = getISOWeekRange(Number(yy), Number(ww))
+          const day = d.toISOString().slice(0, 10)
+          return day >= range.start && day <= range.end
+        }
+        const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        return month === label
+      })
+
+      filteredCommits.sort((a, b) => new Date(a.date) - new Date(b.date))
+
+      if (type === 'weekly') {
+        const weeklyItem = { outsideWorkCount: filteredCommits.length, outsideWorkRate: 0 }
+        showSideBarForWeek({ period: label, weeklyItem, commits: filteredCommits, titleDrawer: `${author} 加班本周详情` })
+      } else {
+        showDayDetailSidebar({ date: label, count: filteredCommits.length, commits: filteredCommits, titleDrawer: `${author} 加班 ${type} 详情` })
+      }
+    } catch (err) {
+      console.warn('Overtime chart click handler error', err)
+    }
+  })
 
   return chart
 }
@@ -2251,6 +2333,51 @@ function drawAuthorLatestOvertimeTrends(commits, stats) {
   renderLatestRiskSummary(commits, { startHour, endHour, cutoff })
   renderLatestMonthlyRiskSummary(commits, { startHour, endHour, cutoff })
 
+  // 点击事件：点击某个作者在某周期的点，打开侧栏显示该作者在该周期内的加班提交明细（用于查看具体提交与时间）
+  chart.on('click', (p) => {
+    try {
+      if (!p || p.componentType !== 'series') return
+      const label = p.axisValue || p.name
+      const author = p.seriesName
+      if (!label || !author) return
+      const type = document.querySelector('#tabsLatestOvertime button.active')?.dataset.type || 'daily'
+
+      const filteredCommits = commits.filter((c) => {
+        const a = c.author || 'unknown'
+        if (a !== author) return false
+        const d = new Date(c.date)
+        if (Number.isNaN(d.valueOf())) return false
+        const h = d.getHours()
+        let overtime = null
+        if (h >= endHour && h < 24) overtime = h - endHour
+        else if (h >= 0 && h < cutoff && h < startHour) overtime = 24 - endHour + h
+        if (overtime == null) return false
+
+        if (type === 'daily') return d.toISOString().slice(0, 10) === label
+        if (type === 'weekly') {
+          if (!label.includes('-W')) return false
+          const [yy, ww] = label.split('-W')
+          const range = getISOWeekRange(Number(yy), Number(ww))
+          const day = d.toISOString().slice(0, 10)
+          return day >= range.start && day <= range.end
+        }
+        const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        return month === label
+      })
+
+      filteredCommits.sort((a, b) => new Date(a.date) - new Date(b.date))
+
+      if (type === 'weekly') {
+        const weeklyItem = { outsideWorkCount: filteredCommits.length, outsideWorkRate: 0 }
+        showSideBarForWeek({ period: label, weeklyItem, commits: filteredCommits, titleDrawer: `${author} 本周最晚加班详情` })
+      } else {
+        showDayDetailSidebar({ date: label, count: filteredCommits.length, commits: filteredCommits, titleDrawer: `${author} 本日最晚加班详情` })
+      }
+    } catch (err) {
+      console.warn('Latest overtime chart click handler error', err)
+    }
+  })
+
   return chart
 }
 
@@ -2431,6 +2558,311 @@ function renderLatestMonthlyRiskSummary(
   `
 }
 
+// ========= 开发者 午休最晚提交（小时） =========
+function buildAuthorLunchDataset(commits, type, lunchStart = 12, lunchEnd = 14) {
+  const byAuthor = new Map()
+  const periods = new Set()
+
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    if (Number.isNaN(d.valueOf())) return
+    const h = d.getHours()
+    const m = d.getMinutes()
+    // 只考虑午休时间段内的提交
+    if (!(h >= lunchStart && h < lunchEnd)) return
+
+    let key
+    if (type === 'daily') key = d.toISOString().slice(0, 10)
+    else if (type === 'weekly') key = getIsoWeekKey(d.toISOString().slice(0, 10))
+    else key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    if (!key) return
+    periods.add(key)
+
+    const author = c.author || 'unknown'
+    if (!byAuthor.has(author)) byAuthor.set(author, {})
+    const obj = byAuthor.get(author)
+    // 以小时小数表示提交时间（例如 12.5 表示 12:30），后者越大表示越靠近午休结束
+    const hourDecimal = h + m / 60
+    obj[key] = Math.max(obj[key] || 0, hourDecimal)
+  })
+
+  const allPeriods = Array.from(periods).sort()
+  const authors = Array.from(byAuthor.keys()).sort()
+  const series = authors.map((a) => ({
+    name: a,
+    type: 'line',
+    smooth: true,
+    data: allPeriods.map((p) => byAuthor.get(a)[p] || 0)
+  }))
+  return { authors, allPeriods, series }
+}
+
+function formatHourDecimal(h) {
+  if (h == null || h === 0) return '-'
+  const hh = Math.floor(h)
+  const mm = Math.round((h - hh) * 60)
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
+}
+
+function drawAuthorLunchTrends(commits, stats) {
+  const el = document.getElementById('chartAuthorLunch')
+  if (!el) return null
+  const chart = echarts.init(el)
+
+  const lunchStart = typeof stats.lunchStart === 'number' ? stats.lunchStart : (window.__lunchStart ?? 12)
+  const lunchEnd = typeof stats.lunchEnd === 'number' ? stats.lunchEnd : (window.__lunchEnd ?? 14)
+
+  function render(type) {
+    const ds = buildAuthorLunchDataset(commits, type, lunchStart, lunchEnd)
+    ds.rangeMap = {}
+    for (const period of ds.allPeriods) {
+      if (period.includes('-W')) {
+        const [yy, ww] = period.split('-W')
+        ds.rangeMap[period] = getISOWeekRange(Number(yy), Number(ww))
+      }
+    }
+
+    chart.setOption({
+      tooltip: {
+        trigger: 'axis',
+        formatter(params) {
+          if (!params || !params.length) return ''
+          const label = params[0].axisValue
+          const isWeekly = type === 'weekly'
+
+          let extra = ''
+          if (isWeekly && ds.rangeMap && ds.rangeMap[label]) {
+            const { start, end } = ds.rangeMap[label]
+            extra = `<div style="margin-top:4px;color:#999;font-size:12px">周区间：${start} ~ ${end}</div>`
+          }
+
+          const lines = params
+            .filter((i) => i.data > 0)
+            .map((item) => `${item.marker}${item.seriesName}: ${formatHourDecimal(item.data)}`)
+            .join('<br/>')
+
+          return `<div>${label}</div>${extra}${lines}`
+        }
+      },
+      legend: { data: ds.authors },
+      xAxis: { type: 'category', data: ds.allPeriods },
+      yAxis: { type: 'value', name: '时间（小时）', min: lunchStart, max: lunchEnd },
+      series: ds.series
+    })
+  }
+
+  render('daily')
+
+  const tabs = document.querySelectorAll('#tabsLunch button')
+  tabs.forEach((btnEl) => {
+    btnEl.addEventListener('click', () => {
+      tabs.forEach((b) => b.classList.remove('active'))
+      btnEl.classList.add('active')
+      render(btnEl.dataset.type)
+    })
+  })
+
+  renderLunchWeeklyRiskSummary(commits, { lunchStart, lunchEnd })
+  renderLunchMonthlyRiskSummary(commits, { lunchStart, lunchEnd })
+
+  // 点击事件：点击某个数据点（作者+周期）打开侧栏，展示该作者在该周期午休时间段内的提交明细
+  chart.on('click', (p) => {
+    try {
+      if (!p || p.componentType !== 'series') return
+      const label = p.axisValue || p.name
+      const author = p.seriesName
+      if (!label || !author) return
+
+      // 识别当前 tabs 类型（daily|weekly|monthly）
+      const type = document.querySelector('#tabsLunch button.active')?.dataset.type || 'daily'
+
+      // 过滤 commits：作者匹配 + 在午休时间段内 + 在所选周期内
+      const filteredCommits = commits.filter((c) => {
+        const a = c.author || 'unknown'
+        if (a !== author) return false
+        const d = new Date(c.date)
+        if (Number.isNaN(d.valueOf())) return false
+        const h = d.getHours()
+        const m = d.getMinutes()
+        if (!(h >= lunchStart && h < lunchEnd)) return false
+
+        if (type === 'daily') {
+          return d.toISOString().slice(0, 10) === label
+        }
+        if (type === 'weekly') {
+          // label 格式 YYYY-Www
+          if (!label.includes('-W')) return false
+          const [yy, ww] = label.split('-W')
+          const range = getISOWeekRange(Number(yy), Number(ww))
+          const day = d.toISOString().slice(0, 10)
+          return day >= range.start && day <= range.end
+        }
+        // monthly
+        const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        return month === label
+      })
+
+      filteredCommits.sort((a, b) => new Date(a.date) - new Date(b.date))
+
+      if (type === 'weekly') {
+        const weeklyItem = { outsideWorkCount: filteredCommits.length, outsideWorkRate: 0 }
+        showSideBarForWeek({ period: label, weeklyItem, commits: filteredCommits, titleDrawer: `${author} 午休本周提交详情` })
+      } else {
+        showDayDetailSidebar({ date: label, count: filteredCommits.length, commits: filteredCommits, titleDrawer: `${author} 午休 ${type} 提交` })
+      }
+    } catch (err) {
+      console.warn('Lunch chart click handler error', err)
+    }
+  })
+
+  return chart
+}
+
+function renderLunchWeeklyRiskSummary(commits, { lunchStart = 12, lunchEnd = 14 } = {}) {
+  const box = document.getElementById('lunchWeeklyRiskSummary')
+  if (!box) return
+
+  const now = new Date()
+  const curKey = getIsoWeekKey(now.toISOString().slice(0, 10))
+  const prev = new Date(now)
+  prev.setDate(prev.getDate() - 7)
+  const prevKey = getIsoWeekKey(prev.toISOString().slice(0, 10))
+
+  const weekMax = new Map() // week -> Map(author -> {val, date, time})
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    if (Number.isNaN(d.valueOf())) return
+    const h = d.getHours()
+    const m = d.getMinutes()
+    if (!(h >= lunchStart && h < lunchEnd)) return
+    const wKey = getIsoWeekKey(d.toISOString().slice(0, 10))
+    if (!wKey) return
+    if (!weekMax.has(wKey)) weekMax.set(wKey, new Map())
+    const mMap = weekMax.get(wKey)
+    const author = c.author || 'unknown'
+    const val = h + m / 60
+    const cur = mMap.get(author)
+    if (!cur || val > cur.val) mMap.set(author, { val, date: d.toISOString().slice(0, 10), time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` })
+  })
+
+  const curMap = weekMax.get(curKey) || new Map()
+  const prevMap = weekMax.get(prevKey) || new Map()
+
+  let topAuthor = null
+  let top = { val: -1, date: null, time: null }
+  curMap.forEach((v, k) => {
+    if (v.val > top.val) {
+      top = v
+      topAuthor = k
+    }
+  })
+
+  let prevMax = -1
+  prevMap.forEach((v) => {
+    if (v.val > prevMax) prevMax = v.val
+  })
+
+  const lines = []
+  lines.push('【本周午休最晚提交风险】')
+
+  if (top.val < 0) {
+    lines.push('本周午休期间暂无提交记录。')
+  } else {
+    let trend = '暂无上周对比'
+    if (prevMax >= 0) {
+      if (top.val > prevMax) trend = '较上周更晚'
+      else if (top.val < prevMax) trend = '较上周提前'
+      else trend = '与上周持平'
+    }
+    lines.push(`${topAuthor} 本周午休最晚提交：${top.time}（${top.date}），${trend}。）`)
+    if (top.val >= lunchEnd - 0.5) lines.push('存在午间延迟提交风险，请关注短时间内频繁占用午休。')
+  }
+
+  box.innerHTML = `
+    <div class="risk-summary">
+      <div class="risk-title">【本周午休最晚提交风险】</div>
+      <ul>
+        ${lines
+          .slice(1)
+          .map((l) => `<li>${escapeHtml(l)}</li>`)
+          .join('')}
+      </ul>
+    </div>
+  `
+}
+
+function renderLunchMonthlyRiskSummary(commits, { lunchStart = 12, lunchEnd = 14 } = {}) {
+  const box = document.getElementById('lunchMonthlyRiskSummary')
+  if (!box) return
+
+  const now = new Date()
+  const curKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const prev = new Date(now)
+  prev.setMonth(prev.getMonth() - 1)
+  const prevKey = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`
+
+  const monthMax = new Map()
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    if (Number.isNaN(d.valueOf())) return
+    const h = d.getHours()
+    const m = d.getMinutes()
+    if (!(h >= lunchStart && h < lunchEnd)) return
+    const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    if (!monthMax.has(mKey)) monthMax.set(mKey, new Map())
+    const mm = monthMax.get(mKey)
+    const author = c.author || 'unknown'
+    const val = h + m / 60
+    const cur = mm.get(author)
+    if (!cur || val > cur.val) mm.set(author, { val, date: d.toISOString().slice(0, 10), time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` })
+  })
+
+  const curMap = monthMax.get(curKey) || new Map()
+  const prevMap = monthMax.get(prevKey) || new Map()
+
+  let topAuthor = null
+  let top = { val: -1, date: null }
+  curMap.forEach((v, k) => {
+    if (v.val > top.val) {
+      top = v
+      topAuthor = k
+    }
+  })
+
+  let prevMax = -1
+  prevMap.forEach((v) => {
+    if (v.val > prevMax) prevMax = v.val
+  })
+
+  const lines = []
+  lines.push('【本月午休最晚提交风险】')
+
+  if (top.val < 0) {
+    lines.push('本月午休期间暂无提交记录。')
+  } else {
+    let trend = '暂无上月对比'
+    if (prevMax >= 0) {
+      if (top.val > prevMax) trend = '较上月更晚'
+      else if (top.val < prevMax) trend = '较上月提前'
+      else trend = '与上月持平'
+    }
+    lines.push(`${topAuthor} 本月午休最晚提交：${top.time}（${top.date}），${trend}。）`)
+    if (top.val >= lunchEnd - 0.5) lines.push('存在午间延迟提交风险，请关注短时间内频繁占用午休。')
+  }
+
+  box.innerHTML = `
+    <div class="risk-summary">
+      <div class="risk-title">【本月午休最晚提交风险】</div>
+      <ul>
+        ${lines
+          .slice(1)
+          .map((l) => `<li>${escapeHtml(l)}</li>`)
+          .join('')}
+      </ul>
+    </div>
+  `
+}
+
 async function main() {
   const {
     commits,
@@ -2449,6 +2881,9 @@ async function main() {
       : (config.endHour ?? 18)
   window.__overnightCutoff =
     typeof config.overnightCutoff === 'number' ? config.overnightCutoff : 6
+  // lunch config（用于午休图表）
+  window.__lunchStart = stats && typeof stats.lunchStart === 'number' ? stats.lunchStart : (config.lunchStart ?? 12)
+  window.__lunchEnd = stats && typeof stats.lunchEnd === 'number' ? stats.lunchEnd : (config.lunchEnd ?? 14)
   initTableControls()
   updatePager()
   renderCommitsTablePage()
@@ -2487,6 +2922,7 @@ async function main() {
   drawChangeTrends(authorChanges)
   drawAuthorOvertimeTrends(commits, stats)
   drawAuthorLatestOvertimeTrends(commits, stats)
+  drawAuthorLunchTrends(commits, stats)
   computeAndRenderLatestOvertime(latestByDay)
   renderKpi(stats)
 }

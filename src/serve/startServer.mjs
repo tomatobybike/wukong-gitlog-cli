@@ -134,7 +134,10 @@ export function startServer(port = 3000, outputDir) {
   return new Promise((resolve, reject) => {
     server.on('error', (err) => reject(err))
     server.listen(port, () => {
-      const url = `http://localhost:${port}`
+      // 监听到的真实端口（当 port 为 0 或系统分配端口时很重要）
+      const bound = server.address()
+      const actualPort = bound && bound.port ? bound.port : port
+      const url = `http://localhost:${actualPort}`
       console.log(chalk.green(`Server started at ${url}`))
       console.log(chalk.green(`Serving web/ and output-wukong/data/`))
 

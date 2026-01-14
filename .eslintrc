@@ -21,6 +21,7 @@
   "plugins": ["prettier"],
   "rules": {
     "array-callback-return": "off",
+    "no-continue": "off",
     "consistent-return": "off",
     "no-await-in-loop": "warn",
     "no-unused-vars": "warn",

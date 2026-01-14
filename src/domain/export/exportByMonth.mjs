@@ -23,7 +23,7 @@ import { getWorkOvertimeStats } from '../overtime/analyze.mjs'
  * @function handleExportByMonth
  * @description 按月导出
  * @param {type}
- * @returns {type} 
+ * @returns {type}
  */
 export const handleExportByMonth = async ({
   opts,
@@ -35,8 +35,7 @@ export const handleExportByMonth = async ({
   const config = { dir: opts.output.dir || path.resolve('output-wukong') }
   const baseDir = `${config.dir}/${EXPORT_DIR_MONTH}`
 
-  // TODO: remove debug log before production
-  console.log('✅', 'opts', opts)
+
   // 按月输出 ... 保持原逻辑
   const perPeriodFormats = opts.output.perPeriod.formats
   try {

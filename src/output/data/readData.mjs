@@ -49,7 +49,6 @@ export async function readServeData(dir) {
     }
   }
 
-  // TODO: remove debug log before production
-  // console.log('✅', 'result', result);
+
   return result;
 }

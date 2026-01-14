@@ -9,13 +9,14 @@ import path from 'path'
 import { createProfiler } from 'wukong-profiler'
 import { createMultiBar } from 'wukong-progress'
 
+import { handleExportAuthor } from '#src/domain/export/exportAuthor.mjs'
 import { handleExportAuthorChanges } from '#src/domain/export/exportAuthorChanges.mjs'
+import { handleExportAuthorChangesJson } from '#src/domain/export/exportAuthorChangesJson.mjs'
 import { handleExportByMonth } from '#src/domain/export/exportByMonth.mjs'
 import { handleExportByWeek } from '#src/domain/export/exportByWeek.mjs'
 import { handleExportCommits } from '#src/domain/export/exportCommits.mjs'
 import { handleExportCommitsExcel } from '#src/domain/export/exportCommitsExcel.mjs'
 import { handleExportCommitsJson } from '#src/domain/export/exportCommitsJson.mjs'
-import { handleExportAuthorChangesJson } from '#src/domain/export/exportAuthorChangesJson.mjs'
 import {
   handleExportOvertimeCsv,
   handleExportOvertimeMain,
@@ -56,7 +57,7 @@ export async function exportAction(rawOpts = {}) {
   try {
     // 1️⃣ 拉取 Git 记录
     bar.step(5, '正在提取 Git 提交记录...')
-    const { commits } = await profiler.stepAsync('getGitLogs', () =>
+    const { commits, authorMap } = await profiler.stepAsync('getGitLogs', () =>
       getGitLogsFast(opts)
     )
     result.commits = commits
@@ -175,10 +176,10 @@ export async function exportAction(rawOpts = {}) {
     handleExportAuthorChangesJson({
       opts,
       records: commits,
-      fileName: 'author-changes.json',
-
+      fileName: 'author-changes.json'
     })
-
+    handleExportAuthor({ opts, records: authorMap, fileName: 'author.txt' })
+    
   } catch (error) {
     // 异常处理：停止进度条并打印红色错误
     mb.stop()

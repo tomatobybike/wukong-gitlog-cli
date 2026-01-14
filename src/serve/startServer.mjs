@@ -60,7 +60,7 @@ export function startServer(port = 3000, outputDir) {
   const pkgRoot = findPkgRoot(__dirname)
 
   // FIXME: remove debug log before production
-  console.log('❌', 'pkgRoot', pkgRoot)
+  console.log('✅', 'pkgRoot', pkgRoot)
   const webRoot = path.resolve(pkgRoot, 'web')
   const dataRoot = outputDir
     ? path.resolve(outputDir)

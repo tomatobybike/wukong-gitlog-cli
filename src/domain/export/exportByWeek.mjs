@@ -35,8 +35,7 @@ export const handleExportByWeek = async ({
   const config = { dir: opts.output.dir || path.resolve('output-wukong') }
   const baseDir = `${config.dir}/${EXPORT_DIR_WEEK}`
 
-  // TODO: remove debug log before production
-  console.log('✅', 'opts', opts)
+
 
   try {
     const weekGroups = groupRecords(records, 'week')

@@ -2666,7 +2666,9 @@ function drawAuthorLunchTrends(commits, stats) {
     })
   })
 
+  renderLunchWeeklyRankSummary(commits, { lunchStart, lunchEnd })
   renderLunchWeeklyRiskSummary(commits, { lunchStart, lunchEnd })
+  renderLunchMonthlyRankSummary(commits, { lunchStart, lunchEnd })
   renderLunchMonthlyRiskSummary(commits, { lunchStart, lunchEnd })
 
   // 点击事件：点击某个数据点（作者+周期）打开侧栏，展示该作者在该周期午休时间段内的提交明细
@@ -2722,6 +2724,59 @@ function drawAuthorLunchTrends(commits, stats) {
   return chart
 }
 
+function renderLunchWeeklyRankSummary(commits, { lunchStart = 12, lunchEnd = 14 } = {}) {
+  const box = document.getElementById('lunchWeeklyRankSummary')
+  if (!box) return
+
+  const now = new Date()
+  const curKey = getIsoWeekKey(now.toISOString().slice(0, 10))
+
+  const weekDays = new Map() // week -> Map(author -> Set(dates))
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    if (Number.isNaN(d.valueOf())) return
+    const h = d.getHours()
+    const m = d.getMinutes()
+    if (!(h >= lunchStart && h < lunchEnd)) return
+    const wKey = getIsoWeekKey(d.toISOString().slice(0, 10))
+    if (wKey !== curKey) return
+    const author = c.author || 'unknown'
+    if (!weekDays.has(author)) weekDays.set(author, new Set())
+    weekDays.get(author).add(d.toISOString().slice(0, 10))
+  })
+
+  const weeklyRanks = []
+  weekDays.forEach((set, author) => {
+    weeklyRanks.push({ author, days: set.size })
+  })
+  weeklyRanks.sort((a, b) => b.days - a.days || String(a.author).localeCompare(String(b.author)))
+
+  const lines = []
+  lines.push('【本周午休清醒者排行榜】')
+  if (weeklyRanks.length === 0) {
+    lines.push('本周无人午休提交，暂无清醒者排行榜。')
+  } else {
+    weeklyRanks.forEach((r, idx) => {
+      const rank = idx + 1
+      const medal = rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : ''
+      const title = rank === 1 ? '（状元・昼魔侠）' : ''
+      lines.push(`${rank}. ${medal}${r.author} — ${r.days} 天${title}`)
+    })
+  }
+
+  box.innerHTML = `
+    <div class="risk-summary">
+      <div class="risk-title">【本周午休清醒者排行榜】</div>
+      <ul>
+        ${lines
+          .slice(1)
+          .map((l) => `<li>${escapeHtml(l)}</li>`)
+          .join('')}
+      </ul>
+    </div>
+  `
+}
+
 function renderLunchWeeklyRiskSummary(commits, { lunchStart = 12, lunchEnd = 14 } = {}) {
   const box = document.getElementById('lunchWeeklyRiskSummary')
   if (!box) return
@@ -2741,6 +2796,7 @@ function renderLunchWeeklyRiskSummary(commits, { lunchStart = 12, lunchEnd = 14 
     if (!(h >= lunchStart && h < lunchEnd)) return
     const wKey = getIsoWeekKey(d.toISOString().slice(0, 10))
     if (!wKey) return
+
     if (!weekMax.has(wKey)) weekMax.set(wKey, new Map())
     const mMap = weekMax.get(wKey)
     const author = c.author || 'unknown'
@@ -2785,6 +2841,59 @@ function renderLunchWeeklyRiskSummary(commits, { lunchStart = 12, lunchEnd = 14 
   box.innerHTML = `
     <div class="risk-summary">
       <div class="risk-title">【本周午休最晚提交风险】</div>
+      <ul>
+        ${lines
+          .slice(1)
+          .map((l) => `<li>${escapeHtml(l)}</li>`)
+          .join('')}
+      </ul>
+    </div>
+  `
+}
+
+function renderLunchMonthlyRankSummary(commits, { lunchStart = 12, lunchEnd = 14 } = {}) {
+  const box = document.getElementById('lunchMonthlyRankSummary')
+  if (!box) return
+
+  const now = new Date()
+  const curKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+
+  const monthDays = new Map() // author -> Set(dates)
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    if (Number.isNaN(d.valueOf())) return
+    const h = d.getHours()
+    const m = d.getMinutes()
+    if (!(h >= lunchStart && h < lunchEnd)) return
+    const mKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    if (mKey !== curKey) return
+    const author = c.author || 'unknown'
+    if (!monthDays.has(author)) monthDays.set(author, new Set())
+    monthDays.get(author).add(d.toISOString().slice(0, 10))
+  })
+
+  const monthlyRanks = []
+  monthDays.forEach((set, author) => {
+    monthlyRanks.push({ author, days: set.size })
+  })
+  monthlyRanks.sort((a, b) => b.days - a.days || String(a.author).localeCompare(String(b.author)))
+
+  const lines = []
+  lines.push('【本月午休清醒者排行榜】')
+  if (monthlyRanks.length === 0) {
+    lines.push('本月无人午休提交，暂无清醒者排行榜。')
+  } else {
+    monthlyRanks.forEach((r, idx) => {
+      const rank = idx + 1
+      const medal = rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : ''
+      const title = rank === 1 ? '（状元・昼魔侠）' : ''
+      lines.push(`${rank}. ${medal}${r.author} — ${r.days} 天${title}`)
+    })
+  }
+
+  box.innerHTML = `
+    <div class="risk-summary">
+      <div class="risk-title">【本月午休清醒者排行榜】</div>
       <ul>
         ${lines
           .slice(1)

@@ -1553,6 +1553,7 @@ const drawChangeTrends = (stats) => {
 
           const lines = params
             .filter((i) => i.data > 0)
+            .sort((a, b) => (b.data || 0) - (a.data || 0) || String(a.seriesName).localeCompare(String(b.seriesName)))
             .map(
               (item) => `${item.marker}${item.seriesName}: ${item.data} 行变更`
             )
@@ -1719,6 +1720,7 @@ function drawAuthorOvertimeTrends(commits, stats) {
 
           const lines = params
             .filter((i) => i.data > 0)
+            .sort((a, b) => (b.data || 0) - (a.data || 0) || String(a.seriesName).localeCompare(String(b.seriesName)))
             .map(
               (item) => `${item.marker}${item.seriesName}: ${item.data} 次提交`
             )
@@ -2296,6 +2298,7 @@ function drawAuthorLatestOvertimeTrends(commits, stats) {
 
           const lines = params
             .filter((i) => i.data > 0)
+            .sort((a, b) => (b.data || 0) - (a.data || 0) || String(a.seriesName).localeCompare(String(b.seriesName)))
             .map(
               (item) => `${item.marker}${item.seriesName}: ${item.data} 小时`
             )
@@ -2638,6 +2641,7 @@ function drawAuthorLunchTrends(commits, stats) {
 
           const lines = params
             .filter((i) => i.data > 0)
+            .sort((a, b) => (b.data || 0) - (a.data || 0) || String(a.seriesName).localeCompare(String(b.seriesName)))
             .map((item) => `${item.marker}${item.seriesName}: ${formatHourDecimal(item.data)}`)
             .join('<br/>')
 

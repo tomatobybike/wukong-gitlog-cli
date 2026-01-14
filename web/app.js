@@ -1755,10 +1755,13 @@ function drawAuthorOvertimeTrends(commits, stats) {
     })
   })
 
-  // 输出本周风险总结
+  // 输出本周风险与加班时长排行
   renderWeeklyRiskSummary(commits, { startHour, endHour, cutoff })
   renderMonthlyRiskSummary(commits, { startHour, endHour, cutoff })
+  // 新增：本周/本月加班时长排名（显示所有作者总时长，前三名带图标，状元标注“夜魔侠”）
+  renderWeeklyDurationRankSummary(commits, { startHour, endHour, cutoff })
   renderWeeklyDurationRiskSummary(commits, { startHour, endHour, cutoff })
+  renderMonthlyDurationRankSummary(commits, { startHour, endHour, cutoff })
   renderMonthlyDurationRiskSummary(commits, { startHour, endHour, cutoff })
   renderRolling30DurationRiskSummary(commits, { startHour, endHour, cutoff })
 
@@ -1934,6 +1937,48 @@ function computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff) {
   return byAuthorDay
 }
 
+function renderWeeklyDurationRankSummary(commits, { startHour = 9, endHour = 18, cutoff = 6 } = {}) {
+  const box = document.getElementById('weeklyDurationRankSummary')
+  if (!box) return
+  const now = new Date()
+  const curWeek = getIsoWeekKey(now.toISOString().slice(0, 10))
+  const byAuthorDay = computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff)
+  const ranks = []
+  byAuthorDay.forEach((dayMap, author) => {
+    let total = 0
+    dayMap.forEach((v, dayKey) => {
+      const wk = getIsoWeekKey(dayKey)
+      if (wk === curWeek) total += v
+    })
+    if (total > 0) ranks.push({ author, total })
+  })
+  ranks.sort((a, b) => b.total - a.total || String(a.author).localeCompare(String(b.author)))
+
+  const lines = []
+  lines.push('【本周加班时长排名】')
+  if (ranks.length === 0) {
+    lines.push('本周暂无加班时长。')
+  } else {
+    ranks.forEach((r, idx) => {
+      const rank = idx + 1
+      const medal = rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : ''
+      const title = rank === 1 ? '（状元・夜魔侠）' : ''
+      lines.push(`${rank}. ${medal}${r.author} — ${r.total.toFixed(2)} 小时${title}`)
+    })
+  }
+  box.innerHTML = `
+    <div class="risk-summary">
+      <div class="risk-title">【本周加班时长排名】</div>
+      <ul>
+        ${lines
+          .slice(1)
+          .map((l) => `<li>${escapeHtml(l)}</li>`)
+          .join('')}
+      </ul>
+    </div>
+  `
+}
+
 function renderWeeklyDurationRiskSummary(
   commits,
   { startHour = 9, endHour = 18, cutoff = 6 } = {}
@@ -1976,6 +2021,48 @@ function renderWeeklyDurationRiskSummary(
   box.innerHTML = `
     <div class="risk-summary">
       <div class="risk-title">【本周加班时长风险】</div>
+      <ul>
+        ${lines
+          .slice(1)
+          .map((l) => `<li>${escapeHtml(l)}</li>`)
+          .join('')}
+      </ul>
+    </div>
+  `
+}
+
+function renderMonthlyDurationRankSummary(commits, { startHour = 9, endHour = 18, cutoff = 6 } = {}) {
+  const box = document.getElementById('monthlyDurationRankSummary')
+  if (!box) return
+  const now = new Date()
+  const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const byAuthorDay = computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff)
+  const ranks = []
+  byAuthorDay.forEach((dayMap, author) => {
+    let total = 0
+    dayMap.forEach((v, dayKey) => {
+      const m = dayKey.slice(0, 7)
+      if (m === curMonth) total += v
+    })
+    if (total > 0) ranks.push({ author, total })
+  })
+  ranks.sort((a, b) => b.total - a.total || String(a.author).localeCompare(String(b.author)))
+
+  const lines = []
+  lines.push('【本月加班时长排名】')
+  if (ranks.length === 0) {
+    lines.push('本月暂无加班时长。')
+  } else {
+    ranks.forEach((r, idx) => {
+      const rank = idx + 1
+      const medal = rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : ''
+      const title = rank === 1 ? '（状元・夜魔侠）' : ''
+      lines.push(`${rank}. ${medal}${r.author} — ${r.total.toFixed(2)} 小时${title}`)
+    })
+  }
+  box.innerHTML = `
+    <div class="risk-summary">
+      <div class="risk-title">【本月加班时长排名】</div>
       <ul>
         ${lines
           .slice(1)

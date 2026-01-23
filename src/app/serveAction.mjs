@@ -21,6 +21,7 @@ export async function serveAction(rawOpts = {}) {
 
   for (let i = 0; i < maxTries; i++) {
     try {
+      // eslint-disable-next-line no-await-in-loop
       server = await startServer(port, dir, data)
       break
     } catch (err) {

@@ -4,7 +4,7 @@
     "exclude": []
   },
   "git": {
-    "noMerges": true,
+    "merges": true,
     "limit": 5000
   },
   "period": {

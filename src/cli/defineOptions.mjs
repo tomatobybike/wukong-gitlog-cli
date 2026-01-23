@@ -95,20 +95,13 @@ export function defineOptions(program) {
       '仅输出 per-period（month/week）文件，不输出合并的 monthly/weekly 汇总文件'
     )
     .option(
-      '--serve',
-      '启动本地 web 服务，查看提交统计（将在 output-wukong/data 下生成数据文件）'
-    )
-    .option(
       '--port <n>',
       '本地 web 服务端口（默认 3000）',
       (v) => parseInt(v, 10),
       3000
     )
     .option('--debug', 'enable debug logs')
-    .option(
-      '--serve-only',
-      '仅启动 web 服务，不导出或分析数据（使用 output-wukong/data 中已有的数据）'
-    )
+
 
     .option('--profile', '输出性能分析 JSON')
     .option('--verbose', '显示详细性能日志')

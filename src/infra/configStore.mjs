@@ -16,7 +16,7 @@ import yaml from 'yaml'
 
 // 1. 定义出厂默认配置（底座）
 export const DEFAULT_CONFIG = {
-  git: { noMerges: true, limit: undefined },
+  git: { merges: true, limit: undefined },
   period: { groupBy: 'month' },
   worktime: {
     country: 'CN',

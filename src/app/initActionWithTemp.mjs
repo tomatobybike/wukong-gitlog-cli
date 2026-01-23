@@ -25,7 +25,7 @@ author:
 
 # Git 提取配置
 git:
-  noMerges: true     # [布尔] 是否排除 merge commit
+  merges: true     # [布尔] 是否排除 merge commit
   limit: 5000        # [数字] 最大拉取提交数，防止大仓拉取过慢
 
 # 统计周期配置

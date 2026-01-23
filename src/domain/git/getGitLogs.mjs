@@ -7,7 +7,6 @@
  * - 避免 zx / WSL / bash 相关问题
  * - 支持大仓库（超大 stdout buffer）
  */
-
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 
@@ -20,7 +19,43 @@ const normalizer = createAuthorNormalizer()
  * 获取 git commit 列表（高性能版）
  */
 export async function getGitLogsFast(opts = {}) {
-  const { author, email, since, until, limit, merges } = opts
+  // TODO: remove debug log before production
+  console.log('✅', 'getGitLogsFast opts', opts)
+  /*
+ git: { merges: true, limit: undefined },
+  period: { groupBy: 'month', since: '2026-12-01', until: '2026-12-06' },
+  worktime: {
+    country: 'CN',
+    start: 9,
+    end: 18,
+    lunch: { start: 12, end: 14 },
+    overnightCutoff: 6
+  },
+  output: {
+    out: 'commits',
+    dir: 'output-wukong',
+    formats: 'text',
+    perPeriod: { enabled: true, excelMode: 'sheets', formats: [] }
+  },
+  author: { include: [ '杨琼,王欢庆' ] },
+  overtime: false,
+  gerrit: { prefix: undefined, api: undefined, auth: undefined },
+  serve: { port: 3000 },
+  profile: {
+    enabled: undefined,
+    flame: true,
+    traceFile: 'trace.json',
+    hotThreshold: 0.8,
+    diffThreshold: 0.2,
+    failOnHot: false,
+    diffBaseFile: 'baseline.json'
+  }
+  */
+  const { git, period, author, email } = opts
+
+  const { since, until } = period
+  const { limit, merges } = git
+  // const { author, email, since, until, limit, merges } = opts
 
   /**
    * git pretty format
@@ -49,7 +84,7 @@ export async function getGitLogsFast(opts = {}) {
   if (email) args.push(`--author=${email}`)
   if (since) args.push(`--since=${since}`)
   if (until) args.push(`--until=${until}`)
-  if (merges === false) args.push(`--no-merges`)
+  if (!merges) args.push(`--no-merges`)
   if (limit) args.push('-n', String(limit))
 
   let stdout
@@ -70,10 +105,7 @@ export async function getGitLogsFast(opts = {}) {
     /**
      * 统一错误出口，方便 CLI 层捕获
      */
-    const message =
-      err?.stderr ||
-      err?.message ||
-      'Failed to execute git log'
+    const message = err?.stderr || err?.message || 'Failed to execute git log'
 
     const error = new Error(message)
     error.cause = err
@@ -95,15 +127,9 @@ export async function getGitLogsFast(opts = {}) {
     /([0-9a-f]+)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([\s\S]*?)(?=(?:[0-9a-f]{7,40}\x1f)|\x1e$)/g
 
   for (const match of raw.matchAll(commitRegex)) {
-    const [
-      _,
-      hash,
-      authorName,
-      emailAddr,
-      date,
-      subject,
-      bodyAndNumstat
-    ] = match
+    // eslint-disable-next-line no-unused-vars
+    const [_, hash, authorName, emailAddr, date, subject, bodyAndNumstat] =
+      match
 
     /**
      * Gerrit Change-Id（如存在）

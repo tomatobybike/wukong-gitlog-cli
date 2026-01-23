@@ -8,6 +8,7 @@ import { exportAction } from './app/exportAction.mjs'
 import { initAction } from './app/initAction.mjs'
 // import { initActionWithTemp } from './app/initActionWithTemp.mjs'
 import { overtimeAction } from './app/overtimeAction.mjs'
+import { journalAction } from './app/journalAction.mjs'
 import { serveAction } from './app/serveAction.mjs'
 import { versionAction } from './app/versionAction.mjs'
 import { defineOptions } from './cli/defineOptions.mjs'
@@ -79,6 +80,16 @@ const main = async () => {
       exportAction(finalOpts)
     })
 
+  // # 每日 日报
+  program
+    .command('journal')
+    .description('Start web server')
+    .action((cmdOpts) => {
+      const globalOpts = program.opts()
+      const finalOpts = { ...globalOpts, ...cmdOpts }
+      journalAction(finalOpts)
+    })
+
   // # Web 服务
   program
     .command('serve')
@@ -88,9 +99,12 @@ const main = async () => {
       const finalOpts = { ...globalOpts, ...cmdOpts }
       serveAction(finalOpts)
     })
+
+
+
   program.parse(process.argv)
 
-  const opts = program.opts()
+  // const opts = program.opts()
   // console.log('✅ Cli Opts:', opts)
 }
 

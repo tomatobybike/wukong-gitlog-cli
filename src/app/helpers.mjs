@@ -1,10 +1,11 @@
 import chalk from 'chalk'
-
 import dayjs from 'dayjs'
 import ora from 'ora'
 import path from 'path'
 import { createProfiler } from 'wukong-profiler'
 import { createMultiBar } from 'wukong-progress'
+
+import { wait } from '#src/utils/wait.mjs'
 
 import { parseOptions } from '../cli/parseOptions.mjs'
 import { getAuthorChangeStats } from '../domain/author/analyze.mjs'
@@ -13,6 +14,22 @@ import { getWorkOvertimeStats } from '../domain/overtime/analyze.mjs'
 import { outputAll, outputData } from '../output/index.mjs'
 import { getWeekRange } from '../utils/getWeekRange.mjs'
 import { groupRecords } from '../utils/groupRecords.mjs'
+
+/**
+ * 处理单条 commit message
+ * 如果冒号前是 feat-* 或 fix-*，则去掉前缀
+ */
+function normalizeCommitMsg(message) {
+  // 匹配：feat-xxx: 或 fix-xxx:
+  const match = message.match(/^(feat|fix)-[^:]+:(.+)$/i)
+
+  if (match) {
+    return match[2].trim()
+  }
+
+  return message
+}
+
 
 export const getWorkTimeConfig = (opts) => {
   // startHour = 9, endHour = 18, lunchStart = 12, lunchEnd = 14, country = 'CN'
@@ -156,3 +173,73 @@ export const getLatestCommitByDay = ({ commits, opts }) => {
   })
   return latestByDay
 }
+
+/**
+ * @function getGitLogsDayReport
+ * @description 返回数据包含 git commit 的日期day （YYYY-MM-DD）,msg(当天提交的所有合并到一个msg),author
+ * 返回数据包含：
+ * - day: YYYY-MM-DD
+ * - author
+ * - originalMsg: 当天所有原始 commit message
+ * - msg: 处理后的 message（去掉 feat-/fix- 冒号前缀）
+ * @param {Array} records
+ * @param {Object} opts
+ * @returns {Array<{ day: string, msg: string, author: string }>}
+ */
+export const getGitLogsDayReport = async (records = [], opts = {}) => {
+  if (!Array.isArray(records) || records.length === 0) {
+    return []
+  }
+
+  const authorFilter = opts?.author
+  const map = {}
+
+  records.forEach((item) => {
+    if (!item?.date || !item?.message) return
+
+    const author =
+      item.author ||
+      item.originalAuthor ||
+      item.email ||
+      'unknown'
+
+    // 如果传了 --author，则过滤
+    if (authorFilter && author !== authorFilter) {
+      return
+    }
+
+    const day = dayjs(item.date).format('YYYY-MM-DD')
+    const key = `${day}__${author}`
+
+    if (!map[key]) {
+      map[key] = {
+        day,
+        author,
+        originalMsgs: [],
+        msgs: []
+      }
+    }
+
+    const originalMsg = item.message.trim()
+    const handledMsg = normalizeCommitMsg(originalMsg)
+
+    map[key].originalMsgs.push(originalMsg)
+    map[key].msgs.push(handledMsg)
+  })
+
+  return Object.values(map)
+    .map((item) => ({
+      day: item.day,
+      author: item.author,
+      originalMsg: item.originalMsgs.join('\n'),
+      msg: item.msgs.join('\n')
+    }))
+    // 按日期倒序，其次作者名排序（稳定输出）
+    .sort((a, b) => {
+      const dayDiff =
+        dayjs(b.day).valueOf() - dayjs(a.day).valueOf()
+      if (dayDiff !== 0) return dayDiff
+      return a.author.localeCompare(b.author, 'zh')
+    })
+}
+

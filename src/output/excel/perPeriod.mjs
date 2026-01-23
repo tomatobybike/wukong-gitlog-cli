@@ -13,6 +13,7 @@ export async function outputOvertimeExcelPerPeriod(map, period, config) {
 
   // files 模式
   for (const key of Object.keys(map)) {
+    // eslint-disable-next-line no-await-in-loop
     await exportExcel(map[key], null, {
       file: path.join(
         config.dir,

@@ -1,6 +1,7 @@
 import { outputOvertimeCsvByPeriod } from './csv/overtime.mjs'
 import { writeServeData, writeServeDataMjs } from './data/writeData.mjs'
 import { outputCommitsExcel } from './excel/commits.mjs'
+import { outputExcelDayReport } from './excel/outputExcelDayReport.mjs'
 import { outputOvertimeExcelPerPeriod } from './excel/perPeriod.mjs'
 import { outputOvertimeJson } from './json/overtime.mjs'
 import { outputOvertimeTabByPeriod } from './tab/overtime.mjs'
@@ -56,4 +57,7 @@ export async function outputData(result, config) {
 
   /* ---------- serve data（永远写） ---------- */
   writeServeDataMjs(result, { dir, worktimeOptions: config.worktimeOptions })
+  if (result.authorDayReport) {
+    outputExcelDayReport(result.authorDayReport, { dir })
+  }
 }

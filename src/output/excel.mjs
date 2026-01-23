@@ -106,6 +106,7 @@ export async function exportExcelPerPeriodFiles(
   const keys = Object.keys(groups).sort()
   for (const k of keys) {
     const perFile = `${dir}/overtime_${filePrefix}_${k}.xlsx`
+    // eslint-disable-next-line no-await-in-loop
     await exportExcel(groups[k], null, {
       file: perFile,
       stats: options.stats,

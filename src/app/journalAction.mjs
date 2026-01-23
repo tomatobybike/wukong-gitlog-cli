@@ -10,6 +10,7 @@ import { resolveGerrit } from '../domain/git/resolveGerrit.mjs'
 import { getWorkOvertimeStats } from '../domain/overtime/analyze.mjs'
 import { outputAll, outputData } from '../output/index.mjs'
 import {
+  getGitLogsDayReport,
   getLatestCommitByDay,
   getOvertimeByMonth,
   getOvertimeByWeek,
@@ -22,8 +23,7 @@ export async function journalAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
 
   // FIXME: remove debug log before production
-  console.log('❌', 'journalAction opts', opts);
-
+  console.log('❌', 'journalAction opts', opts)
 
   const profiler = createProfiler({ ...opts.profile })
 
@@ -54,8 +54,6 @@ export async function journalAction(rawOpts = {}) {
       ? await resolveGerrit(records, opts)
       : records
 
-
-
     // 2️⃣ 分析作者变更
     bar.step(10, '正在分析作者代码贡献...')
     const authorChanges = await profiler.stepAsync(
@@ -65,6 +63,15 @@ export async function journalAction(rawOpts = {}) {
       }
     )
     result.authorChanges = authorChanges
+
+    const authorDayReport = await profiler.stepAsync(
+      'analyzeAuthorDayReport',
+      () => {
+        return getGitLogsDayReport(enrichedRecords, opts)
+      }
+    )
+
+    result.authorDayReport = authorDayReport
 
     // 4️⃣ 数据输出
     bar.step(10, '正在持久化分析结果...')

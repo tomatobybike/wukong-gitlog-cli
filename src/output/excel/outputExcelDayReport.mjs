@@ -2,7 +2,7 @@ import dayjs from 'dayjs'
 import ExcelJS from 'exceljs'
 import path from 'path'
 
-import { DAY_REPORT } from '#src/constants/index.mjs'
+import { DAY_REPORT_EXCEL } from '#src/constants/index.mjs'
 import { outFile } from '#src/output/utils/outputPath.mjs'
 
 /**
@@ -19,7 +19,7 @@ export const outputExcelDayReport = async (dayReports = [], conf = {}) => {
   }
 
   const config = { dir: conf.dir || path.resolve('output-wukong') }
-  const baseDir = `${config.dir}/${DAY_REPORT}`
+  const baseDir = `${config.dir}/${DAY_REPORT_EXCEL}`
 
   // 按 author 分组
   const authorMap = {}

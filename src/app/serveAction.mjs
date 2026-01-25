@@ -3,10 +3,20 @@ import { logger } from '#utils/logger.mjs'
 import { parseOptions } from '../cli/parseOptions.mjs'
 import { readServeData } from '../output/data/readData.mjs'
 import { startServer } from '../serve/startServer.mjs'
+import { analyzeAction } from './analyzeAction.mjs'
 
 export async function serveAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
   const dir = opts.output.dir || 'output-wukong'
+
+  // 🚀 在启动服务前，自动运行 analyze 以更新基础数据
+  try {
+    logger.info('⚡ Auto-running analyze to ensure latest data...')
+    await analyzeAction(rawOpts)
+    logger.info('✅ Data refreshed successfully')
+  } catch (error) {
+    logger.warn('⚠️  Auto-analyze failed, but continuing with cached data:', error.message)
+  }
 
   let data = null
 

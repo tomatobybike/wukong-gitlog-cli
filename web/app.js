@@ -94,19 +94,16 @@ async function loadData() {
     }
   }
 
-  // 并行加载所有静态模块
-  const [commits, stats, weekly, monthly, latestByDay, config, authorChanges] =
+  // 并行加载基础数据（只加载快速的 analyze 生成的文件）
+  // 移除 overtime 文件加载，改为前端实时计算
+  const [commits, config, authorChanges] =
     await Promise.all([
       safeImport('/data/commits.mjs', []),
-      safeImport('/data/overtime.mjs', {}),
-      safeImport('/data/overtime.week.mjs', []),
-      safeImport('/data/overtime.month.mjs', []),
-      safeImport('/data/overtime.latest.commit.day.mjs', []),
       safeImport('/data/config.mjs', {}),
       safeImport('/data/author.changes.mjs', {})
     ])
 
-  return { commits, stats, weekly, monthly, latestByDay, config, authorChanges }
+  return { commits, config, authorChanges }
 }
 
 let commitsAll = []
@@ -3063,27 +3060,329 @@ function renderLunchMonthlyRiskSummary(commits, { lunchStart = 12, lunchEnd = 14
   `
 }
 
+// ====== 前端计算 overtime 数据的函数 ======
+
+/**
+ * 根据 commits 和配置计算小时加班统计
+ */
+function computeHourlyOvertime(commits, config) {
+  const startHour = config.startHour ?? 9
+  const endHour = config.endHour ?? 18
+  const lunchStart = config.lunchStart ?? 12
+  const lunchEnd = config.lunchEnd ?? 14
+
+  const hourlyCommits = Array(24).fill(0)
+  const hourlyOvertimeCommits = Array(24).fill(0)
+  const hourlyOvertimePercent = Array(24).fill(0)
+
+  let latestCommitHour = -1
+  let latestCommit = null
+  let total = 0
+  let outsideWorkCount = 0
+  let latestOutsideCommit = null
+  let latestOutsideCommitHour = -1
+
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    if (isNaN(d.getTime())) return
+
+    const h = d.getHours()
+    const m = d.getMinutes()
+
+    hourlyCommits[h]++
+    total++
+
+    // 更新最后一条提交
+    if (!latestCommit || new Date(c.date) > new Date(latestCommit.date)) {
+      latestCommit = c
+      latestCommitHour = h
+    }
+
+    // 判断是否加班：下班后（包括深夜）或午休中
+    const isAfterWork = h >= endHour || h < startHour
+    const isDuringLunch = h >= lunchStart && h < lunchEnd
+    const isOvertime = isAfterWork && !isDuringLunch
+
+    if (isOvertime) {
+      hourlyOvertimeCommits[h]++
+      outsideWorkCount++
+      // 跟踪最晚的加班提交（按严重度：小时越大越晚）
+      if (!latestOutsideCommit) {
+        latestOutsideCommit = c
+        latestOutsideCommitHour = h
+      } else {
+        const curSev = h >= endHour ? (h - endHour) : (24 - endHour + h)
+        const prevSev = latestOutsideCommitHour >= endHour
+          ? (latestOutsideCommitHour - endHour)
+          : (24 - endHour + latestOutsideCommitHour)
+        if (curSev > prevSev || (curSev === prevSev && new Date(c.date) > new Date(latestOutsideCommit.date))) {
+          latestOutsideCommit = c
+          latestOutsideCommitHour = h
+        }
+      }
+    }
+  })
+
+  // 计算百分比
+  for (let i = 0; i < 24; i++) {
+    hourlyOvertimePercent[i] = total > 0 ? hourlyOvertimeCommits[i] / total : 0
+  }
+
+  return {
+    startHour,
+    endHour,
+    lunchStart,
+    lunchEnd,
+    hourlyOvertimeCommits,
+    hourlyOvertimePercent,
+    latestCommitHour,
+    latestCommit,
+    latestOutsideCommit,
+    latestOutsideCommitHour,
+    total,
+    outsideWorkCount,
+    outsideWorkRate: total > 0 ? outsideWorkCount / total : 0
+  }
+}
+
+/**
+ * 根据 commits 计算每周加班统计
+ */
+function computeWeeklyOvertime(commits, startHour, endHour, cutoff) {
+  const weekMap = new Map()
+  const cutoffHour = cutoff || 6
+
+  // 第一步：按周分组统计加班提交
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    const h = d.getHours()
+
+    // 判断是否加班
+    const isOvertime =
+      (h >= endHour && h < 24) || (h >= 0 && h < cutoffHour && h < startHour)
+    if (!isOvertime) return
+
+    const weekKey = getIsoWeekKey(d.toISOString().slice(0, 10))
+    if (!weekKey) return
+
+    if (!weekMap.has(weekKey)) {
+      weekMap.set(weekKey, {
+        period: weekKey,
+        outsideWorkCount: 0,
+        outsideWorkRate: 0,
+        range: { start: '', end: '' }
+      })
+    }
+
+    weekMap.get(weekKey).outsideWorkCount++
+  })
+
+  // 第二步：计算每周的总 commits 数以便计算比例
+  const totalByWeek = new Map()
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    const weekKey = getIsoWeekKey(d.toISOString().slice(0, 10))
+    if (weekKey) {
+      totalByWeek.set(weekKey, (totalByWeek.get(weekKey) || 0) + 1)
+    }
+  })
+
+  // 第三步：计算比例并填充周范围
+  const weekly = Array.from(weekMap.values())
+  weekly.forEach((w) => {
+    const total = totalByWeek.get(w.period) || 1
+    w.outsideWorkRate = w.outsideWorkCount / total
+
+    // 填充周的日期范围
+    const [yy, ww] = w.period.split('-W')
+    w.range = getISOWeekRange(Number(yy), Number(ww))
+  })
+
+  return weekly.sort((a, b) => a.period.localeCompare(b.period))
+}
+
+/**
+ * 根据 commits 计算每月加班统计
+ */
+function computeMonthlyOvertime(commits, startHour, endHour, cutoff) {
+  const monthMap = new Map()
+  const cutoffHour = cutoff || 6
+
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    const h = d.getHours()
+
+    // 判断是否加班
+    const isOvertime =
+      (h >= endHour && h < 24) || (h >= 0 && h < cutoffHour && h < startHour)
+    if (!isOvertime) return
+
+    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+
+    if (!monthMap.has(monthKey)) {
+      monthMap.set(monthKey, {
+        period: monthKey,
+        outsideWorkCount: 0,
+        outsideWorkRate: 0
+      })
+    }
+
+    monthMap.get(monthKey).outsideWorkCount++
+  })
+
+  // 计算比例
+  const totalByMonth = new Map()
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    totalByMonth.set(monthKey, (totalByMonth.get(monthKey) || 0) + 1)
+  })
+
+  const monthly = Array.from(monthMap.values())
+  monthly.forEach((m) => {
+    const total = totalByMonth.get(m.period) || 1
+    m.outsideWorkRate = m.outsideWorkCount / total
+  })
+
+  return monthly.sort((a, b) => a.period.localeCompare(b.period))
+}
+
+/**
+ * 根据 commits 计算每日最晚提交时间（精确到分钟，包括跨天处理）
+ */
+function computeLatestByDay(commits, startHour, endHour, cutoff) {
+  const cutoffHour = cutoff || 6
+  const dayMap = new Map()
+
+  // 按日期分组所有 commits
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    if (isNaN(d.getTime())) return
+
+    const dateStr = d.toISOString().slice(0, 10)
+    if (!dayMap.has(dateStr)) {
+      dayMap.set(dateStr, [])
+    }
+    dayMap.get(dateStr).push(c)
+  })
+
+  // 获取所有日期键
+  const allDayKeys = Array.from(dayMap.keys()).sort()
+
+  // 找出需要创建"虚拟日期"的情况（次日凌晨没有当日记录）
+  const virtualPrevDays = new Set()
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    if (isNaN(d.getTime())) return
+    const h = d.getHours()
+
+    // 如果是次日凌晨（0-cutoffHour 之间且 < startHour）
+    if (h >= 0 && h < cutoffHour && h < startHour) {
+      const curDay = d.toISOString().slice(0, 10)
+      const prevDate = new Date(d)
+      prevDate.setDate(prevDate.getDate() - 1)
+      const prevDay = prevDate.toISOString().slice(0, 10)
+
+      // 如果前一日没有记录，添加虚拟日期
+      if (!dayMap.has(prevDay)) {
+        virtualPrevDays.add(prevDay)
+      }
+    }
+  })
+
+  // 合并实际日期和虚拟日期
+  const finalDayKeys = Array.from(
+    new Set([...allDayKeys, ...virtualPrevDays])
+  ).sort()
+
+  // 计算每一天的最晚提交时间
+  const latestByDay = finalDayKeys.map((dateStr) => {
+    const dayCommits = dayMap.get(dateStr) || []
+
+    // 1) 当天「下班后」的提交：>= endHour 的小时
+    const sameDayTimes = dayCommits
+      .map((r) => new Date(r.date))
+      .filter((d) => !isNaN(d.getTime()))
+      .filter((d) => {
+        const h = d.getHours()
+        return h >= endHour && h < 24
+      })
+      .map((d) => d.getHours() + d.getMinutes() / 60)
+
+    // 2) 次日凌晨、但仍算前一日加班的提交
+    const nextDate = new Date(dateStr)
+    nextDate.setDate(nextDate.getDate() + 1)
+    const nextDateStr = nextDate.toISOString().slice(0, 10)
+    const nextDayCommits = dayMap.get(nextDateStr) || []
+
+    const earlyTimes = nextDayCommits
+      .map((r) => new Date(r.date))
+      .filter((d) => !isNaN(d.getTime()))
+      .filter((d) => {
+        const h = d.getHours()
+        return h >= 0 && h < cutoffHour && h < startHour
+      })
+      .map((d) => 24 + d.getHours() + d.getMinutes() / 60)
+
+    // 3) 合并所有加班时间点
+    const allOvertimeTimes = [...sameDayTimes, ...earlyTimes]
+
+    if (allOvertimeTimes.length === 0) {
+      return {
+        date: dateStr,
+        latestHour: null,
+        latestHourNormalized: null
+      }
+    }
+
+    // 获取最晚的加班时间
+    const latestHourNormalized = Math.max(...allOvertimeTimes)
+
+    // latestHour 只记录当天（非跨天）的最晚时间
+    const sameDayMax = sameDayTimes.length > 0 ? Math.max(...sameDayTimes) : null
+
+    return {
+      date: dateStr,
+      latestHour: sameDayMax ? Math.floor(sameDayMax) : null,
+      latestHourNormalized: Math.floor(latestHourNormalized)
+    }
+  })
+
+  return latestByDay
+}
+
 async function main() {
   const {
     commits,
-    stats,
-    weekly,
-    monthly,
-    latestByDay,
     config,
     authorChanges
   } = await loadData()
   commitsAll = commits
   filtered = commitsAll.slice()
-  window.__overtimeEndHour =
-    stats && typeof stats.endHour === 'number'
-      ? stats.endHour
-      : (config.endHour ?? 18)
-  window.__overnightCutoff =
-    typeof config.overnightCutoff === 'number' ? config.overnightCutoff : 6
-  // lunch config（用于午休图表）
-  window.__lunchStart = stats && typeof stats.lunchStart === 'number' ? stats.lunchStart : (config.lunchStart ?? 12)
-  window.__lunchEnd = stats && typeof stats.lunchEnd === 'number' ? stats.lunchEnd : (config.lunchEnd ?? 14)
+
+  // 前端计算 overtime 数据
+  const startHour = config.startHour ?? 9
+  const endHour = config.endHour ?? 18
+  const lunchStart = config.lunchStart ?? 12
+  const lunchEnd = config.lunchEnd ?? 14
+  const cutoff = config.overnightCutoff ?? 6
+
+  const stats = computeHourlyOvertime(commits, {
+    startHour,
+    endHour,
+    lunchStart,
+    lunchEnd
+  })
+
+  const weekly = computeWeeklyOvertime(commits, startHour, endHour, cutoff)
+  const monthly = computeMonthlyOvertime(commits, startHour, endHour, cutoff)
+  const latestByDay = computeLatestByDay(commits, startHour, endHour, cutoff)
+
+  window.__overtimeEndHour = endHour
+  window.__overnightCutoff = cutoff
+  window.__lunchStart = lunchStart
+  window.__lunchEnd = lunchEnd
+
   initTableControls()
   updatePager()
   renderCommitsTablePage()

@@ -3150,10 +3150,10 @@ function computeHourlyOvertime(commits, config) {
       latestCommitHour = h
     }
 
-    // 判断是否加班：下班后（包括深夜）或午休中
-    const isAfterWork = h >= endHour || h < startHour
-    const isDuringLunch = h >= lunchStart && h < lunchEnd
-    const isOvertime = isAfterWork && !isDuringLunch
+    // 判断是否加班：与后端保持一致——非工作时间即为加班
+    // 工作时间定义：startHour <= hour < endHour，且排除午休区间
+    const inWorkHours = h >= startHour && h < endHour && !(h >= lunchStart && h < lunchEnd)
+    const isOvertime = !inWorkHours
 
     if (isOvertime) {
       hourlyOvertimeCommits[h]++

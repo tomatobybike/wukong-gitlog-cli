@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>wukong-gitlog-cli — Overtime Dashboard</title>
+    <link rel="stylesheet" href="./static/style.css" />
+    <script src="./static/echarts.min.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>Wukong Gitlog Overtime Dashboard</h1>
+    </header>
+    <main>
+      <section id="chartsHalf">
+        <div class="chart-card">
+          <h2>下班时间 vs 工作时间提交占比</h2>
+          <div id="outsideVsInsideChart" class="echart"></div>
+        </div>
+        <div class="chart-card" id="kpiCard">
+          <h2>关键指标</h2>
+          <div id="kpiContent"></div>
+        </div>
+      </section>
+      <section id="charts">
+        <div class="chart-card">
+          <h2>每小时加班分布 (小时 -> 提交数)</h2>
+          <div id="hourlyOvertimeChart" data-title="每小时加班分布" class="echart"></div>
+        </div>
+
+        <div class="chart-card">
+          <h2>按日提交趋势（次数）</h2>
+          <div id="dailyTrendChart" data-title="按日提交趋势（次数）" class="echart"></div>
+        </div>
+
+        <div class="chart-card">
+          <h2>每周趋势（加班占比）</h2>
+          <div id="weeklyTrendChart" data-title="每周趋势（加班占比）" class="echart"></div>
+        </div>
+        <div class="chart-card">
+          <h2>每月趋势（加班占比）</h2>
+          <div id="monthlyTrendChart" data-title="每月趋势（加班占比）" class="echart"></div>
+        </div>
+        <div class="chart-card">
+          <h2>每日最晚提交时间（小时）</h2>
+          <div id="latestHourDailyChart" data-title="每日最晚提交时间（小时）" class="echart"></div>
+        </div>
+        <div class="chart-card">
+          <h2>每日超过下班的小时数</h2>
+          <div id="dailySeverityChart" data-title="每日超过下班的小时数" class="echart"></div>
+        </div>
+        <div class="chart-card">
+          <h2>按日提交趋势（次数）</h2>
+          <div id="dailyTrendChartDog" data-title="按日提交趋势"  class="echart"></div>
+        </div>
+        <div class="chart-card">
+          <div id="mostTiredDay"></div>
+          <div id="mostTiredWeek"></div>
+          <div id="mostTiredMonth"></div>
+          <div id="latestOvertimeDay"></div>
+          <div id="latestOvertimeWeek"></div>
+          <div id="latestOvertimeMonth"></div>
+        </div>
+      </section>
+
+      <div class="chart-card">
+        <h2>开发者 Changed 工作量趋势（行数）</h2>
+
+        <div id="tabs" class="tabs">
+          <button data-type="daily" class="active">按日</button>
+          <button data-type="weekly">按周</button>
+          <button data-type="monthly">按月</button>
+        </div>
+        <div id="chartAuthorChanges" class="echart"></div>
+      </div>
+
+      <div class="chart-card">
+        <h2>开发者 加班趋势（次数）</h2>
+        <div class="tabs" id="tabsOvertime">
+          <button data-type="daily" class="active">按日</button>
+          <button data-type="weekly">按周</button>
+          <button data-type="monthly">按月</button>
+        </div>
+        <div id="chartAuthorOvertime" class="echart"></div>
+        <div id="weeklyRiskSummary" class="risk-summary-box"></div>
+        <div id="monthlyRiskSummary" class="risk-summary-box"></div>
+        <div id="weeklyDurationRankSummary" class="risk-summary-box"></div>
+        <div id="weeklyDurationRiskSummary" class="risk-summary-box"></div>
+        <div id="monthlyDurationRankSummary" class="risk-summary-box"></div>
+        <div id="monthlyDurationRiskSummary" class="risk-summary-box"></div>
+        <div id="rolling30DurationRiskSummary" class="risk-summary-box"></div>
+      </div>
+
+      <div class="chart-card">
+        <h2>开发者 加班最晚趋势（小时）</h2>
+        <div class="tabs" id="tabsLatestOvertime">
+          <button data-type="daily" class="active">按日</button>
+          <button data-type="weekly">按周</button>
+          <button data-type="monthly">按月</button>
+        </div>
+        <div id="chartAuthorLatestOvertime" class="echart"></div>
+        <div id="latestRiskSummary" class="risk-summary-box"></div>
+        <div id="latestMonthlyRiskSummary" class="risk-summary-box"></div>
+      </div>
+
+      <div class="chart-card">
+        <h2>开发者 午休最晚提交（小时）</h2>
+        <div class="tabs" id="tabsLunch">
+          <button data-type="daily" class="active">按日</button>
+          <button data-type="weekly">按周</button>
+          <button data-type="monthly">按月</button>
+        </div>
+        <div id="chartAuthorLunch" class="echart"></div>
+        <div id="lunchWeeklyRankSummary" class="risk-summary-box"></div>
+        <div id="lunchWeeklyRiskSummary" class="risk-summary-box"></div>
+        <div id="lunchMonthlyRankSummary" class="risk-summary-box"></div>
+        <div id="lunchMonthlyRiskSummary" class="risk-summary-box"></div>
+      </div>
+
+      <section class="table-card">
+        <h2>提交清单</h2>
+        <div id="tableControls">
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="搜索作者/信息/Hash/Date"
+          />
+          <input type="date" id="startDate" />
+          <span>~</span>
+          <input type="date" id="endDate" />
+          <button id="clearDate">清除</button>
+          <label for="pageSize">每页显示</label>
+          <select id="pageSize">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <label id="commitsTotal"></label>
+          <div class="pager">
+            <button id="prevPage">上一页</button>
+            <span id="pageInfo"></span>
+            <button id="nextPage">下一页</button>
+          </div>
+        </div>
+        <table id="commitsTable">
+          <thead>
+            <tr>
+              <th>Hash</th>
+              <th>Author</th>
+              <th>Email</th>
+              <th>Date</th>
+              <th>Message</th>
+              <th>Changed</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+    <footer>
+      <small
+        >Local dashboard generated by wukong-gitlog-cli. Data served from
+        <code>/data/</code>.</small
+      >
+    </footer>
+    <!-- 通用：右侧滑出的详情侧栏（小时 / 天 / 周 复用同一个 DOM） -->
+    <!-- 背景遮罩，点击可关闭侧栏 -->
+    <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+    <div id="dayDetailSidebar" class="sidebar">
+      <div class="sidebar-header">
+        <span id="sidebarDrawerTitle"></span>
+        <button id="sidebarClose">×</button>
+      </div>
+      <div id="sidebarTitle"></div>
+      <div id="sidebarContent" class="sidebar-content"></div>
+    </div>
+
+    <script type="module" src="/app.before.js"></script>
+  </body>
+</html>

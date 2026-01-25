@@ -1,17 +1,29 @@
+import { logger } from '#utils/logger.mjs'
+
+import { parseOptions } from '../cli/parseOptions.mjs'
 import { readServeData } from '../output/data/readData.mjs'
 import { startServer } from '../serve/startServer.mjs'
-import { parseOptions } from '../cli/parseOptions.mjs'
 
 export async function serveAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
   const dir = opts.output.dir || 'output-wukong'
 
-  const data = readServeData(dir)
+  let data = null
 
-  if (!data) {
-    throw new Error(
-      'No serve data found. Please run `wukong-gitlog analyze` first.'
+  try {
+    data = await readServeData(dir)
+
+    if (!data) {
+      logger.error(
+        'No serve data found. Please run `wukong-gitlog analyze` first.'
+      )
+      process.exit(1)
+    }
+  } catch (error) {
+    logger.error(
+      'Failed to read serve data. Please run `wukong-gitlog analyze` first.'
     )
+    process.exit(1)
   }
 
   const initialPort = Number(opts.port || 3000)

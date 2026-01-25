@@ -60,13 +60,17 @@ export async function outputAll(result, config) {
 export async function outputData(result, config) {
   const dir = resolveOutDir(config.dir)
 
-  const time = getCurrentTimestampSecond()
   /* ---------- serve data（永远写） ---------- */
   writeServeDataMjs(result, {
     dir,
     worktimeOptions: config.worktimeOptions
   })
+}
 
+export async function outputJournalAnalysis(result, config) {
+  const dir = resolveOutDir(config.dir)
+
+  const time = getCurrentTimestampSecond()
   writeDayReportData({
     dayReports: result.authorDayReport,
     conf: { dir, time }

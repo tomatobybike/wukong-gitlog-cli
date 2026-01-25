@@ -8,7 +8,7 @@ import { getAuthorChangeStats } from '../domain/author/analyze.mjs'
 import { getGitLogsFast } from '../domain/git/getGitLogs.mjs'
 import { resolveGerrit } from '../domain/git/resolveGerrit.mjs'
 import { getWorkOvertimeStats } from '../domain/overtime/analyze.mjs'
-import { outputAll, outputData } from '../output/index.mjs'
+import { outputAll, outputJournalAnalysis } from '../output/index.mjs'
 import {
   getGitLogsDayReport,
   getLatestCommitByDay,
@@ -77,7 +77,7 @@ export async function journalAction(rawOpts = {}) {
     bar.step(10, '正在持久化分析结果...')
     await profiler.stepAsync('output', async () => {
       const worktimeOptions = getWorkTimeConfig(opts)
-      await outputData(result, {
+      await outputJournalAnalysis(result, {
         dir: opts.output.dir || path.resolve('output-wukong'),
         worktimeOptions
       })

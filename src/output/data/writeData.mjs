@@ -1,10 +1,10 @@
 import fs from 'fs'
 
+import { outputExcelDayReport } from '#src/output/excel/outputExcelDayReport.mjs'
+import { outputTxtDayReport } from '#src/output/text/outputTxtDayReport.mjs'
+
 import { getEsmJs } from '../utils/getEsmJs.mjs'
 import { writeJsonFile, writeTxtFile } from '../utils/index.mjs'
-import { outputExcelDayReport } from '#src/output/excel/outputExcelDayReport.mjs'
-import {outputTxtDayReport} from '#src/output/text/outputTxtDayReport.mjs'
-
 
 const pkg = JSON.parse(
   fs.readFileSync(new URL('../../../package.json', import.meta.url), 'utf-8')
@@ -130,7 +130,7 @@ export function writeServeDataMjs(result, config) {
 }
 
 // 输出 日报 数据excel
-export function writeDayReportData(dayReports, config) {
-  outputExcelDayReport(dayReports, config)
-  outputTxtDayReport(dayReports, config)
+export async function writeDayReportData({ dayReports = [], conf = {} }) {
+  await outputExcelDayReport({ dayReports, conf })
+  await outputTxtDayReport({ dayReports, conf })
 }

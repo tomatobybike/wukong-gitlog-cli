@@ -1,14 +1,18 @@
-import { outputOvertimeCsvByPeriod } from './csv/overtime.mjs'
-import { writeServeData, writeServeDataMjs ,writeDayReportData} from './data/writeData.mjs'
-import { outputCommitsExcel } from './excel/commits.mjs'
+import { getCurrentTimestampSecond } from '#utils/index.mjs'
 
+import { outputOvertimeCsvByPeriod } from './csv/overtime.mjs'
+import {
+  writeDayReportData,
+  writeServeData,
+  writeServeDataMjs
+} from './data/writeData.mjs'
+import { outputCommitsExcel } from './excel/commits.mjs'
 import { outputOvertimeExcelPerPeriod } from './excel/perPeriod.mjs'
 import { outputOvertimeJson } from './json/overtime.mjs'
 import { outputOvertimeTabByPeriod } from './tab/overtime.mjs'
 import { outputCommitsText } from './text/commits.mjs'
 import { outputOvertimeText } from './text/overtime.mjs'
 import { resolveOutDir } from './utils/outputPath.mjs'
-
 
 export async function outputAll(result, config) {
   const dir = resolveOutDir(config.dir)
@@ -56,9 +60,15 @@ export async function outputAll(result, config) {
 export async function outputData(result, config) {
   const dir = resolveOutDir(config.dir)
 
+  const time = getCurrentTimestampSecond()
   /* ---------- serve data（永远写） ---------- */
-  writeServeDataMjs(result, { dir, worktimeOptions: config.worktimeOptions })
+  writeServeDataMjs(result, {
+    dir,
+    worktimeOptions: config.worktimeOptions
+  })
 
-  writeDayReportData(result.authorDayReport, { dir })
-
+  writeDayReportData({
+    dayReports: result.authorDayReport,
+    conf: { dir, time }
+  })
 }

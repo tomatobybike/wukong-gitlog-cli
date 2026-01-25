@@ -9,17 +9,20 @@ import { outFile } from '#src/output/utils/outputPath.mjs'
  * @function outputTxtDayReport
  * @description
  * 按 author 输出 TXT 日报（每人一个文件）
- * @param {Array} dayReports getGitLogsDayReport 的返回结果
- * @param {Object} options
- * @param {string} options.outputDir 输出目录
  */
-export const outputTxtDayReport = async (dayReports = [], conf = {}) => {
+export const outputTxtDayReport = async ({
+  dayReports = [],
+  conf = {}
+} = {}) => {
   if (!Array.isArray(dayReports) || dayReports.length === 0) {
     return
   }
 
   const config = { dir: conf.dir || path.resolve('output-wukong') }
   const baseDir = `${config.dir}/${DAY_REPORT_TXT}`
+
+  // 生成时间（来自上层 outputData）
+  const generateTime =  dayjs().format('YYYY-MM-DD HH:mm:ss')
 
   // 按 author 分组
   const authorMap = {}
@@ -33,11 +36,18 @@ export const outputTxtDayReport = async (dayReports = [], conf = {}) => {
   // 每个人生成一个 txt
   for (const [author, records] of Object.entries(authorMap)) {
     // 日期升序
-    records.sort((a, b) => dayjs(a.day).valueOf() - dayjs(b.day).valueOf())
+    records.sort(
+      (a, b) =>
+        dayjs(a.day).valueOf() - dayjs(b.day).valueOf()
+    )
 
     const lines = []
 
-    // 文件头
+    // ✅ 文件头：生成时间
+    lines.push(`生成时间：${generateTime}`)
+    lines.push('')
+
+    // 姓名
     lines.push(`姓名：${author}`)
     lines.push('')
 
@@ -53,10 +63,10 @@ export const outputTxtDayReport = async (dayReports = [], conf = {}) => {
 
     const content = lines.join('\n')
 
-    const excelFile = `${author}.txt`
-    const filePath = outFile(baseDir, excelFile)
-    // const filePath = path.join(outputDir, `${author}.txt`)
+    const txtFile = `${author}.txt`
+    const filePath = outFile(baseDir, txtFile)
 
+    // eslint-disable-next-line no-await-in-loop
     fs.writeFileSync(filePath, content, 'utf-8')
 
     console.log(`✅ 已生成 TXT：${filePath}`)

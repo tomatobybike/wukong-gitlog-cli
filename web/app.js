@@ -205,25 +205,50 @@ function drawHourlyOvertime(stats, onHourClick) {
   }
   const chart = echarts.init(el)
 
-  const commits = stats.hourlyOvertimeCommits || []
-  const percent = stats.hourlyOvertimePercent || []
+  // 显示所有提交数（不仅仅是加班）
+  const allCommits = Array(24).fill(0)
   const labels = Array.from({ length: 24 }, (_, i) =>
     String(i).padStart(2, '0')
   )
 
-  // 颜色逻辑（与 daily severity 风格一致）
-  function getColor(h) {
-    if (h >= 21) return '#d32f2f' // 深夜加班 红
-    if (h >= 19) return '#fb8c00' // 夜间加班 橙
-    if (h >= stats.lunchStart && h < stats.lunchEnd) return '#888888' // 午休灰
-    if (h >= stats.startHour && h < stats.endHour) return '#1976d2' // 工作时段 蓝
-    return '#b71c1c' // 凌晨 红
+  // 从原始 commits 数据重新计算每小时的所有提交数
+  // 如果没有则使用后备逻辑
+  if (window.__allCommitsData && Array.isArray(window.__allCommitsData)) {
+    window.__allCommitsData.forEach((c) => {
+      const d = new Date(c.date)
+      if (!isNaN(d.getTime())) {
+        const h = d.getHours()
+        allCommits[h]++
+      }
+    })
   }
 
-  const data = commits.map((v, h) => ({
+  // 颜色逻辑：根据时间段着色
+  function getColor(h) {
+    // 深夜（0-9 点）红色
+    if (h < stats.startHour) return '#b71c1c'
+    // 上班开始到午休开始：蓝色
+    if (h >= stats.startHour && h < stats.lunchStart) return '#1976d2'
+    // 午休时间：灰色
+    if (h >= stats.lunchStart && h < stats.lunchEnd) return '#888888'
+    // 午休结束到下班：蓝色
+    if (h >= stats.lunchEnd && h < stats.endHour) return '#1976d2'
+    // 下班后到晚上 19:00：橙色
+    if (h >= stats.endHour && h < 19) return '#fb8c00'
+    // 晚上 19:00 到深夜 21:00：深橙
+    if (h >= 19 && h < 21) return '#fb8c00'
+    // 深夜 21:00 后：红色
+    return '#d32f2f'
+  }
+
+  const data = allCommits.map((v, h) => ({
     value: v,
     itemStyle: { color: getColor(h) }
   }))
+
+  // 计算百分比
+  const total = allCommits.reduce((sum, v) => sum + v, 0)
+  const percentData = allCommits.map((v) => total > 0 ? (v / total * 100).toFixed(1) : 0)
 
   chart.setOption({
     tooltip: {
@@ -232,11 +257,31 @@ function drawHourlyOvertime(stats, onHourClick) {
         const p = params[0]
         const h = parseInt(p.axisValue, 10)
         const count = p.value
-        const rate = (percent[h] * 100).toFixed(1)
+        const percent = percentData[h]
+
+        // 判断时间段
+        let period = ''
+        if (h < stats.startHour) {
+          period = '深夜（需要休息）'
+        } else if (h >= stats.startHour && h < stats.lunchStart) {
+          period = '早上工作时间'
+        } else if (h >= stats.lunchStart && h < stats.lunchEnd) {
+          period = '午休时间'
+        } else if (h >= stats.lunchEnd && h < stats.endHour) {
+          period = '下午工作时间'
+        } else if (h >= stats.endHour && h < 19) {
+          period = '下班后（轻度加班）'
+        } else if (h >= 19 && h < 21) {
+          period = '晚间（中度加班）'
+        } else {
+          period = '深夜（严重加班）'
+        }
+
         return `
           🕒 <b>${h}:00</b><br/>
           提交次数：<b>${count}</b><br/>
-          占全天比例：<b>${rate}%</b>
+          占全天比例：<b>${percent}%</b><br/>
+          时段：${period}
         `
       }
     },
@@ -258,7 +303,7 @@ function drawHourlyOvertime(stats, onHourClick) {
     series: [
       {
         type: 'bar',
-        name: 'Overtime commits',
+        name: '每小时提交',
         data,
         barWidth: 18,
 
@@ -271,7 +316,7 @@ function drawHourlyOvertime(stats, onHourClick) {
               name: '最晚提交',
               coord: [
                 String(stats.latestCommitHour).padStart(2, '0'),
-                commits[stats.latestCommitHour]
+                allCommits[stats.latestCommitHour] || 0
               ]
             }
           ]
@@ -318,7 +363,14 @@ function drawHourlyOvertime(stats, onHourClick) {
       }
       document.getElementById('dayDetailSidebar').classList.remove('show')
       if (Number.isNaN(hour)) return
-      onHourClick(hour, commits[hour])
+
+      // 获取该小时的所有提交
+      const hourCommits = (window.__allCommitsData || []).filter((c) => {
+        const d = new Date(c.date)
+        return !isNaN(d.getTime()) && d.getHours() === hour
+      })
+
+      onHourClick(hour, hourCommits)
     })
   }
 
@@ -3359,6 +3411,9 @@ async function main() {
   } = await loadData()
   commitsAll = commits
   filtered = commitsAll.slice()
+
+  // 保存所有 commits 数据供小时分布图使用
+  window.__allCommitsData = commits
 
   // 前端计算 overtime 数据
   const startHour = config.startHour ?? 9

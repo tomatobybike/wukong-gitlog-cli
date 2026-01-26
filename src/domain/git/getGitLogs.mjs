@@ -20,7 +20,7 @@ const normalizer = createAuthorNormalizer()
  */
 export async function getGitLogsFast(opts = {}) {
   // TODO: remove debug log before production
-  console.log('✅', 'getGitLogsFast opts', opts)
+  // console.log('✅', 'getGitLogsFast opts', opts)
   /*
  git: { merges: true, limit: undefined },
   period: { groupBy: 'month', since: '2026-12-01', until: '2026-12-06' },
@@ -51,16 +51,10 @@ export async function getGitLogsFast(opts = {}) {
     diffBaseFile: 'baseline.json'
   }
   */
-  const { git, period, author, email } = opts
-
+  const { git = {}, period = {}, author, email } = opts
   const { since, until } = period
   const { limit, merges } = git
-  // const { author, email, since, until, limit, merges } = opts
 
-  /**
-   * git pretty format
-   * 使用不可见分隔符，方便后续正则解析
-   */
   const pretty = `${[
     '%H', // hash
     '%an', // author name
@@ -70,14 +64,12 @@ export async function getGitLogsFast(opts = {}) {
     '%B' // body
   ].join('%x1f')}%x1e`
 
-  /**
-   * git log 参数（数组形式，避免 shell）
-   */
   const args = [
     'log',
     `--pretty=format:${pretty}`,
     '--date=iso-local',
-    '--numstat'
+    '--numstat',
+    '--all'
   ]
 
   if (author) args.push(`--author=${author}`)
@@ -88,7 +80,6 @@ export async function getGitLogsFast(opts = {}) {
   if (limit) args.push('-n', String(limit))
 
   let stdout
-
   try {
     /**
      * execFile 直接执行 git：
@@ -99,14 +90,12 @@ export async function getGitLogsFast(opts = {}) {
     const result = await execFileAsync('git', args, {
       maxBuffer: 1024 * 1024 * 200 // 200MB（Windows 大仓库友好）
     })
-
     stdout = result.stdout
   } catch (err) {
     /**
      * 统一错误出口，方便 CLI 层捕获
      */
     const message = err?.stderr || err?.message || 'Failed to execute git log'
-
     const error = new Error(message)
     error.cause = err
     throw error
@@ -116,7 +105,6 @@ export async function getGitLogsFast(opts = {}) {
    * Windows 下 git 输出可能带 \r
    */
   const raw = stdout.replace(/\r/g, '')
-
   const commits = []
 
   /**
@@ -127,16 +115,19 @@ export async function getGitLogsFast(opts = {}) {
     /([0-9a-f]+)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([\s\S]*?)(?=(?:[0-9a-f]{7,40}\x1f)|\x1e$)/g
 
   for (const match of raw.matchAll(commitRegex)) {
-    // eslint-disable-next-line no-unused-vars
     const [_, hash, authorName, emailAddr, date, subject, bodyAndNumstat] =
       match
 
-    /**
-     * Gerrit Change-Id（如存在）
-     */
     const [, changeId] =
       bodyAndNumstat.match(/Change-Id:\s*(I[0-9a-fA-F]+)/) || []
 
+    const cherryPickMatch = bodyAndNumstat.match(
+      /\(cherry picked from commit\s+([0-9a-f]{7,40})\)/i
+    )
+
+    /**
+     * 解析 numstat
+     */
     const commit = {
       hash,
       author: normalizer.getAuthor(authorName, emailAddr),
@@ -146,15 +137,17 @@ export async function getGitLogsFast(opts = {}) {
       message: subject,
       body: bodyAndNumstat,
       changeId,
+
+      // ✅ 新增标记
+      isCherryPick: Boolean(cherryPickMatch),
+      cherryPickFrom: cherryPickMatch?.[1],
+
       added: 0,
       deleted: 0,
       changed: 0,
       files: []
     }
 
-    /**
-     * 解析 numstat
-     */
     const numstatRegex = /^(\d+)\s+(\d+)\s+(.+)$/gm
     for (const m of bodyAndNumstat.matchAll(numstatRegex)) {
       const added = parseInt(m[1], 10) || 0
@@ -169,7 +162,7 @@ export async function getGitLogsFast(opts = {}) {
 
     commits.push(commit)
   }
-
+  
   /**
    * 最终统一覆盖 author
    * 确保同一 email 使用同一个（中文）作者名
@@ -186,4 +179,48 @@ export async function getGitLogsFast(opts = {}) {
     authorMap: finalMap,
     originalMap: normalizer.getOriginalMap()
   }
+}
+
+/**
+ * 去重 cherry-pick commit
+ *
+ * 默认策略：
+ * - 按 Change-Id 去重
+ * - 优先保留非 cherry-pick
+ * - 多个 cherry-pick 时保留 first / last
+ */
+export function dedupeCommits(
+  commits,
+  {
+    by = 'changeId', // 'changeId' | 'hash'
+    prefer = 'original' // 'original' | 'first' | 'last'
+  } = {}
+) {
+  const map = new Map()
+
+  for (const commit of commits) {
+    const key = by === 'changeId' ? commit.changeId || commit.hash : commit.hash
+
+    if (!map.has(key)) {
+      map.set(key, commit)
+      continue
+    }
+
+    const existing = map.get(key)
+
+    // 优先保留非 cherry-pick
+    if (prefer === 'original') {
+      if (!existing.isCherryPick && commit.isCherryPick) continue
+      if (existing.isCherryPick && !commit.isCherryPick) {
+        map.set(key, commit)
+        continue
+      }
+    }
+
+    if (prefer === 'last') {
+      map.set(key, commit)
+    }
+  }
+
+  return Array.from(map.values())
 }

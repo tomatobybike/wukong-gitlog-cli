@@ -5,7 +5,7 @@ import { createMultiBar } from 'wukong-progress'
 
 import { parseOptions } from '../cli/parseOptions.mjs'
 import { getAuthorChangeStats } from '../domain/author/analyze.mjs'
-import { getGitLogsFast } from '../domain/git/getGitLogs.mjs'
+import { dedupeCommits, getGitLogsFast } from '../domain/git/getGitLogs.mjs'
 import { resolveGerrit } from '../domain/git/resolveGerrit.mjs'
 import { getWorkOvertimeStats } from '../domain/overtime/analyze.mjs'
 import { outputAll, outputJournalAnalysis } from '../output/index.mjs'
@@ -43,6 +43,15 @@ export async function journalAction(rawOpts = {}) {
     const { commits, authorMap } = await profiler.stepAsync('getGitLogs', () =>
       getGitLogsFast(opts)
     )
+
+    //  去重 commit（基于 Change-Id），过滤掉 Gerrit 产生的重复提交例如cherry-pick
+    const cleanCommits = dedupeCommits(commits, {
+      by: 'changeId',
+      prefer: 'original'
+    })
+
+    result.cleanCommits = cleanCommits
+
     result.commits = commits
     result.authorMap = authorMap
     bar.step(15, 'Git 记录提取完成')
@@ -67,7 +76,7 @@ export async function journalAction(rawOpts = {}) {
     const authorDayReport = await profiler.stepAsync(
       'analyzeAuthorDayReport',
       () => {
-        return getGitLogsDayReport(enrichedRecords, opts)
+        return getGitLogsDayReport(cleanCommits, opts)
       }
     )
 

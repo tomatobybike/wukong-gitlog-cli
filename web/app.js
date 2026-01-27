@@ -117,7 +117,7 @@ function renderCommitsTablePage() {
   const end = start + pageSize
   filtered.slice(start, end).forEach((c) => {
     const tr = document.createElement('tr')
-    tr.innerHTML = `<td>${c.hash.slice(0, 8)}</td><td>${c.author}</td><td>${c.email}</td><td>${formatDate(c.date)}</td><td>${c.message}</td><td>${c.changed}</td>`
+    tr.innerHTML = `<td>${c.hash.slice(0, 8)}</td><td>${c.author}</td><td>${c.email}</td><td>${formatDate(c.date)}</td><td>${c.message}</td><td>${c.isCherryPick}</td><td>${c.changed}</td>`
     tbody.appendChild(tr)
   })
   document.getElementById('commitsTotal').textContent =

@@ -177,11 +177,17 @@ export const getLatestCommitByDay = ({ commits, opts }) => {
 /**
  * @function getGitLogsDayReport
  * @description 返回数据包含 git commit 的日期day （YYYY-MM-DD）,msg(当天提交的所有合并到一个msg),author
+ * 用于 git log --all 的日报统计（Gerrit 友好）
+ *
+ * - 按 Change-Id 去重（同一 Change 只统计一次，取最新提交）
+ * - 按 day + author 聚合
+ * - msg：normalize 后 + 去重 + 合并
+ * - originalMsg：当天所有原始 commit message（不去重，便于排查）
  * 返回数据包含：
  * - day: YYYY-MM-DD
  * - author
  * - originalMsg: 当天所有原始 commit message
- * - msg: 处理后的 message（去掉 feat-/fix- 冒号前缀）
+ * - msg: 处理后的 message（去掉 feat-/fix- 冒号前缀）去重合并后的结果
  * @param {Array} records
  * @param {Object} opts
  * @returns {Array<{ day: string, msg: string, author: string }>}
@@ -192,20 +198,39 @@ export const getGitLogsDayReport = async (records = [], opts = {}) => {
   }
 
   const authorFilter = opts?.author
+
+  /* ---------------- 1️⃣ Change-Id 级别去重（取最新） ---------------- */
+
+  const changeMap = new Map()
+
+  for (const item of records) {
+    if (!item?.date || !item?.message) continue
+
+    const key = item.changeId || item.hash
+    const time = dayjs(item.date).valueOf()
+
+    const prev = changeMap.get(key)
+    if (!prev || time > dayjs(prev.date).valueOf()) {
+      changeMap.set(key, item)
+    }
+  }
+
+  const dedupedRecords = Array.from(changeMap.values())
+
+  /* ---------------- 2️⃣ Day + Author 聚合 ---------------- */
+
   const map = {}
 
-  records.forEach((item) => {
-    if (!item?.date || !item?.message) return
-
+  for (const item of dedupedRecords) {
     const author =
       item.author ||
       item.originalAuthor ||
       item.email ||
       'unknown'
 
-    // 如果传了 --author，则过滤
+    // --author 过滤
     if (authorFilter && author !== authorFilter) {
-      return
+      continue
     }
 
     const day = dayjs(item.date).format('YYYY-MM-DD')
@@ -216,7 +241,7 @@ export const getGitLogsDayReport = async (records = [], opts = {}) => {
         day,
         author,
         originalMsgs: [],
-        msgs: []
+        msgSet: new Set()
       }
     }
 
@@ -224,17 +249,18 @@ export const getGitLogsDayReport = async (records = [], opts = {}) => {
     const handledMsg = normalizeCommitMsg(originalMsg)
 
     map[key].originalMsgs.push(originalMsg)
-    map[key].msgs.push(handledMsg)
-  })
+    map[key].msgSet.add(handledMsg)
+  }
+
+  /* ---------------- 3️⃣ 输出 + 稳定排序 ---------------- */
 
   return Object.values(map)
     .map((item) => ({
       day: item.day,
       author: item.author,
       originalMsg: item.originalMsgs.join('\n'),
-      msg: item.msgs.join('\n')
+      msg: Array.from(item.msgSet).join('\n')
     }))
-    // 按日期倒序，其次作者名排序（稳定输出）
     .sort((a, b) => {
       const dayDiff =
         dayjs(b.day).valueOf() - dayjs(a.day).valueOf()
@@ -242,4 +268,3 @@ export const getGitLogsDayReport = async (records = [], opts = {}) => {
       return a.author.localeCompare(b.author, 'zh')
     })
 }
-

@@ -96,12 +96,11 @@ async function loadData() {
 
   // 并行加载基础数据（只加载快速的 analyze 生成的文件）
   // 移除 overtime 文件加载，改为前端实时计算
-  const [commits, config, authorChanges] =
-    await Promise.all([
-      safeImport('/data/commits.mjs', []),
-      safeImport('/data/config.mjs', {}),
-      safeImport('/data/author.changes.mjs', {})
-    ])
+  const [commits, config, authorChanges] = await Promise.all([
+    safeImport('/data/commits.mjs', []),
+    safeImport('/data/config.mjs', {}),
+    safeImport('/data/author.changes.mjs', {})
+  ])
 
   return { commits, config, authorChanges }
 }
@@ -248,7 +247,9 @@ function drawHourlyOvertime(stats, onHourClick) {
 
   // 计算百分比
   const total = allCommits.reduce((sum, v) => sum + v, 0)
-  const percentData = allCommits.map((v) => total > 0 ? (v / total * 100).toFixed(1) : 0)
+  const percentData = allCommits.map((v) =>
+    total > 0 ? ((v / total) * 100).toFixed(1) : 0
+  )
 
   chart.setOption({
     tooltip: {
@@ -1285,6 +1286,7 @@ function drawDailyTrendSeverity(commits, weekly, onDayClick) {
 
   // ---------- 7. 绘图 ----------
   const el = document.getElementById('dailyTrendChartDog')
+
   const titleDrawer = el.getAttribute('data-title') || ''
 
   const chart = echarts.init(el)
@@ -1602,7 +1604,11 @@ const drawChangeTrends = (stats) => {
 
           const lines = params
             .filter((i) => i.data > 0)
-            .sort((a, b) => (b.data || 0) - (a.data || 0) || String(a.seriesName).localeCompare(String(b.seriesName)))
+            .sort(
+              (a, b) =>
+                (b.data || 0) - (a.data || 0) ||
+                String(a.seriesName).localeCompare(String(b.seriesName))
+            )
             .map(
               (item) => `${item.marker}${item.seriesName}: ${item.data} 行变更`
             )
@@ -1642,9 +1648,12 @@ const drawChangeTrends = (stats) => {
       const label = p.axisValue || p.name
       const author = p.seriesName
       if (!label || !author) return
-      const type = document.querySelector('#tabs button.active')?.dataset.type || 'daily'
+      const type =
+        document.querySelector('#tabs button.active')?.dataset.type || 'daily'
 
-      const filteredCommits = (Array.isArray(commitsAll) ? commitsAll : []).filter((c) => {
+      const filteredCommits = (
+        Array.isArray(commitsAll) ? commitsAll : []
+      ).filter((c) => {
         const a = c.author || 'unknown'
         if (a !== author) return false
         const d = new Date(c.date)
@@ -1664,10 +1673,23 @@ const drawChangeTrends = (stats) => {
       filteredCommits.sort((a, b) => new Date(a.date) - new Date(b.date))
 
       if (type === 'weekly') {
-        const weeklyItem = { outsideWorkCount: filteredCommits.length, outsideWorkRate: 0 }
-        showSideBarForWeek({ period: label, weeklyItem, commits: filteredCommits, titleDrawer: `${author} 变更量 ${type} 详情` })
+        const weeklyItem = {
+          outsideWorkCount: filteredCommits.length,
+          outsideWorkRate: 0
+        }
+        showSideBarForWeek({
+          period: label,
+          weeklyItem,
+          commits: filteredCommits,
+          titleDrawer: `${author} 变更量 ${type} 详情`
+        })
       } else {
-        showDayDetailSidebar({ date: label, count: filteredCommits.length, commits: filteredCommits, titleDrawer: `${author} 变更量 ${type} 详情` })
+        showDayDetailSidebar({
+          date: label,
+          count: filteredCommits.length,
+          commits: filteredCommits,
+          titleDrawer: `${author} 变更量 ${type} 详情`
+        })
       }
     } catch (err) {
       console.warn('Change chart click handler error', err)
@@ -1769,7 +1791,11 @@ function drawAuthorOvertimeTrends(commits, stats) {
 
           const lines = params
             .filter((i) => i.data > 0)
-            .sort((a, b) => (b.data || 0) - (a.data || 0) || String(a.seriesName).localeCompare(String(b.seriesName)))
+            .sort(
+              (a, b) =>
+                (b.data || 0) - (a.data || 0) ||
+                String(a.seriesName).localeCompare(String(b.seriesName))
+            )
             .map(
               (item) => `${item.marker}${item.seriesName}: ${item.data} 次提交`
             )
@@ -1821,7 +1847,9 @@ function drawAuthorOvertimeTrends(commits, stats) {
       const label = p.axisValue || p.name
       const author = p.seriesName
       if (!label || !author) return
-      const type = document.querySelector('#tabsOvertime button.active')?.dataset.type || 'daily'
+      const type =
+        document.querySelector('#tabsOvertime button.active')?.dataset.type ||
+        'daily'
 
       const filteredCommits = commits.filter((c) => {
         const a = c.author || 'unknown'
@@ -1829,7 +1857,8 @@ function drawAuthorOvertimeTrends(commits, stats) {
         const d = new Date(c.date)
         if (Number.isNaN(d.valueOf())) return false
         const h = d.getHours()
-        const isOT = (h >= endHour && h < 24) || (h >= 0 && h < cutoff && h < startHour)
+        const isOT =
+          (h >= endHour && h < 24) || (h >= 0 && h < cutoff && h < startHour)
         if (!isOT) return false
 
         if (type === 'daily') return d.toISOString().slice(0, 10) === label
@@ -1847,10 +1876,23 @@ function drawAuthorOvertimeTrends(commits, stats) {
       filteredCommits.sort((a, b) => new Date(a.date) - new Date(b.date))
 
       if (type === 'weekly') {
-        const weeklyItem = { outsideWorkCount: filteredCommits.length, outsideWorkRate: 0 }
-        showSideBarForWeek({ period: label, weeklyItem, commits: filteredCommits, titleDrawer: `${author} 加班本周详情` })
+        const weeklyItem = {
+          outsideWorkCount: filteredCommits.length,
+          outsideWorkRate: 0
+        }
+        showSideBarForWeek({
+          period: label,
+          weeklyItem,
+          commits: filteredCommits,
+          titleDrawer: `${author} 加班本周详情`
+        })
       } else {
-        showDayDetailSidebar({ date: label, count: filteredCommits.length, commits: filteredCommits, titleDrawer: `${author} 加班 ${type} 详情` })
+        showDayDetailSidebar({
+          date: label,
+          count: filteredCommits.length,
+          commits: filteredCommits,
+          titleDrawer: `${author} 加班 ${type} 详情`
+        })
       }
     } catch (err) {
       console.warn('Overtime chart click handler error', err)
@@ -1986,12 +2028,20 @@ function computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff) {
   return byAuthorDay
 }
 
-function renderWeeklyDurationRankSummary(commits, { startHour = 9, endHour = 18, cutoff = 6 } = {}) {
+function renderWeeklyDurationRankSummary(
+  commits,
+  { startHour = 9, endHour = 18, cutoff = 6 } = {}
+) {
   const box = document.getElementById('weeklyDurationRankSummary')
   if (!box) return
   const now = new Date()
   const curWeek = getIsoWeekKey(now.toISOString().slice(0, 10))
-  const byAuthorDay = computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff)
+  const byAuthorDay = computeAuthorDailyMaxOvertime(
+    commits,
+    startHour,
+    endHour,
+    cutoff
+  )
   const ranks = []
   byAuthorDay.forEach((dayMap, author) => {
     let total = 0
@@ -2001,7 +2051,10 @@ function renderWeeklyDurationRankSummary(commits, { startHour = 9, endHour = 18,
     })
     if (total > 0) ranks.push({ author, total })
   })
-  ranks.sort((a, b) => b.total - a.total || String(a.author).localeCompare(String(b.author)))
+  ranks.sort(
+    (a, b) =>
+      b.total - a.total || String(a.author).localeCompare(String(b.author))
+  )
 
   const lines = []
   lines.push('【本周加班时长排名】')
@@ -2010,9 +2063,12 @@ function renderWeeklyDurationRankSummary(commits, { startHour = 9, endHour = 18,
   } else {
     ranks.forEach((r, idx) => {
       const rank = idx + 1
-      const medal = rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : ''
+      const medal =
+        rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : ''
       const title = rank === 1 ? '（状元・夜魔侠）' : ''
-      lines.push(`${rank}. ${medal}${r.author} — ${r.total.toFixed(2)} 小时${title}`)
+      lines.push(
+        `${rank}. ${medal}${r.author} — ${r.total.toFixed(2)} 小时${title}`
+      )
     })
   }
   box.innerHTML = `
@@ -2080,12 +2136,20 @@ function renderWeeklyDurationRiskSummary(
   `
 }
 
-function renderMonthlyDurationRankSummary(commits, { startHour = 9, endHour = 18, cutoff = 6 } = {}) {
+function renderMonthlyDurationRankSummary(
+  commits,
+  { startHour = 9, endHour = 18, cutoff = 6 } = {}
+) {
   const box = document.getElementById('monthlyDurationRankSummary')
   if (!box) return
   const now = new Date()
   const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  const byAuthorDay = computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff)
+  const byAuthorDay = computeAuthorDailyMaxOvertime(
+    commits,
+    startHour,
+    endHour,
+    cutoff
+  )
   const ranks = []
   byAuthorDay.forEach((dayMap, author) => {
     let total = 0
@@ -2095,7 +2159,10 @@ function renderMonthlyDurationRankSummary(commits, { startHour = 9, endHour = 18
     })
     if (total > 0) ranks.push({ author, total })
   })
-  ranks.sort((a, b) => b.total - a.total || String(a.author).localeCompare(String(b.author)))
+  ranks.sort(
+    (a, b) =>
+      b.total - a.total || String(a.author).localeCompare(String(b.author))
+  )
 
   const lines = []
   lines.push('【本月加班时长排名】')
@@ -2104,9 +2171,12 @@ function renderMonthlyDurationRankSummary(commits, { startHour = 9, endHour = 18
   } else {
     ranks.forEach((r, idx) => {
       const rank = idx + 1
-      const medal = rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : ''
+      const medal =
+        rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : ''
       const title = rank === 1 ? '（状元・夜魔侠）' : ''
-      lines.push(`${rank}. ${medal}${r.author} — ${r.total.toFixed(2)} 小时${title}`)
+      lines.push(
+        `${rank}. ${medal}${r.author} — ${r.total.toFixed(2)} 小时${title}`
+      )
     })
   }
   box.innerHTML = `
@@ -2434,7 +2504,11 @@ function drawAuthorLatestOvertimeTrends(commits, stats) {
 
           const lines = params
             .filter((i) => i.data > 0)
-            .sort((a, b) => (b.data || 0) - (a.data || 0) || String(a.seriesName).localeCompare(String(b.seriesName)))
+            .sort(
+              (a, b) =>
+                (b.data || 0) - (a.data || 0) ||
+                String(a.seriesName).localeCompare(String(b.seriesName))
+            )
             .map(
               (item) => `${item.marker}${item.seriesName}: ${item.data} 小时`
             )
@@ -2479,7 +2553,9 @@ function drawAuthorLatestOvertimeTrends(commits, stats) {
       const label = p.axisValue || p.name
       const author = p.seriesName
       if (!label || !author) return
-      const type = document.querySelector('#tabsLatestOvertime button.active')?.dataset.type || 'daily'
+      const type =
+        document.querySelector('#tabsLatestOvertime button.active')?.dataset
+          .type || 'daily'
 
       const filteredCommits = commits.filter((c) => {
         const a = c.author || 'unknown'
@@ -2489,7 +2565,8 @@ function drawAuthorLatestOvertimeTrends(commits, stats) {
         const h = d.getHours()
         let overtime = null
         if (h >= endHour && h < 24) overtime = h - endHour
-        else if (h >= 0 && h < cutoff && h < startHour) overtime = 24 - endHour + h
+        else if (h >= 0 && h < cutoff && h < startHour)
+          overtime = 24 - endHour + h
         if (overtime == null) return false
 
         if (type === 'daily') return d.toISOString().slice(0, 10) === label
@@ -2507,10 +2584,23 @@ function drawAuthorLatestOvertimeTrends(commits, stats) {
       filteredCommits.sort((a, b) => new Date(a.date) - new Date(b.date))
 
       if (type === 'weekly') {
-        const weeklyItem = { outsideWorkCount: filteredCommits.length, outsideWorkRate: 0 }
-        showSideBarForWeek({ period: label, weeklyItem, commits: filteredCommits, titleDrawer: `${author} 本周最晚加班详情` })
+        const weeklyItem = {
+          outsideWorkCount: filteredCommits.length,
+          outsideWorkRate: 0
+        }
+        showSideBarForWeek({
+          period: label,
+          weeklyItem,
+          commits: filteredCommits,
+          titleDrawer: `${author} 本周最晚加班详情`
+        })
       } else {
-        showDayDetailSidebar({ date: label, count: filteredCommits.length, commits: filteredCommits, titleDrawer: `${author} 本日最晚加班详情` })
+        showDayDetailSidebar({
+          date: label,
+          count: filteredCommits.length,
+          commits: filteredCommits,
+          titleDrawer: `${author} 本日最晚加班详情`
+        })
       }
     } catch (err) {
       console.warn('Latest overtime chart click handler error', err)
@@ -2698,7 +2788,12 @@ function renderLatestMonthlyRiskSummary(
 }
 
 // ========= 开发者 午休最晚提交（小时） =========
-function buildAuthorLunchDataset(commits, type, lunchStart = 12, lunchEnd = 14) {
+function buildAuthorLunchDataset(
+  commits,
+  type,
+  lunchStart = 12,
+  lunchEnd = 14
+) {
   const byAuthor = new Map()
   const periods = new Set()
 
@@ -2712,7 +2807,8 @@ function buildAuthorLunchDataset(commits, type, lunchStart = 12, lunchEnd = 14) 
 
     let key
     if (type === 'daily') key = d.toISOString().slice(0, 10)
-    else if (type === 'weekly') key = getIsoWeekKey(d.toISOString().slice(0, 10))
+    else if (type === 'weekly')
+      key = getIsoWeekKey(d.toISOString().slice(0, 10))
     else key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     if (!key) return
     periods.add(key)
@@ -2748,8 +2844,14 @@ function drawAuthorLunchTrends(commits, stats) {
   if (!el) return null
   const chart = echarts.init(el)
 
-  const lunchStart = typeof stats.lunchStart === 'number' ? stats.lunchStart : (window.__lunchStart ?? 12)
-  const lunchEnd = typeof stats.lunchEnd === 'number' ? stats.lunchEnd : (window.__lunchEnd ?? 14)
+  const lunchStart =
+    typeof stats.lunchStart === 'number'
+      ? stats.lunchStart
+      : (window.__lunchStart ?? 12)
+  const lunchEnd =
+    typeof stats.lunchEnd === 'number'
+      ? stats.lunchEnd
+      : (window.__lunchEnd ?? 14)
 
   function render(type) {
     const ds = buildAuthorLunchDataset(commits, type, lunchStart, lunchEnd)
@@ -2777,8 +2879,15 @@ function drawAuthorLunchTrends(commits, stats) {
 
           const lines = params
             .filter((i) => i.data > 0)
-            .sort((a, b) => (b.data || 0) - (a.data || 0) || String(a.seriesName).localeCompare(String(b.seriesName)))
-            .map((item) => `${item.marker}${item.seriesName}: ${formatHourDecimal(item.data)}`)
+            .sort(
+              (a, b) =>
+                (b.data || 0) - (a.data || 0) ||
+                String(a.seriesName).localeCompare(String(b.seriesName))
+            )
+            .map(
+              (item) =>
+                `${item.marker}${item.seriesName}: ${formatHourDecimal(item.data)}`
+            )
             .join('<br/>')
 
           return `<div>${label}</div>${extra}${lines}`
@@ -2786,7 +2895,12 @@ function drawAuthorLunchTrends(commits, stats) {
       },
       legend: { data: ds.authors },
       xAxis: { type: 'category', data: ds.allPeriods },
-      yAxis: { type: 'value', name: '时间（小时）', min: lunchStart, max: lunchEnd },
+      yAxis: {
+        type: 'value',
+        name: '时间（小时）',
+        min: lunchStart,
+        max: lunchEnd
+      },
       series: ds.series
     })
   }
@@ -2816,7 +2930,9 @@ function drawAuthorLunchTrends(commits, stats) {
       if (!label || !author) return
 
       // 识别当前 tabs 类型（daily|weekly|monthly）
-      const type = document.querySelector('#tabsLunch button.active')?.dataset.type || 'daily'
+      const type =
+        document.querySelector('#tabsLunch button.active')?.dataset.type ||
+        'daily'
 
       // 过滤 commits：作者匹配 + 在午休时间段内 + 在所选周期内
       const filteredCommits = commits.filter((c) => {
@@ -2847,10 +2963,23 @@ function drawAuthorLunchTrends(commits, stats) {
       filteredCommits.sort((a, b) => new Date(a.date) - new Date(b.date))
 
       if (type === 'weekly') {
-        const weeklyItem = { outsideWorkCount: filteredCommits.length, outsideWorkRate: 0 }
-        showSideBarForWeek({ period: label, weeklyItem, commits: filteredCommits, titleDrawer: `${author} 午休本周提交详情` })
+        const weeklyItem = {
+          outsideWorkCount: filteredCommits.length,
+          outsideWorkRate: 0
+        }
+        showSideBarForWeek({
+          period: label,
+          weeklyItem,
+          commits: filteredCommits,
+          titleDrawer: `${author} 午休本周提交详情`
+        })
       } else {
-        showDayDetailSidebar({ date: label, count: filteredCommits.length, commits: filteredCommits, titleDrawer: `${author} 午休 ${type} 提交` })
+        showDayDetailSidebar({
+          date: label,
+          count: filteredCommits.length,
+          commits: filteredCommits,
+          titleDrawer: `${author} 午休 ${type} 提交`
+        })
       }
     } catch (err) {
       console.warn('Lunch chart click handler error', err)
@@ -2860,7 +2989,10 @@ function drawAuthorLunchTrends(commits, stats) {
   return chart
 }
 
-function renderLunchWeeklyRankSummary(commits, { lunchStart = 12, lunchEnd = 14 } = {}) {
+function renderLunchWeeklyRankSummary(
+  commits,
+  { lunchStart = 12, lunchEnd = 14 } = {}
+) {
   const box = document.getElementById('lunchWeeklyRankSummary')
   if (!box) return
 
@@ -2885,7 +3017,10 @@ function renderLunchWeeklyRankSummary(commits, { lunchStart = 12, lunchEnd = 14 
   weekDays.forEach((set, author) => {
     weeklyRanks.push({ author, days: set.size })
   })
-  weeklyRanks.sort((a, b) => b.days - a.days || String(a.author).localeCompare(String(b.author)))
+  weeklyRanks.sort(
+    (a, b) =>
+      b.days - a.days || String(a.author).localeCompare(String(b.author))
+  )
 
   const lines = []
   lines.push('【本周午休清醒者排行榜】')
@@ -2894,7 +3029,8 @@ function renderLunchWeeklyRankSummary(commits, { lunchStart = 12, lunchEnd = 14 
   } else {
     weeklyRanks.forEach((r, idx) => {
       const rank = idx + 1
-      const medal = rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : ''
+      const medal =
+        rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : ''
       const title = rank === 1 ? '（状元・昼魔侠）' : ''
       lines.push(`${rank}. ${medal}${r.author} — ${r.days} 天${title}`)
     })
@@ -2913,7 +3049,10 @@ function renderLunchWeeklyRankSummary(commits, { lunchStart = 12, lunchEnd = 14 
   `
 }
 
-function renderLunchWeeklyRiskSummary(commits, { lunchStart = 12, lunchEnd = 14 } = {}) {
+function renderLunchWeeklyRiskSummary(
+  commits,
+  { lunchStart = 12, lunchEnd = 14 } = {}
+) {
   const box = document.getElementById('lunchWeeklyRiskSummary')
   if (!box) return
 
@@ -2938,7 +3077,12 @@ function renderLunchWeeklyRiskSummary(commits, { lunchStart = 12, lunchEnd = 14 
     const author = c.author || 'unknown'
     const val = h + m / 60
     const cur = mMap.get(author)
-    if (!cur || val > cur.val) mMap.set(author, { val, date: d.toISOString().slice(0, 10), time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` })
+    if (!cur || val > cur.val)
+      mMap.set(author, {
+        val,
+        date: d.toISOString().slice(0, 10),
+        time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+      })
   })
 
   const curMap = weekMax.get(curKey) || new Map()
@@ -2970,8 +3114,11 @@ function renderLunchWeeklyRiskSummary(commits, { lunchStart = 12, lunchEnd = 14 
       else if (top.val < prevMax) trend = '较上周提前'
       else trend = '与上周持平'
     }
-    lines.push(`${topAuthor} 本周午休最晚提交：${top.time}（${top.date}），${trend}。）`)
-    if (top.val >= lunchEnd - 0.5) lines.push('存在午间延迟提交风险，请关注短时间内频繁占用午休。')
+    lines.push(
+      `${topAuthor} 本周午休最晚提交：${top.time}（${top.date}），${trend}。）`
+    )
+    if (top.val >= lunchEnd - 0.5)
+      lines.push('存在午间延迟提交风险，请关注短时间内频繁占用午休。')
   }
 
   box.innerHTML = `
@@ -2987,7 +3134,10 @@ function renderLunchWeeklyRiskSummary(commits, { lunchStart = 12, lunchEnd = 14 
   `
 }
 
-function renderLunchMonthlyRankSummary(commits, { lunchStart = 12, lunchEnd = 14 } = {}) {
+function renderLunchMonthlyRankSummary(
+  commits,
+  { lunchStart = 12, lunchEnd = 14 } = {}
+) {
   const box = document.getElementById('lunchMonthlyRankSummary')
   if (!box) return
 
@@ -3012,7 +3162,10 @@ function renderLunchMonthlyRankSummary(commits, { lunchStart = 12, lunchEnd = 14
   monthDays.forEach((set, author) => {
     monthlyRanks.push({ author, days: set.size })
   })
-  monthlyRanks.sort((a, b) => b.days - a.days || String(a.author).localeCompare(String(b.author)))
+  monthlyRanks.sort(
+    (a, b) =>
+      b.days - a.days || String(a.author).localeCompare(String(b.author))
+  )
 
   const lines = []
   lines.push('【本月午休清醒者排行榜】')
@@ -3021,7 +3174,8 @@ function renderLunchMonthlyRankSummary(commits, { lunchStart = 12, lunchEnd = 14
   } else {
     monthlyRanks.forEach((r, idx) => {
       const rank = idx + 1
-      const medal = rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : ''
+      const medal =
+        rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : ''
       const title = rank === 1 ? '（状元・昼魔侠）' : ''
       lines.push(`${rank}. ${medal}${r.author} — ${r.days} 天${title}`)
     })
@@ -3040,7 +3194,10 @@ function renderLunchMonthlyRankSummary(commits, { lunchStart = 12, lunchEnd = 14
   `
 }
 
-function renderLunchMonthlyRiskSummary(commits, { lunchStart = 12, lunchEnd = 14 } = {}) {
+function renderLunchMonthlyRiskSummary(
+  commits,
+  { lunchStart = 12, lunchEnd = 14 } = {}
+) {
   const box = document.getElementById('lunchMonthlyRiskSummary')
   if (!box) return
 
@@ -3063,7 +3220,12 @@ function renderLunchMonthlyRiskSummary(commits, { lunchStart = 12, lunchEnd = 14
     const author = c.author || 'unknown'
     const val = h + m / 60
     const cur = mm.get(author)
-    if (!cur || val > cur.val) mm.set(author, { val, date: d.toISOString().slice(0, 10), time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}` })
+    if (!cur || val > cur.val)
+      mm.set(author, {
+        val,
+        date: d.toISOString().slice(0, 10),
+        time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+      })
   })
 
   const curMap = monthMax.get(curKey) || new Map()
@@ -3095,8 +3257,11 @@ function renderLunchMonthlyRiskSummary(commits, { lunchStart = 12, lunchEnd = 14
       else if (top.val < prevMax) trend = '较上月提前'
       else trend = '与上月持平'
     }
-    lines.push(`${topAuthor} 本月午休最晚提交：${top.time}（${top.date}），${trend}。）`)
-    if (top.val >= lunchEnd - 0.5) lines.push('存在午间延迟提交风险，请关注短时间内频繁占用午休。')
+    lines.push(
+      `${topAuthor} 本月午休最晚提交：${top.time}（${top.date}），${trend}。）`
+    )
+    if (top.val >= lunchEnd - 0.5)
+      lines.push('存在午间延迟提交风险，请关注短时间内频繁占用午休。')
   }
 
   box.innerHTML = `
@@ -3152,7 +3317,8 @@ function computeHourlyOvertime(commits, config) {
 
     // 判断是否加班：与后端保持一致——非工作时间即为加班
     // 工作时间定义：startHour <= hour < endHour，且排除午休区间
-    const inWorkHours = h >= startHour && h < endHour && !(h >= lunchStart && h < lunchEnd)
+    const inWorkHours =
+      h >= startHour && h < endHour && !(h >= lunchStart && h < lunchEnd)
     const isOvertime = !inWorkHours
 
     if (isOvertime) {
@@ -3163,11 +3329,16 @@ function computeHourlyOvertime(commits, config) {
         latestOutsideCommit = c
         latestOutsideCommitHour = h
       } else {
-        const curSev = h >= endHour ? (h - endHour) : (24 - endHour + h)
-        const prevSev = latestOutsideCommitHour >= endHour
-          ? (latestOutsideCommitHour - endHour)
-          : (24 - endHour + latestOutsideCommitHour)
-        if (curSev > prevSev || (curSev === prevSev && new Date(c.date) > new Date(latestOutsideCommit.date))) {
+        const curSev = h >= endHour ? h - endHour : 24 - endHour + h
+        const prevSev =
+          latestOutsideCommitHour >= endHour
+            ? latestOutsideCommitHour - endHour
+            : 24 - endHour + latestOutsideCommitHour
+        if (
+          curSev > prevSev ||
+          (curSev === prevSev &&
+            new Date(c.date) > new Date(latestOutsideCommit.date))
+        ) {
           latestOutsideCommit = c
           latestOutsideCommitHour = h
         }
@@ -3200,7 +3371,14 @@ function computeHourlyOvertime(commits, config) {
 /**
  * 根据 commits 计算每周加班统计
  */
-function computeWeeklyOvertime(commits, startHour, endHour, cutoff, lunchStart, lunchEnd) {
+function computeWeeklyOvertime(
+  commits,
+  startHour,
+  endHour,
+  cutoff,
+  lunchStart,
+  lunchEnd
+) {
   const weekMap = new Map()
 
   // 第一步：按周分组统计加班提交
@@ -3210,7 +3388,8 @@ function computeWeeklyOvertime(commits, startHour, endHour, cutoff, lunchStart, 
 
     // 判断是否在工作时间（与后端保持一致）
     // 工作时间是 startHour <= hour < endHour，但排除午休 lunchStart <= hour < lunchEnd
-    const inWorkHours = h >= startHour && h < endHour && !(h >= lunchStart && h < lunchEnd)
+    const inWorkHours =
+      h >= startHour && h < endHour && !(h >= lunchStart && h < lunchEnd)
     const isOvertime = !inWorkHours
     if (!isOvertime) return
 
@@ -3256,7 +3435,14 @@ function computeWeeklyOvertime(commits, startHour, endHour, cutoff, lunchStart, 
 /**
  * 根据 commits 计算每月加班统计
  */
-function computeMonthlyOvertime(commits, startHour, endHour, cutoff, lunchStart, lunchEnd) {
+function computeMonthlyOvertime(
+  commits,
+  startHour,
+  endHour,
+  cutoff,
+  lunchStart,
+  lunchEnd
+) {
   const monthMap = new Map()
 
   commits.forEach((c) => {
@@ -3264,7 +3450,8 @@ function computeMonthlyOvertime(commits, startHour, endHour, cutoff, lunchStart,
     const h = d.getHours()
 
     // 判断是否在工作时间（与后端保持一致）
-    const inWorkHours = h >= startHour && h < endHour && !(h >= lunchStart && h < lunchEnd)
+    const inWorkHours =
+      h >= startHour && h < endHour && !(h >= lunchStart && h < lunchEnd)
     const isOvertime = !inWorkHours
     if (!isOvertime) return
 
@@ -3302,7 +3489,14 @@ function computeMonthlyOvertime(commits, startHour, endHour, cutoff, lunchStart,
  * 根据 commits 计算每日最晚提交时间（所有工作时间外提交的最晚时刻）
  * 与后端逻辑保持一致：只看小时部分，忽略分钟
  */
-function computeLatestByDay(commits, startHour, endHour, cutoff, lunchStart, lunchEnd) {
+function computeLatestByDay(
+  commits,
+  startHour,
+  endHour,
+  cutoff,
+  lunchStart,
+  lunchEnd
+) {
   const cutoffHour = cutoff || 6
 
   // 第一步：按日期分组所有 commits（使用本地时间日期，避免时区偏移）
@@ -3343,7 +3537,9 @@ function computeLatestByDay(commits, startHour, endHour, cutoff, lunchStart, lun
   })
 
   // 第三步：合并所有日期（实际 + 虚拟）
-  const allDayKeys = Array.from(new Set([...dayKeys, ...virtualPrevDays])).sort()
+  const allDayKeys = Array.from(
+    new Set([...dayKeys, ...virtualPrevDays])
+  ).sort()
 
   // 第四步：计算每一天的最晚提交时间
   const latestByDay = allDayKeys.map((k) => {
@@ -3369,10 +3565,7 @@ function computeLatestByDay(commits, startHour, endHour, cutoff, lunchStart, lun
       .filter((h) => h >= 0 && h < cutoffHour && h < startHour)
 
     // 3) 合并时间值：当天用原始小时，次日凌晨用 24+小时
-    const overtimeValues = [
-      ...sameDayHours,
-      ...earlyHours.map((h) => 24 + h)
-    ]
+    const overtimeValues = [...sameDayHours, ...earlyHours.map((h) => 24 + h)]
 
     // 如果没有任何下班后的提交，返回 null
     if (overtimeValues.length === 0) {
@@ -3384,7 +3577,8 @@ function computeLatestByDay(commits, startHour, endHour, cutoff, lunchStart, lun
     }
 
     const latestHourNormalized = Math.max(...overtimeValues)
-    const sameDayMax = sameDayHours.length > 0 ? Math.max(...sameDayHours) : null
+    const sameDayMax =
+      sameDayHours.length > 0 ? Math.max(...sameDayHours) : null
 
     return {
       date: k,
@@ -3397,11 +3591,7 @@ function computeLatestByDay(commits, startHour, endHour, cutoff, lunchStart, lun
 }
 
 async function main() {
-  const {
-    commits,
-    config,
-    authorChanges
-  } = await loadData()
+  const { commits, config, authorChanges } = await loadData()
   commitsAll = commits
   filtered = commitsAll.slice()
 
@@ -3422,9 +3612,30 @@ async function main() {
     lunchEnd
   })
 
-  const weekly = computeWeeklyOvertime(commits, startHour, endHour, cutoff, lunchStart, lunchEnd)
-  const monthly = computeMonthlyOvertime(commits, startHour, endHour, cutoff, lunchStart, lunchEnd)
-  const latestByDay = computeLatestByDay(commits, startHour, endHour, cutoff, lunchStart, lunchEnd)
+  const weekly = computeWeeklyOvertime(
+    commits,
+    startHour,
+    endHour,
+    cutoff,
+    lunchStart,
+    lunchEnd
+  )
+  const monthly = computeMonthlyOvertime(
+    commits,
+    startHour,
+    endHour,
+    cutoff,
+    lunchStart,
+    lunchEnd
+  )
+  const latestByDay = computeLatestByDay(
+    commits,
+    startHour,
+    endHour,
+    cutoff,
+    lunchStart,
+    lunchEnd
+  )
 
   window.__overtimeEndHour = endHour
   window.__overnightCutoff = cutoff

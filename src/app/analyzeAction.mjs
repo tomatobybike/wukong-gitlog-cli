@@ -3,6 +3,8 @@ import path from 'path'
 import { createProfiler } from 'wukong-profiler'
 import { createMultiBar } from 'wukong-progress'
 
+import { getProfileDirFile } from '#utils/getProfileDirFile.mjs'
+
 import { parseOptions } from '../cli/parseOptions.mjs'
 import { getAuthorChangeStats } from '../domain/author/analyze.mjs'
 import { getGitLogsFast } from '../domain/git/getGitLogs.mjs'
@@ -21,8 +23,10 @@ import {
 export async function analyzeAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
 
-
-  const profiler = createProfiler({ ...opts.profile })
+  const traceFile = getProfileDirFile('trace.json', opts)
+  // FIXME: remove debug log before production
+  console.log('❌', 'traceFile', traceFile);
+  const profiler = createProfiler({ ...opts.profile, traceFile })
 
   // 未来 可考虑将 MultiBar 抽离到更高层，支持所有 action 共用，wukong-progress 需要支持自定义子任务占位符
   // 初始化 MultiBar
@@ -51,8 +55,6 @@ export async function analyzeAction(rawOpts = {}) {
       ? await resolveGerrit(records, opts)
       : records
 
-
-
     // 2️⃣ 分析作者变更
     bar.step(10, '正在分析作者代码贡献...')
     const authorChanges = await profiler.stepAsync(
@@ -78,7 +80,7 @@ export async function analyzeAction(rawOpts = {}) {
 
       bar.step(20, '正在标记每日最晚提交点...')
       result.overtimeLatestCommitByDay = await getLatestCommitByDay({
-        commits:enrichedRecords,
+        commits: enrichedRecords,
         opts: worktimeOptions
       })
     } else {

@@ -9,3 +9,6 @@ export const DAY_REPORT_EXCEL = "dayReport/excel"
 // 按月导出相关
 export const EXPORT_DIR_MONTH = "export/month"
 export const EXPORT_DIR_WEEK = "export/week"
+
+// profile
+export const EXPORT_DIR_PROFILE = "export/profile"

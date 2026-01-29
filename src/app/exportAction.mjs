@@ -41,11 +41,13 @@ import {
   getOvertimeByWeek,
   getWorkTimeConfig
 } from './helpers.mjs'
+import { getProfileDirFile } from '#utils/getProfileDirFile.mjs'
 
 export async function exportAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
+  const traceFile = getProfileDirFile('trace.json', opts)
 
-  const profiler = createProfiler({ ...opts.profile })
+  const profiler = createProfiler({ ...opts.profile, traceFile }, opts)
 
   const mb = createMultiBar()
   const bar = mb.create(100, {
@@ -179,7 +181,7 @@ export async function exportAction(rawOpts = {}) {
       fileName: 'author-changes.json'
     })
     handleExportAuthor({ opts, records: authorMap, fileName: 'author.txt' })
-    
+
   } catch (error) {
     // 异常处理：停止进度条并打印红色错误
     mb.stop()

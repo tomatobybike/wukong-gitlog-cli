@@ -58,8 +58,8 @@ output:
     enabled: true        # [布尔] 是否按周期 (月/周) 生成单独的明细文件
     excelMode: "sheets"  # [枚举] sheets (一文件多页) | files (一周期一个独立文件)
 
-# 调试与性能
-debug: false
+# 作者别名映射：将邮箱或原始显示名映射为规范化作者名
+authorAliases: {}
 `
 
 // JS 模板 (支持逻辑，适合高级用户)
@@ -76,7 +76,7 @@ export default {
 
   // Git 提取配置
   git: {
-    noMerges: true,
+    merges: true,
     limit: 5000
   },
 
@@ -89,6 +89,9 @@ export default {
     overnightCutoff: 6
   },
 
+  // 用户自定义的作者别名映射（key 可以是邮箱或原始作者名）
+  authorAliases: {},
+
   // 输出与报告
   output: {
     dir: 'output-wukong',
@@ -98,57 +101,12 @@ export default {
 };
 `
 
-
-
-export async function initActionWithTemp(options) {
-  console.log(`\n🚀 ${'Wukong GitLog'} 配置文件初始化\n`)
-
-  try {
-    const format = await select({
-      message: '请选择要生成的配置文件格式:',
-      choices: [
-        { name: 'JavaScript (灵活，支持逻辑)', value: 'js' },
-        { name: 'YAML (推荐，带详细中文注释)', value: 'yaml' },
-        { name: 'JSON (标准格式)', value: 'json' }
-      ]
-    })
-
-    const fileNameMap = {
-      js: '.wukonggitlogrc.js',
-      yaml: '.wukonggitlogrc.yml',
-      json: '.wukonggitlogrc.json'
-    }
-
-    const fileName = fileNameMap[format]
-    const targetPath = path.join(process.cwd(), fileName)
-
-    if (fs.existsSync(targetPath) && !options.force) {
-      console.error(`\n❌ 错误: 当前目录已存在 ${fileName}`)
-      return
-    }
-
-    let content = ''
-    if (format === 'js') content = JS_TEMPLATE
-    else if (format === 'yaml') content = YAML_TEMPLATE
-    else content = JSON.stringify(DEFAULT_CONFIG, null, 2)
-
-    fs.writeFileSync(targetPath, content, 'utf8')
-    console.log(`✅ 成功生成配置: ${fileName}`)
-
-    await manageGitignore(DEFAULT_CONFIG.output.dir)
-    console.log(`\n✨ 初始化完成！\n`)
-  } catch (err) {
-    if (err.name === 'ExitPromptError') console.log('\n👋 已取消初始化')
-    else console.error(`\n❌ 初始化失败: ${err.message}`)
-  }
-}
-
 async function manageGitignore(outputDir) {
   const gitignorePath = path.join(process.cwd(), '.gitignore')
   if (!fs.existsSync(gitignorePath)) return
 
   try {
-    let content = fs.readFileSync(gitignorePath, 'utf8')
+    const content = fs.readFileSync(gitignorePath, 'utf8')
     if (content.includes(outputDir)) return
 
     const shouldAdd = await confirm({
@@ -168,3 +126,53 @@ async function manageGitignore(outputDir) {
     }
   }
 }
+
+
+
+export async function initActionWithTemp(options) {
+  console.log(`\n🚀 ${'Wukong GitLog'} 配置文件初始化\n`)
+
+  try {
+    const format = await select({
+      message: '请选择要生成的配置文件格式:',
+      choices: [
+        { name: 'ES Module (.mjs)', value: 'mjs' },
+        { name: 'JavaScript (灵活，支持逻辑)', value: 'js' },
+        { name: 'YAML (推荐，带详细中文注释)', value: 'yaml' },
+        { name: 'JSON (标准格式)', value: 'json' },
+        { name: 'YAML 无后缀 (.wukonggitlogrc)', value: 'plain' }
+      ]
+    })
+
+    const fileNameMap = {
+      mjs: '.wukonggitlogrc.mjs',
+      js: '.wukonggitlogrc.js',
+      yaml: '.wukonggitlogrc.yml',
+      json: '.wukonggitlogrc.json',
+      plain: '.wukonggitlogrc'
+    }
+
+    const fileName = fileNameMap[format]
+    const targetPath = path.join(process.cwd(), fileName)
+
+    if (fs.existsSync(targetPath) && !options.force) {
+      console.error(`\n❌ 错误: 当前目录已存在 ${fileName}`)
+      return
+    }
+
+    let content = ''
+    if (format === 'js' || format === 'mjs') content = JS_TEMPLATE
+    else if (format === 'yaml' || format === 'plain') content = YAML_TEMPLATE
+    else content = JSON.stringify(DEFAULT_CONFIG, null, 2)
+
+    fs.writeFileSync(targetPath, content, 'utf8')
+    console.log(`✅ 成功生成配置: ${fileName}`)
+
+    await manageGitignore(DEFAULT_CONFIG.output.dir)
+    console.log(`\n✨ 初始化完成！\n`)
+  } catch (err) {
+    if (err.name === 'ExitPromptError') console.log('\n👋 已取消初始化')
+    else console.error(`\n❌ 初始化失败: ${err.message}`)
+  }
+}
+

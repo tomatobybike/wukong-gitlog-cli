@@ -205,6 +205,38 @@ custom-output/
 
 ---
 
+## 🧾 作者别名映射（`authorAliases`）
+
+有时同一人会在不同电脑或工具上使用不同的邮箱或名字提交（例如邮箱和显示名不一致）。你可以在配置文件中使用 `authorAliases` 将多个邮箱或原始姓名映射为同一个规范化作者名，以便统计和 Web 展示时合并这些记录。
+
+示例（YAML）:
+
+```yaml
+authorAliases:
+  "tomatoboybybike@gmail.com": "tomatoboy"
+  "tomatojacky@126.com": "tomatoboy"
+  "Tom Jacky": "tomatoboy"
+```
+
+示例（JS）:
+
+```javascript
+export default {
+  authorAliases: {
+    'tomatoboybybike@gmail.com': 'tomatoboy',
+    'tomatojacky@126.com': 'tomatoboy',
+    'Tom Jacky': 'tomatoboy'
+  }
+}
+```
+
+说明：
+- key 可以是邮箱（包含 `@`）或作者原始显示名（不包含 `@`）；value 为你希望在统计和展示中使用的规范化名字。
+- 配置生效后，运行 `analyze` / `overtime` / `export` 或重启 `serve`，生成的 `output/data` 将使用规范化的作者名。
+
+
+---
+
 ## 🤝 贡献指南
 
 欢迎 PR！

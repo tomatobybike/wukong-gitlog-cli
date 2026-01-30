@@ -51,6 +51,7 @@ md-structure.config.json
 
 profile.json
 trace.json
+.wukonggitlogrc.js
 
 # Miscellaneous
 *.tgz

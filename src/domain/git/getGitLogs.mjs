@@ -19,6 +19,8 @@ const execFileAsync = promisify(execFile)
  */
 export async function getGitLogsFast(opts = {}) {
 
+  // FIXME: remove debug log before production
+  console.log('❌', 'opts', opts);
   /*
  git: { merges: true, limit: undefined },
   period: { groupBy: 'month', since: '2026-12-01', until: '2026-12-06' },
@@ -55,6 +57,10 @@ export async function getGitLogsFast(opts = {}) {
   const { since, until } = period
   const { limit, merges } = git
 
+  // 对于 CLI 传入的 author，只有当它是字符串时才传给 git
+  // 如果是对象（包含 include/exclude），我们在前端做更精细的过滤
+  const authorIsString = typeof author === 'string' && author.trim().length > 0
+
   const pretty = `${[
     '%H', // hash
     '%an', // author name
@@ -72,8 +78,8 @@ export async function getGitLogsFast(opts = {}) {
     '--all'
   ]
 
-  if (author) args.push(`--author=${author}`)
-  if (email) args.push(`--author=${email}`)
+  if (authorIsString) args.push(`--author=${author}`)
+  if (email && typeof email === 'string') args.push(`--author=${email}`)
   if (since) args.push(`--since=${since}`)
   if (until) args.push(`--until=${until}`)
   if (!merges) args.push(`--no-merges`)
@@ -167,6 +173,7 @@ export async function getGitLogsFast(opts = {}) {
    * 最终统一覆盖 author
    * 确保同一 email 使用同一个（中文）作者名
    */
+  // 应用基于邮箱的最终映射
   const finalMap = normalizer.getMap()
   for (const c of commits) {
     if (c.email && finalMap[c.email]) {
@@ -174,10 +181,65 @@ export async function getGitLogsFast(opts = {}) {
     }
   }
 
+  // 支持配置：author.include / author.exclude（可为数组或逗号分隔字符串）
+  const authorCfg = opts.author
+  function toList(v) {
+    if (!v) return null
+    if (Array.isArray(v)) return v.map((s) => String(s).trim()).filter(Boolean)
+    return String(v)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  }
+
+  const include = authorCfg && typeof authorCfg === 'object' ? toList(authorCfg.include) : (typeof authorCfg === 'string' ? toList(authorCfg) : null)
+  const exclude = authorCfg && typeof authorCfg === 'object' ? toList(authorCfg.exclude) : null
+
+  let filteredCommits = commits
+
+  if (include || exclude) {
+    filteredCommits = commits.filter((c) => {
+      const name = (c.author || c.originalAuthor || '').trim().toLowerCase()
+      const mail = (c.email || '').trim().toLowerCase()
+
+      function matches(list) {
+        if (!list || !list.length) return false
+        return list.some((item) => {
+          const it = String(item).trim().toLowerCase()
+          if (it.includes('@')) return it === mail
+          return it === name
+        })
+      }
+
+      if (include && include.length) {
+        if (!matches(include)) return false
+      }
+
+      if (exclude && exclude.length) {
+        if (matches(exclude)) return false
+      }
+
+      return true
+    })
+  }
+
+  // 重新计算 authorMap / originalMap 以只包含筛选后的作者
+  const presentEmails = new Set(filteredCommits.map((c) => c.email).filter(Boolean))
+  const filteredMap = {}
+  for (const [email, name] of Object.entries(finalMap)) {
+    if (presentEmails.has(email)) filteredMap[email] = name
+  }
+
+  const original = normalizer.getOriginalMap()
+  const filteredOriginal = {}
+  for (const [email, names] of Object.entries(original)) {
+    if (presentEmails.has(email)) filteredOriginal[email] = names
+  }
+
   return {
-    commits,
-    authorMap: finalMap,
-    originalMap: normalizer.getOriginalMap()
+    commits: filteredCommits,
+    authorMap: filteredMap,
+    originalMap: filteredOriginal
   }
 }
 

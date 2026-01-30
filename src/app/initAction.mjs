@@ -53,12 +53,13 @@ export async function initAction(options) {
       choices: [
         { name: 'ES Module (.mjs)', value: 'mjs' },
         { name: 'JavaScript (.js)', value: 'js' },
-        { name: 'YAML', value: 'yml' },
-        { name: 'JSON', value: 'json' }
+        { name: 'YAML (.yml)', value: 'yml' },
+        { name: 'JSON (.json)', value: 'json' },
+        { name: 'YAML 无后缀 (.wukonggitlogrc)', value: 'plain' }
       ]
     });
 
-    const fileName = `${WUKONG_GITLOG_RC}.${format}`;
+    const fileName = format === 'plain' ? WUKONG_GITLOG_RC : `${WUKONG_GITLOG_RC}.${format}`;
     const targetPath = path.join(process.cwd(), fileName);
 
     if (fs.existsSync(targetPath) && !options.force) {
@@ -75,6 +76,7 @@ export async function initAction(options) {
         content = `${headerComment}export default ${JSON.stringify(DEFAULT_CONFIG, null, 2)};`;
         break;
       case 'yml':
+      case 'plain':
         content = `# Wukong GitLog Config\n${yaml.stringify(DEFAULT_CONFIG)}`;
         break;
       case 'json':

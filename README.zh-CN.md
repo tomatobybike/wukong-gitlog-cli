@@ -63,6 +63,23 @@ wukong-gitlog-cli --overtime  --serve --port 5555
 wukong-gitlog-cli [options]
 ```
 
+### 初始化配置（init）
+
+生成带模板或带注释的配置文件，支持以下格式：
+
+- `.wukonggitlogrc`（YAML 内容，无扩展名）
+- `.wukonggitlogrc.yml` / `.wukonggitlogrc.yaml`
+- `.wukonggitlogrc.js` / `.wukonggitlogrc.mjs`（ES Module，支持逻辑）
+- `.wukonggitlogrc.json`
+
+命令：
+
+```bash
+wukong-gitlog-cli init
+```
+
+在交互式生成时会询问是否将 `output` 目录与配置文件名自动加入 `.gitignore`（推荐）。
+
 ### 常用参数
 
 | 参数                 | 描述                                                               |
@@ -233,6 +250,18 @@ export default {
 说明：
 - key 可以是邮箱（包含 `@`）或作者原始显示名（不包含 `@`）；value 为你希望在统计和展示中使用的规范化名字。
 - 配置生效后，运行 `analyze` / `overtime` / `export` 或重启 `serve`，生成的 `output/data` 将使用规范化的作者名。
+
+作者过滤（`author.include` / `author.exclude`）:
+- 你可以在配置中使用 `author.include` 或 `author.exclude` 来进一步控制要统计或排除的作者。
+- 支持数组或逗号分隔的字符串。匹配会同时支持邮箱精确匹配（包含 `@`）或作者的规范化/原始姓名（不区分大小写）。
+
+示例：
+
+```yaml
+author:
+  include: ["tomatoboy", "alice@example.com"]
+  exclude: "bot@example.com"
+```
 
 
 ---

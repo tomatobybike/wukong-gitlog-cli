@@ -36,7 +36,7 @@ export const DEFAULT_CONFIG = {
 }
 
 // 配置文件名列表
-const RC_NAMES = [
+export const RC_NAMES = [
   '.wukonggitlogrc',
   '.wukonggitlogrc.js',
   '.wukonggitlogrc.mjs',

@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import yaml from 'yaml';
 import { select, confirm } from '@inquirer/prompts';
-import { DEFAULT_CONFIG } from '../infra/configStore.mjs';
+import { DEFAULT_CONFIG, RC_NAMES } from '../infra/configStore.mjs';
 import { WUKONG_GITLOG_RC } from '#src/constants/index.mjs';
 
 
@@ -22,17 +22,28 @@ async function manageGitignore(outputDir) {
   try {
     const content = fs.readFileSync(gitignorePath, 'utf8');
 
-    // 如果已经忽略了该目录，则跳过
-    if (content.includes(outputDir)) return;
+    // 同时检查输出目录与常见配置文件名（从 configStore 导出），若全部存在则跳过
+    const configFiles = Array.isArray(RC_NAMES) ? RC_NAMES : [];
+
+    const hasOutput = content.includes(outputDir);
+    const hasAllConfigs = configFiles.length && configFiles.every((f) => content.includes(f));
+    if (hasOutput && hasAllConfigs) return;
 
     const shouldAdd = await confirm({
-      message: `是否自动将报告目录 "${outputDir}/" 添加到 .gitignore?`,
+      message: `是否自动将报告目录 "${outputDir}/" 以及配置文件名添加到 .gitignore?`,
       default: true
     });
 
     if (shouldAdd) {
       const prefix = content.endsWith('\n') ? '' : '\n';
-      const entry = `${prefix}\n# Wukong GitLog Reports\n${outputDir}/\n`;
+      let entry = `${prefix}\n# Wukong GitLog Reports\n`;
+      if (!hasOutput) entry += `${outputDir}/\n`;
+
+      const missingConfigs = configFiles.filter((f) => !content.includes(f));
+      if (missingConfigs.length) {
+        entry += `\n# Wukong GitLog Config\n${  missingConfigs.map((f) => `${f}\n`).join('')}`;
+      }
+
       fs.appendFileSync(gitignorePath, entry, 'utf8');
       console.log(`✅ 已更新 .gitignore`);
     }

@@ -12,3 +12,6 @@ export const EXPORT_DIR_WEEK = "export/week"
 
 // profile
 export const EXPORT_DIR_PROFILE = "export/profile"
+
+// 配置文件名
+export const WUKONG_GITLOG_RC = ".wukonggitlogrc"

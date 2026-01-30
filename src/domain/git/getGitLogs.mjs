@@ -13,14 +13,12 @@ import { promisify } from 'node:util'
 import { createAuthorNormalizer } from '#utils/authorNormalizer.mjs'
 
 const execFileAsync = promisify(execFile)
-const normalizer = createAuthorNormalizer()
 
 /**
  * 获取 git commit 列表（高性能版）
  */
 export async function getGitLogsFast(opts = {}) {
-  // TODO: remove debug log before production
-  // console.log('✅', 'getGitLogsFast opts', opts)
+
   /*
  git: { merges: true, limit: undefined },
   period: { groupBy: 'month', since: '2026-12-01', until: '2026-12-06' },
@@ -52,6 +50,8 @@ export async function getGitLogsFast(opts = {}) {
   }
   */
   const { git = {}, period = {}, author, email } = opts
+  // 在运行时根据传入的 opts.authorAliases（或用户配置）创建 normalizer
+  const normalizer = createAuthorNormalizer(opts.authorAliases || {})
   const { since, until } = period
   const { limit, merges } = git
 
@@ -162,7 +162,7 @@ export async function getGitLogsFast(opts = {}) {
 
     commits.push(commit)
   }
-  
+
   /**
    * 最终统一覆盖 author
    * 确保同一 email 使用同一个（中文）作者名

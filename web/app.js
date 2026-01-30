@@ -196,8 +196,7 @@ function initTableControls() {
 
 function drawHourlyOvertime(stats, onHourClick) {
   const el = document.getElementById('hourlyOvertimeChart')
-  // TODO: remove debug log before production
-  console.log('✅', 'stats', stats)
+
   const isEmpty = hideElementByObj({ el, objectName: stats })
   if (isEmpty) {
     return false
@@ -650,8 +649,7 @@ function drawWeeklyTrend(weekly, commits, onWeekClick) {
   const dataRate = weekly.map((w) => +(w.outsideWorkRate * 100).toFixed(1)) // %
   const dataCount = weekly.map((w) => w.outsideWorkCount)
 
-  // TODO: remove debug log before production
-  console.log('✅', 'weekly', weekly)
+
 
   const titleDrawer = el.getAttribute('data-title') || ''
 
@@ -1599,7 +1597,6 @@ const drawChangeTrends = (stats) => {
             //   extra = `<div style="margin-top:4px;color:#999;font-size:12px">
             //   周区间：${start} ~ ${end}
             // </div>`
-            // TODO: remove debug log before production
             extra = ''
           }
 

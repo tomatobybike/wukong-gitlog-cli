@@ -8,6 +8,8 @@ import path from 'path';
 import yaml from 'yaml';
 import { select, confirm } from '@inquirer/prompts';
 import { DEFAULT_CONFIG } from '../infra/configStore.mjs';
+import { WUKONG_GITLOG_RC } from '#src/constants/index.mjs';
+
 
 /**
  * 自动将输出目录添加到 .gitignore
@@ -56,7 +58,7 @@ export async function initAction(options) {
       ]
     });
 
-    const fileName = `.wukonggitlogrc.${format}`;
+    const fileName = `${WUKONG_GITLOG_RC}.${format}`;
     const targetPath = path.join(process.cwd(), fileName);
 
     if (fs.existsSync(targetPath) && !options.force) {
@@ -72,7 +74,7 @@ export async function initAction(options) {
       case 'js':
         content = `${headerComment}export default ${JSON.stringify(DEFAULT_CONFIG, null, 2)};`;
         break;
-      case 'yaml':
+      case 'yml':
         content = `# Wukong GitLog Config\n${yaml.stringify(DEFAULT_CONFIG)}`;
         break;
       case 'json':

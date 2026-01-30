@@ -23,8 +23,6 @@ import { getProfileDirFile } from '#utils/getProfileDirFile.mjs'
 export async function journalAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
 
-  // FIXME: remove debug log before production
-  console.log('❌', 'journalAction opts', opts)
   const traceFile = getProfileDirFile('trace.json', opts)
 
   const profiler = createProfiler({ ...opts.profile, traceFile }, opts)

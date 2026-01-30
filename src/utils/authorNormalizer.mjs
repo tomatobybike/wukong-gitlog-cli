@@ -4,9 +4,19 @@
  * - 同邮箱多个英文名保持第一个
  * - 保留原始 author 以便 debug
  */
-export function createAuthorNormalizer() {
+export function createAuthorNormalizer(aliases = {}) {
   const map = {} // email -> canonical name
   const originalMap = {} // email -> Set of original author names
+
+  // 预处理别名配置：按 email/name 划分
+  const aliasByEmail = {}
+  const aliasByName = {}
+  for (const [k, v] of Object.entries(aliases || {})) {
+    const key = (k || '').trim()
+    if (!key) continue
+    if (key.includes('@')) aliasByEmail[key] = v
+    else aliasByName[key] = v
+  }
 
   function isChinese(str) {
     return /[\u4e00-\u9fa5]/.test(str)
@@ -25,11 +35,27 @@ export function createAuthorNormalizer() {
     const n = cleanName(name)
     const e = cleanEmail(email)
 
-    if (!e) return n || 'Unknown'
+    if (!e) {
+      // 如果没有邮箱，先尝试按名字别名匹配
+      if (n && aliasByName[n]) return aliasByName[n]
+      return n || 'Unknown'
+    }
 
     // 记录原始 author
     if (!originalMap[e]) originalMap[e] = new Set()
     if (n) originalMap[e].add(n)
+
+    // 先检查 email 别名配置
+    if (aliasByEmail[e]) {
+      map[e] = aliasByEmail[e]
+      return map[e]
+    }
+
+    // 再检查名字别名配置
+    if (n && aliasByName[n]) {
+      map[e] = aliasByName[n]
+      return map[e]
+    }
 
     const prev = map[e]
 

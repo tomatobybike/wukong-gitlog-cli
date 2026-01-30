@@ -59,15 +59,12 @@ export function startServer(port = 3000, outputDir) {
   // 动态寻找根目录
   const pkgRoot = findPkgRoot(__dirname)
 
-  // FIXME: remove debug log before production
-  console.log('✅', 'pkgRoot', pkgRoot)
   const webRoot = path.resolve(pkgRoot, 'web')
   const dataRoot = outputDir
     ? path.resolve(outputDir)
     : path.resolve(process.cwd(), 'output-wukong')
 
-  // TODO: remove debug log before production
-  console.log('✅', 'outputDir', outputDir)
+
   // warn if web directory or data directory doesn't exist
   if (!fs.existsSync(webRoot)) {
     console.warn(

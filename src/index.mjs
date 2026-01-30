@@ -70,7 +70,7 @@ const main = async () => {
   // # 导出（excel / csv / json）
   program
     .command('export')
-    .description('export （excel / csv / json）')
+    .description('Export （excel / csv / json）')
     // .option('-f, --format <type>', '导出格式') // 局部参数
     .action((cmdOpts, command) => {
       // globalOpts 拿到 author, since 等
@@ -83,7 +83,7 @@ const main = async () => {
   // # 每日 日报
   program
     .command('journal')
-    .description('Start web server')
+    .description('Export daily journal')
     .action((cmdOpts) => {
       const globalOpts = program.opts()
       const finalOpts = { ...globalOpts, ...cmdOpts }

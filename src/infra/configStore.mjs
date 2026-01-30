@@ -30,7 +30,9 @@ export const DEFAULT_CONFIG = {
     dir: 'output-wukong',
     formats: ['text'],
     perPeriod: { enabled: true, excelMode: 'sheets' }
-  }
+  },
+  // 用户自定义的作者别名映射（key 可以是邮箱或原始作者名，value 为规范化作者名）
+  authorAliases: {}
 }
 
 // 配置文件名列表
@@ -100,9 +102,7 @@ export async function loadRcConfig(cwd = process.cwd()) {
           // 处理 YAML
           parsed = yaml.parse(fs.readFileSync(filePath, 'utf8'))
         }
-
         config = deepMerge(config, parsed)
-
       } catch (e) {
         console.warn(
           `[Config] 无法解析配置文件: ${filePath}\n原因: ${e.message}`
@@ -112,6 +112,7 @@ export async function loadRcConfig(cwd = process.cwd()) {
   }
 
   cachedConfig = config
+
   return cachedConfig
 }
 

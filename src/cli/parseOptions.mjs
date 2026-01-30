@@ -36,8 +36,6 @@ export async function parseOptions(cliOpts) {
     'CN'
   )
 
-  // FIXME: remove debug log before production
-  console.log('❌', 'cliOpts', cliOpts);
   // 2. 将扁平的 CLI 参数映射为嵌套结构 (与 RC 结构对齐)
   // 注意：只有当 CLI 确实传了值时，才映射到对象里，否则保持 undefined
   const mappedCli = {

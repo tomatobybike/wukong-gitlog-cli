@@ -378,7 +378,7 @@ function drawHourlyOvertime(stats, onHourClick) {
   return chart
 }
 
-// showSideBarForHour 实现
+// 每小时加班分布
 function showSideBarForHour({ hour, commitsOrCount, titleDrawer }) {
   // 支持传入 number（仅次数）或 array（详细 commit 列表）
   // 统一复用通用详情侧栏 DOM
@@ -408,14 +408,14 @@ function showSideBarForHour({ hour, commitsOrCount, titleDrawer }) {
     // commits 列表：展示作者/时间/消息（最多前 50 条，避免性能问题）
     const commits = commitsOrCount.slice(0, 50)
     contentEl.innerHTML = `<div class="sidebar-list">${commits
-      .map((c) => {
+      .map((c,index) => {
         const author = c.author ?? c.name ?? 'unknown'
         const time = c.date ?? c.time ?? ''
         const msg = (c.message ?? c.msg ?? c.body ?? '').replace(/\n/g, ' ')
         return `
           <div class="sidebar-item">
             <div class="sidebar-item-header">
-              <span class="author">👤 ${escapeHtml(author)}</span>
+              <span class="author">${index+1}. 👤 ${escapeHtml(author)}</span>
               <span class="time">🕒 ${escapeHtml(time)}</span>
             </div>
             <div class="sidebar-item-message">${escapeHtml(msg)}</div>
@@ -614,14 +614,14 @@ function showSideBarForWeek({ period, weeklyItem, commits = [], titleDrawer }) {
     html += `<div style="padding:10px;color:#777;">该周无提交记录</div>`
   } else {
     html += `<div class="sidebar-list">${commits
-      .map((c) => {
+      .map((c,index) => {
         const author = escapeHtml(c.author || 'unknown')
         const time = escapeHtml(c.date || '')
         const msg = escapeHtml((c.message || '').replace(/\n/g, ' '))
         return `
           <div class="sidebar-item">
             <div class="sidebar-item-header">
-              <span class="author">👤 ${author}</span>
+              <span class="author">${index+1}👤 ${author}</span>
               <span class="time">🕒 ${time}</span>
             </div>
             <div class="sidebar-item-message">${msg}</div>
@@ -1349,6 +1349,7 @@ function drawDailyTrendSeverity(commits, weekly, onDayClick) {
   }
 }
 
+
 function showDayDetailSidebar({ date, count, commits, titleDrawer }) {
   const sidebar = document.getElementById('dayDetailSidebar')
   const backdrop = document.getElementById('sidebarBackdrop')
@@ -1362,10 +1363,10 @@ function showDayDetailSidebar({ date, count, commits, titleDrawer }) {
   // 渲染详情
   content.innerHTML = commits
     .map(
-      (c) => `
+      (c,index) => `
     <div class="sidebar-item">
       <div class="sidebar-item-header">
-        <span class="author">👤 ${escapeHtml(c.author || 'unknown')}</span>
+        <span class="author">${index+1}👤 ${escapeHtml(c.author || 'unknown')}</span>
         <span class="time">🕒 ${escapeHtml(c.time || c.date || '')}</span>
       </div>
       <div class="sidebar-item-message">${escapeHtml(c.msg || c.message || '')}</div>

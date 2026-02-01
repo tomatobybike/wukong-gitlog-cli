@@ -24,9 +24,11 @@ export async function analyzeAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
 
   const traceFile = getProfileDirFile('trace.json', opts)
+  const profileFile = getProfileDirFile('profile.json', opts)
   // FIXME: remove debug log before production
   console.log('❌', 'traceFile', traceFile);
-  const profiler = createProfiler({ ...opts.profile, traceFile })
+  console.log('❌', 'profileFile', profileFile);
+  const profiler = createProfiler({ ...opts.profile,enabled:true, traceFile, profileFile })
 
   // 未来 可考虑将 MultiBar 抽离到更高层，支持所有 action 共用，wukong-progress 需要支持自定义子任务占位符
   // 初始化 MultiBar

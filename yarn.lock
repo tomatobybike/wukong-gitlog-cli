@@ -4597,10 +4597,10 @@ wsl-utils@^0.3.0:
     is-wsl "^3.1.0"
     powershell-utils "^0.1.0"
 
-wukong-profiler@^1.0.10:
-  version "1.0.10"
-  resolved "https://registry.npmjs.org/wukong-profiler/-/wukong-profiler-1.0.10.tgz#6e84b6736d24d4ab2e182d7b9f91008d08017494"
-  integrity sha512-m6+eEPHHREZaSBRoS6jzjRzcAaNAAXqhjUl4snVOG+hAFDOTki6mLGKexLq9m77Stn4SyJ7xDabOqbgZ5FCBNA==
+wukong-profiler@^1.0.11:
+  version "1.0.11"
+  resolved "https://registry.npmjs.org/wukong-profiler/-/wukong-profiler-1.0.11.tgz#ff65df74a3ee5c90c5e1b03971dde229c5efe4c9"
+  integrity sha512-tg0y2U7J4NQwhnhozCMqPXV/dpBH30ERk9Zh6g9nRyi64xAEFqA/DTf7YPPjbjhMTwIiRiMN8xEo55csFblASQ==
   dependencies:
     chalk "^5.6.2"
     commander "^14.0.2"

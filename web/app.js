@@ -481,26 +481,53 @@ function escapeHtml(str = '') {
 
 function drawOutsideVsInside(stats) {
   const el = document.getElementById('outsideVsInsideChart')
-  // eslint-disable-next-line no-undef
   const chart = echarts.init(el)
+
   const outside = stats.outsideWorkCount || 0
   const total = stats.total || 0
   const inside = Math.max(0, total - outside)
+
   chart.setOption({
-    tooltip: {},
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}：{c} 次（{d}%）'
+    },
+    legend: {
+  bottom: 0,
+  formatter: name => `${name}`
+},
+    graphic: [
+      {
+        type: 'text',
+        left: 'center',
+        top: '45%',
+        style: {
+          text: `总提交\n${total} 次`,
+          textAlign: 'center',
+          fill: '#333',
+          fontSize: 14,
+          fontWeight: 600
+        }
+      }
+    ],
     series: [
       {
         type: 'pie',
-        radius: '55%',
+        radius: ['40%', '60%'], // 环形
         data: [
           { value: inside, name: '工作时间内' },
           { value: outside, name: '下班时间' }
-        ]
+        ],
+        label: {
+          formatter: '{b}\n{c} 次'
+        }
       }
     ]
   })
+
   return chart
 }
+
 
 function drawDailyTrend(commits, onDayClick) {
   if (!Array.isArray(commits) || commits.length === 0) return null
@@ -2964,7 +2991,7 @@ function renderAuthorTotalOvertimeRankFromDs(ds, topN = 10) {
           (t, i) => `
     <div class="rank-item">
       <span class="dot" style="background:${colors[i % colors.length]}"></span>
-      <span class="author">${escapeHtml(t.author)}</span>
+      <span class="author">${i+1}.${escapeHtml(t.author)}</span>
       <span class="hours">${Number(t.total).toFixed(2)} 小时</span>
     </div>
   `

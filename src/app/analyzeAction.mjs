@@ -93,9 +93,12 @@ export async function analyzeAction(rawOpts = {}) {
     bar.step(10, '正在持久化分析结果...')
     await profiler.stepAsync('output', async () => {
       const worktimeOptions = getWorkTimeConfig(opts)
+      // TODO: remove debug log before production
+      console.log('✅', 'opts', opts);
       await outputData(result, {
         dir: opts.output.dir || path.resolve('output-wukong'),
-        worktimeOptions
+        worktimeOptions,
+        period: opts.period || {}
       })
     })
 

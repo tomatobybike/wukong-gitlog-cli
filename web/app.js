@@ -96,13 +96,14 @@ async function loadData() {
 
   // 并行加载基础数据（只加载快速的 analyze 生成的文件）
   // 移除 overtime 文件加载，改为前端实时计算
-  const [commits, config, authorChanges] = await Promise.all([
+  const [commits, config, authorChanges, options] = await Promise.all([
     safeImport('/data/commits.mjs', []),
     safeImport('/data/config.mjs', {}),
-    safeImport('/data/author.changes.mjs', {})
+    safeImport('/data/author.changes.mjs', {}),
+    safeImport('/data/options.mjs', {})
   ])
 
-  return { commits, config, authorChanges }
+  return { commits, config, authorChanges, options }
 }
 
 let commitsAll = []
@@ -3701,17 +3702,18 @@ function computeLatestByDay(
 }
 
 async function main() {
-  const { commits, config, authorChanges } = await loadData()
+  const { commits, config, authorChanges, options } = await loadData()
   commitsAll = commits
   filtered = commitsAll.slice()
 
   // 保存所有 commits 数据供小时分布图使用
   window.__allCommitsData = commits
 
-  // 保存采样起止（来自 config.mjs / serve 参数）供前端展示
+  // 保存采样起止（来自 /data/options.mjs 中的 period / serve 参数）供前端展示
   // 可能的形式：--since YYYY-MM-DD --until YYYY-MM-DD
-  window.__samplingSince = config?.since || null
-  window.__samplingUntil = config?.until || null
+  const period = options?.period || {}
+  window.__samplingSince = period?.since || null
+  window.__samplingUntil = period?.until || null
 
   // 前端计算 overtime 数据
   const startHour = config.startHour ?? 9

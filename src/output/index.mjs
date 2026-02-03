@@ -63,6 +63,7 @@ export async function outputData(result, config) {
   /* ---------- serve data（永远写） ---------- */
   writeServeDataMjs(result, {
     dir,
+    ...config,
     worktimeOptions: config.worktimeOptions
   })
 }

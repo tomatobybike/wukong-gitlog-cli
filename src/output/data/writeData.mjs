@@ -80,6 +80,13 @@ export function writeServeDataMjs(result, config) {
     getEsmJs(config.worktimeOptions)
   )
 
+  // 保存 CLI 运行时的 period（since/until/groupBy 等），供前端展示采样范围
+  files.options = writeTxtFile(
+    baseDir,
+    'options.mjs',
+    getEsmJs({ period: config.period || {} })
+  )
+
   files.commits = writeTxtFile(baseDir, 'commits.mjs', getEsmJs(result.commits))
 
   files.authorMap = writeTxtFile(

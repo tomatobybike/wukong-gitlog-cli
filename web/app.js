@@ -2864,6 +2864,13 @@ function drawAuthorTotalOvertimeTrends(commits, stats) {
       yAxis: { type: 'value', name: '累计加班时长 (小时)' },
       series: ds.series
     })
+
+    // 同步更新下面的排名列表
+    try {
+      renderAuthorTotalOvertimeRankFromDs(ds, 10)
+    } catch (e) {
+      console.warn('更新累计加班排名失败', e)
+    }
   }
 
   render('daily')
@@ -2929,6 +2936,41 @@ function drawAuthorTotalOvertimeTrends(commits, stats) {
   })
 
   return chart
+}
+
+// 渲染累计加班排名（chart 下方）
+function renderAuthorTotalOvertimeRankFromDs(ds, topN = 10) {
+  const box = document.getElementById('authorTotalOvertimeRank')
+  if (!box) return
+  if (!ds || !Array.isArray(ds.authors) || !Array.isArray(ds.series)) {
+    box.innerHTML = '<div style="color:#777">暂无加班时长数据</div>'
+    return
+  }
+
+  const totals = ds.authors.map((a) => {
+    const s = ds.series.find((ser) => ser.name === a)
+    const total = (s && Array.isArray(s.data) ? s.data.reduce((sum, v) => sum + (Number(v) || 0), 0) : 0)
+    return { author: a, total }
+  })
+
+  totals.sort((x, y) => y.total - x.total || String(x.author).localeCompare(String(y.author)))
+
+  const top = totals.slice(0, topN)
+  const colors = ['#1976d2','#00a76f','#fb8c00','#d32f2f','#6a1b9a','#00897b','#ef5350','#ffa000','#5c6bc0','#43a047']
+
+  box.innerHTML = top.length
+    ? top
+        .map(
+          (t, i) => `
+    <div class="rank-item">
+      <span class="dot" style="background:${colors[i % colors.length]}"></span>
+      <span class="author">${escapeHtml(t.author)}</span>
+      <span class="hours">${Number(t.total).toFixed(2)} 小时</span>
+    </div>
+  `
+        )
+        .join('')
+    : '<div style="color:#777">暂无加班时长数据</div>'
 }
 
 

@@ -434,6 +434,38 @@ td {
   box-shadow: 0 3px 10px rgba(79, 70, 229, 0.25);
 }
 
+/* 开发者累计加班排名（小圆点样式） --------------------------- */
+.rank-list {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+}
+.rank-list .rank-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #333;
+}
+.rank-list .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  flex: 0 0 12px;
+  box-shadow: 0 0 0 0 rgba(0,0,0,0.03) inset;
+}
+.rank-list .author {
+  flex: 1;
+}
+.rank-list .hours {
+  color: #666;
+  font-weight: 600;
+}
+
 /* 风险总结卡片 ---------------------------------------------- */
 /* 风险总结卡片 — MUI风格 ---------------------------------------------- */
 .risk-summary {

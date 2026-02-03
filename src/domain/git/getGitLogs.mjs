@@ -19,8 +19,7 @@ const execFileAsync = promisify(execFile)
  */
 export async function getGitLogsFast(opts = {}) {
 
-  // FIXME: remove debug log before production
-  console.log('❌', 'opts', opts);
+
   /*
  git: { merges: true, limit: undefined },
   period: { groupBy: 'month', since: '2026-12-01', until: '2026-12-06' },

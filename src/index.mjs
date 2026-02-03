@@ -7,8 +7,8 @@ import { analyzeAction } from './app/analyzeAction.mjs'
 import { exportAction } from './app/exportAction.mjs'
 // import { initAction } from './app/initAction.mjs'
 import { initActionWithTemp as initAction } from './app/initActionWithTemp.mjs'
-import { overtimeAction } from './app/overtimeAction.mjs'
 import { journalAction } from './app/journalAction.mjs'
+import { overtimeAction } from './app/overtimeAction.mjs'
 import { serveAction } from './app/serveAction.mjs'
 import { versionAction } from './app/versionAction.mjs'
 import { defineOptions } from './cli/defineOptions.mjs'
@@ -99,8 +99,6 @@ const main = async () => {
       const finalOpts = { ...globalOpts, ...cmdOpts }
       serveAction(finalOpts)
     })
-
-
 
   program.parse(process.argv)
 

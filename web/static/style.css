@@ -505,6 +505,11 @@ td {
   margin-bottom: 6px;
 }
 
+.box-flex{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
 /* 底部 -------------------------------------------------- */
 footer {
@@ -518,3 +523,4 @@ footer small code {
   padding: 2px 4px;
   border-radius: 4px;
 }
+

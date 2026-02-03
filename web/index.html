@@ -104,6 +104,17 @@
       </div>
 
       <div class="chart-card">
+        <h2>开发者 加班最晚趋势（小时</h2>
+        <div class="tabs" id="tabsLatestOvertime">
+          <button data-type="daily" class="active">按日</button>
+          <button data-type="weekly">按周</button>
+          <button data-type="monthly">按月</button>
+        </div>
+        <div id="chartAuthorLatestOvertime" class="echart"></div>
+
+      </div>
+
+      <div class="chart-card">
         <h2>开发者 加班趋势（次数）</h2>
         <div class="tabs" id="tabsOvertime">
           <button data-type="daily" class="active">按日</button>
@@ -120,17 +131,7 @@
         <div id="rolling30DurationRiskSummary" class="risk-summary-box"></div>
       </div>
 
-      <div class="chart-card">
-        <h2>开发者 加班最晚趋势（小时）</h2>
-        <div class="tabs" id="tabsLatestOvertime">
-          <button data-type="daily" class="active">按日</button>
-          <button data-type="weekly">按周</button>
-          <button data-type="monthly">按月</button>
-        </div>
-        <div id="chartAuthorLatestOvertime" class="echart"></div>
-        <div id="latestRiskSummary" class="risk-summary-box"></div>
-        <div id="latestMonthlyRiskSummary" class="risk-summary-box"></div>
-      </div>
+
 
       <div class="chart-card">
         <h2>开发者 午休最晚提交（小时）</h2>

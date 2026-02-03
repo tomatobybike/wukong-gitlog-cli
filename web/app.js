@@ -479,53 +479,117 @@ function escapeHtml(str = '') {
     .replaceAll("'", '&#39;')
 }
 
-function drawOutsideVsInside(stats) {
-  const el = document.getElementById('outsideVsInsideChart')
-  const chart = echarts.init(el)
+/**
+ * 通用环形饼图（中心显示总数）
+ *
+ * @param {Object} options
+ * @param {string|HTMLElement} options.el        DOM 或 id
+ * @param {Array} options.data                   [{ name, value }]
+ * @param {string} [options.title]               标题
+ * @param {string} [options.unit='次']            单位
+ * @param {Array}  [options.colors]              自定义颜色
+ * @param {string} [options.totalLabel='总计']    中心文案
+ */
+export function drawPieWithTotal({
+  el,
+  data = [],
+  title = '',
+  unit = '次',
+  colors = [],
+  totalLabel = '总计'
+}) {
+  const dom = typeof el === 'string' ? document.getElementById(el) : el
+  const chart = echarts.init(dom)
 
-  const outside = stats.outsideWorkCount || 0
-  const total = stats.total || 0
-  const inside = Math.max(0, total - outside)
+  const total = data.reduce((sum, item) => sum + (item.value || 0), 0)
+
+  const safeData =
+    total === 0
+      ? [{ name: '暂无数据', value: 1 }]
+      : data
 
   chart.setOption({
+    color: colors.length ? colors : undefined,
+
+    title: title
+      ? {
+          text: title,
+          left: 'center',
+          top: 10
+        }
+      : undefined,
+
     tooltip: {
       trigger: 'item',
-      formatter: '{b}：{c} 次（{d}%）'
+      formatter: params => {
+        if (total === 0) return '暂无数据'
+        return `
+          ${params.name}<br/>
+          数量：${params.value} ${unit}<br/>
+          占比：${params.percent}%
+        `
+      }
     },
-    legend: {
+legend: {
   bottom: 0,
   formatter: name => `${name}`
 },
-    graphic: [
-      {
-        type: 'text',
-        left: 'center',
-        top: '45%',
-        style: {
-          text: `总提交\n${total} 次`,
-          textAlign: 'center',
-          fill: '#333',
-          fontSize: 14,
-          fontWeight: 600
-        }
-      }
-    ],
+    graphic:
+      total === 0
+        ? []
+        : [
+            {
+              type: 'text',
+              left: 'center',
+              top: '45%',
+              style: {
+                text: `${totalLabel}\n${total} ${unit}`,
+                textAlign: 'center',
+                fill: '#333',
+                fontSize: 14,
+                fontWeight: 600
+              }
+            }
+          ],
+
     series: [
       {
         type: 'pie',
-        radius: ['40%', '60%'], // 环形
-        data: [
-          { value: inside, name: '工作时间内' },
-          { value: outside, name: '下班时间' }
-        ],
+        radius: ['40%', '60%'],
+        avoidLabelOverlap: false,
         label: {
-          formatter: '{b}\n{c} 次'
-        }
+          show: total !== 0,
+          formatter: `{b}\n{c} ${unit}`
+        },
+        emphasis: {
+          scale: true,
+          scaleSize: 8
+        },
+        data: safeData
       }
     ]
   })
 
   return chart
+}
+
+
+function drawOutsideVsInside(stats) {
+  const outside = stats.outsideWorkCount || 0
+  const total = stats.total || 0
+  const inside = Math.max(0, total - outside)
+
+  return drawPieWithTotal({
+    el: 'outsideVsInsideChart',
+    title: '提交时间分布',
+    unit: '次',
+    totalLabel: '总提交',
+    data: [
+      { name: '工作时间内', value: inside },
+      { name: '下班时间', value: outside }
+    ],
+    colors: ['#5470C6', '#EE6666']
+  })
 }
 
 

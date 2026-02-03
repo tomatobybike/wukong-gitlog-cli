@@ -2712,6 +2712,153 @@ function drawAuthorLatestOvertimeTrends(commits, stats) {
 
 
 
+// ====== 开发者 累计加班时长（按日/周/月/年累计日峰值加班时长求和） ======
+function buildAuthorTotalOvertimeDataset(commits, type, startHour, endHour, cutoff) {
+  // 基于每天每人的最大超时（computeAuthorDailyMaxOvertime），再按周期聚合求和
+  const byAuthorDay = computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff)
+  const byAuthorPeriod = new Map()
+  const periods = new Set()
+
+  byAuthorDay.forEach((dayMap, author) => {
+    for (const [dayKey, overtime] of dayMap.entries()) {
+      let period
+      if (type === 'daily') period = dayKey
+      else if (type === 'weekly') period = getIsoWeekKey(dayKey)
+      else if (type === 'monthly') period = dayKey.slice(0, 7) // YYYY-MM
+      else if (type === 'yearly') period = dayKey.slice(0, 4) // YYYY
+      else period = dayKey
+      if (!period) continue
+      periods.add(period)
+      if (!byAuthorPeriod.has(author)) byAuthorPeriod.set(author, {})
+      const obj = byAuthorPeriod.get(author)
+      obj[period] = (obj[period] || 0) + (overtime || 0)
+    }
+  })
+
+  const allPeriods = Array.from(periods).sort()
+  const authors = Array.from(byAuthorPeriod.keys()).sort()
+  const series = authors.map((a) => ({
+    name: a,
+    type: 'line',
+    smooth: true,
+    data: allPeriods.map((p) => Number((byAuthorPeriod.get(a)[p] || 0).toFixed(2)))
+  }))
+
+  return { authors, allPeriods, series }
+}
+
+function drawAuthorTotalOvertimeTrends(commits, stats) {
+  const el = document.getElementById('chartAuthorTotalOvertime')
+  if (!el) return null
+  const chart = echarts.init(el)
+
+  const startHour = typeof stats.startHour === 'number' && stats.startHour >= 0 ? stats.startHour : 9
+  const endHour = typeof stats.endHour === 'number' && stats.endHour >= 0 ? stats.endHour : window.__overtimeEndHour || 18
+  const cutoff = window.__overnightCutoff ?? 6
+
+  function render(type) {
+    const ds = buildAuthorTotalOvertimeDataset(commits, type, startHour, endHour, cutoff)
+    ds.rangeMap = {}
+    for (const period of ds.allPeriods) {
+      if (period.includes('-W')) {
+        const [yy, ww] = period.split('-W')
+        ds.rangeMap[period] = getISOWeekRange(Number(yy), Number(ww))
+      }
+    }
+
+    chart.setOption({
+      tooltip: {
+        trigger: 'axis',
+        formatter(params) {
+          if (!params || !params.length) return ''
+          const label = params[0].axisValue
+          const isWeekly = type === 'weekly'
+          let extra = ''
+          if (isWeekly && ds.rangeMap && ds.rangeMap[label]) {
+            const { start, end } = ds.rangeMap[label]
+            extra = `<div style="margin-top:4px;color:#999;font-size:12px">周区间：${start} ~ ${end}</div>`
+          }
+          const lines = params
+            .filter((i) => i.data > 0)
+            .sort((a, b) => (b.data || 0) - (a.data || 0) || String(a.seriesName).localeCompare(String(b.seriesName)))
+            .map((item) => `${item.marker}${item.seriesName}: ${item.data} 小时`)
+            .join('<br/>')
+          return `<div>${label}</div>${extra}${lines}`
+        }
+      },
+      legend: { data: ds.authors },
+      xAxis: { type: 'category', data: ds.allPeriods },
+      yAxis: { type: 'value', name: '累计加班时长 (小时)' },
+      series: ds.series
+    })
+  }
+
+  render('daily')
+
+  const tabs = document.querySelectorAll('#tabsTotalOvertime button')
+  tabs.forEach((btnEl) => {
+    btnEl.addEventListener('click', () => {
+      tabs.forEach((b) => b.classList.remove('active'))
+      btnEl.classList.add('active')
+      render(btnEl.dataset.type)
+    })
+  })
+
+  // 点击事件：展示该作者在该周期的加班详情（过滤出下班/凌晨提交）
+  chart.on('click', (p) => {
+    try {
+      if (!p || p.componentType !== 'series') return
+      const label = p.axisValue || p.name
+      const author = p.seriesName
+      if (!label || !author) return
+      const type = document.querySelector('#tabsTotalOvertime button.active')?.dataset.type || 'daily'
+
+      const filteredCommits = commits.filter((c) => {
+        const a = c.author || 'unknown'
+        if (a !== author) return false
+        const d = new Date(c.date)
+        if (Number.isNaN(d.valueOf())) return false
+        const h = d.getHours()
+        const isOT = (h >= endHour && h < 24) || (h >= 0 && h < cutoff && h < startHour)
+        if (!isOT) return false
+
+        if (type === 'daily') return d.toISOString().slice(0, 10) === label
+        if (type === 'weekly') {
+          if (!label.includes('-W')) return false
+          const [yy, ww] = label.split('-W')
+          const range = getISOWeekRange(Number(yy), Number(ww))
+          const day = d.toISOString().slice(0, 10)
+          return day >= range.start && day <= range.end
+        }
+        if (type === 'monthly') {
+          const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+          return month === label
+        }
+        // yearly
+        const year = String(d.getFullYear())
+        return year === label
+      })
+
+      filteredCommits.sort((a, b) => new Date(a.date) - new Date(b.date))
+
+      if (type === 'weekly') {
+        const weeklyItem = {
+          outsideWorkCount: filteredCommits.length,
+          outsideWorkRate: 0
+        }
+        showSideBarForWeek({ period: label, weeklyItem, commits: filteredCommits, titleDrawer: `${author} 累计加班 本周详情` })
+      } else {
+        showDayDetailSidebar({ date: label, count: filteredCommits.length, commits: filteredCommits, titleDrawer: `${author} 累计加班 ${type} 详情` })
+      }
+    } catch (err) {
+      console.warn('Total overtime chart click handler error', err)
+    }
+  })
+
+  return chart
+}
+
+
 // ========= 开发者 午休最晚提交（小时） =========
 function buildAuthorLunchDataset(
   commits,
@@ -3606,6 +3753,8 @@ async function main() {
   drawAuthorOvertimeTrends(commits, stats)
   drawAuthorLatestOvertimeTrends(commits, stats)
   drawAuthorLunchTrends(commits, stats)
+  // 新增：开发者累计加班时长（按日/周/月/年）
+  drawAuthorTotalOvertimeTrends(commits, stats)
   computeAndRenderLatestOvertime(latestByDay)
   renderKpi(stats)
 }

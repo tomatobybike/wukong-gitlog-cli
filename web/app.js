@@ -440,14 +440,14 @@ function showSideBarForHour({ hour, commitsOrCount, titleDrawer }) {
     // commits 列表：展示作者/时间/消息（最多前 50 条，避免性能问题）
     const commits = commitsOrCount.slice(0, 50)
     contentEl.innerHTML = `<div class="sidebar-list">${commits
-      .map((c,index) => {
+      .map((c, index) => {
         const author = c.author ?? c.name ?? 'unknown'
         const time = c.date ?? c.time ?? ''
         const msg = (c.message ?? c.msg ?? c.body ?? '').replace(/\n/g, ' ')
         return `
           <div class="sidebar-item">
             <div class="sidebar-item-header">
-              <span class="author">${index+1}. 👤 ${escapeHtml(author)}</span>
+              <span class="author">${index + 1}. 👤 ${escapeHtml(author)}</span>
               <span class="time">🕒 ${escapeHtml(time)}</span>
             </div>
             <div class="sidebar-item-message">${escapeHtml(msg)}</div>
@@ -503,10 +503,7 @@ export function drawPieWithTotal({
 
   const total = data.reduce((sum, item) => sum + (item.value || 0), 0)
 
-  const safeData =
-    total === 0
-      ? [{ name: '暂无数据', value: 1 }]
-      : data
+  const safeData = total === 0 ? [{ name: '暂无数据', value: 1 }] : data
 
   chart.setOption({
     color: colors.length ? colors : undefined,
@@ -521,7 +518,7 @@ export function drawPieWithTotal({
 
     tooltip: {
       trigger: 'item',
-      formatter: params => {
+      formatter: (params) => {
         if (total === 0) return '暂无数据'
         return `
           ${params.name}<br/>
@@ -530,10 +527,10 @@ export function drawPieWithTotal({
         `
       }
     },
-legend: {
-  bottom: 0,
-  formatter: name => `${name}`
-},
+    legend: {
+      bottom: 0,
+      formatter: (name) => `${name}`
+    },
     graphic:
       total === 0
         ? []
@@ -573,7 +570,6 @@ legend: {
   return chart
 }
 
-
 function drawOutsideVsInside(stats) {
   const outside = stats.outsideWorkCount || 0
   const total = stats.total || 0
@@ -591,7 +587,6 @@ function drawOutsideVsInside(stats) {
     colors: ['#5470C6', '#EE6666']
   })
 }
-
 
 function drawDailyTrend(commits, onDayClick) {
   if (!Array.isArray(commits) || commits.length === 0) return null
@@ -737,14 +732,14 @@ function showSideBarForWeek({ period, weeklyItem, commits = [], titleDrawer }) {
     html += `<div style="padding:10px;color:#777;">该周无提交记录</div>`
   } else {
     html += `<div class="sidebar-list">${commits
-      .map((c,index) => {
+      .map((c, index) => {
         const author = escapeHtml(c.author || 'unknown')
         const time = escapeHtml(c.date || '')
         const msg = escapeHtml((c.message || '').replace(/\n/g, ' '))
         return `
           <div class="sidebar-item">
             <div class="sidebar-item-header">
-              <span class="author">${index+1}👤 ${author}</span>
+              <span class="author">${index + 1}👤 ${author}</span>
               <span class="time">🕒 ${time}</span>
             </div>
             <div class="sidebar-item-message">${msg}</div>
@@ -772,8 +767,6 @@ function drawWeeklyTrend(weekly, commits, onWeekClick) {
   const labels = weekly.map((w) => w.period)
   const dataRate = weekly.map((w) => +(w.outsideWorkRate * 100).toFixed(1)) // %
   const dataCount = weekly.map((w) => w.outsideWorkCount)
-
-
 
   const titleDrawer = el.getAttribute('data-title') || ''
 
@@ -1471,7 +1464,6 @@ function drawDailyTrendSeverity(commits, weekly, onDayClick) {
   }
 }
 
-
 function showDayDetailSidebar({ date, count, commits, titleDrawer }) {
   const sidebar = document.getElementById('dayDetailSidebar')
   const backdrop = document.getElementById('sidebarBackdrop')
@@ -1485,10 +1477,10 @@ function showDayDetailSidebar({ date, count, commits, titleDrawer }) {
   // 渲染详情
   content.innerHTML = commits
     .map(
-      (c,index) => `
+      (c, index) => `
     <div class="sidebar-item">
       <div class="sidebar-item-header">
-        <span class="author">${index+1}👤 ${escapeHtml(c.author || 'unknown')}</span>
+        <span class="author">${index + 1}👤 ${escapeHtml(c.author || 'unknown')}</span>
         <span class="time">🕒 ${escapeHtml(c.time || c.date || '')}</span>
       </div>
       <div class="sidebar-item-message">${escapeHtml(c.msg || c.message || '')}</div>
@@ -1594,15 +1586,17 @@ function renderKpi(stats) {
   if (headerEl) {
     const sSince = formatSampling(samplingSince)
     const sUntil = formatSampling(samplingUntil)
-    const sAuthor = samplingAuthor ? ` （作者 ${escapeHtml(samplingAuthor)}）` : ''
+    const sAuthor = samplingAuthor
+      ? ` （作者 ${escapeHtml(samplingAuthor)}）`
+      : ''
     const sText =
       sSince && sUntil
         ? `采样：${sSince} ~ ${sUntil}`
         : sSince
-        ? `采样起：${sSince}`
-        : sUntil
-        ? `采样止：${sUntil}`
-        : '采样：全量提交'
+          ? `采样起：${sSince}`
+          : sUntil
+            ? `采样止：${sUntil}`
+            : '采样：全量提交'
     headerEl.textContent = sText + sAuthor
   }
 }
@@ -2156,8 +2150,7 @@ function renderWeeklyRiskSummary(
     const h = d.getHours()
     let overtime = null
     if (h >= endHour && h < 24) overtime = h - endHour
-    else if (h >= 0 && h < cutoff && h < startHour)
-      overtime = 24 - endHour + h
+    else if (h >= 0 && h < cutoff && h < startHour) overtime = 24 - endHour + h
     if (overtime == null) return
 
     const wKey = getIsoWeekKey(d.toISOString().slice(0, 10))
@@ -2807,7 +2800,6 @@ function drawAuthorLatestOvertimeTrends(commits, stats) {
     })
   })
 
-
   // 点击事件：点击某个作者在某周期的点，打开侧栏显示该作者在该周期内的加班提交明细（用于查看具体提交与时间）
   chart.on('click', (p) => {
     try {
@@ -2872,14 +2864,21 @@ function drawAuthorLatestOvertimeTrends(commits, stats) {
   return chart
 }
 
-
-
-
-
 // ====== 开发者 累计加班时长（按日/周/月/年累计日峰值加班时长求和） ======
-function buildAuthorTotalOvertimeDataset(commits, type, startHour, endHour, cutoff) {
+function buildAuthorTotalOvertimeDataset(
+  commits,
+  type,
+  startHour,
+  endHour,
+  cutoff
+) {
   // 基于每天每人的最大超时（computeAuthorDailyMaxOvertime），再按周期聚合求和
-  const byAuthorDay = computeAuthorDailyMaxOvertime(commits, startHour, endHour, cutoff)
+  const byAuthorDay = computeAuthorDailyMaxOvertime(
+    commits,
+    startHour,
+    endHour,
+    cutoff
+  )
   const byAuthorPeriod = new Map()
   const periods = new Set()
 
@@ -2888,8 +2887,10 @@ function buildAuthorTotalOvertimeDataset(commits, type, startHour, endHour, cuto
       let period
       if (type === 'daily') period = dayKey
       else if (type === 'weekly') period = getIsoWeekKey(dayKey)
-      else if (type === 'monthly') period = dayKey.slice(0, 7) // YYYY-MM
-      else if (type === 'yearly') period = dayKey.slice(0, 4) // YYYY
+      else if (type === 'monthly')
+        period = dayKey.slice(0, 7) // YYYY-MM
+      else if (type === 'yearly')
+        period = dayKey.slice(0, 4) // YYYY
       else period = dayKey
       if (!period) continue
       periods.add(period)
@@ -2905,7 +2906,9 @@ function buildAuthorTotalOvertimeDataset(commits, type, startHour, endHour, cuto
     name: a,
     type: 'line',
     smooth: true,
-    data: allPeriods.map((p) => Number((byAuthorPeriod.get(a)[p] || 0).toFixed(2)))
+    data: allPeriods.map((p) =>
+      Number((byAuthorPeriod.get(a)[p] || 0).toFixed(2))
+    )
   }))
 
   return { authors, allPeriods, series }
@@ -2916,12 +2919,24 @@ function drawAuthorTotalOvertimeTrends(commits, stats) {
   if (!el) return null
   const chart = echarts.init(el)
 
-  const startHour = typeof stats.startHour === 'number' && stats.startHour >= 0 ? stats.startHour : 9
-  const endHour = typeof stats.endHour === 'number' && stats.endHour >= 0 ? stats.endHour : window.__overtimeEndHour || 18
+  const startHour =
+    typeof stats.startHour === 'number' && stats.startHour >= 0
+      ? stats.startHour
+      : 9
+  const endHour =
+    typeof stats.endHour === 'number' && stats.endHour >= 0
+      ? stats.endHour
+      : window.__overtimeEndHour || 18
   const cutoff = window.__overnightCutoff ?? 6
 
   function render(type) {
-    const ds = buildAuthorTotalOvertimeDataset(commits, type, startHour, endHour, cutoff)
+    const ds = buildAuthorTotalOvertimeDataset(
+      commits,
+      type,
+      startHour,
+      endHour,
+      cutoff
+    )
     ds.rangeMap = {}
     for (const period of ds.allPeriods) {
       if (period.includes('-W')) {
@@ -2944,8 +2959,14 @@ function drawAuthorTotalOvertimeTrends(commits, stats) {
           }
           const lines = params
             .filter((i) => i.data > 0)
-            .sort((a, b) => (b.data || 0) - (a.data || 0) || String(a.seriesName).localeCompare(String(b.seriesName)))
-            .map((item) => `${item.marker}${item.seriesName}: ${item.data} 小时`)
+            .sort(
+              (a, b) =>
+                (b.data || 0) - (a.data || 0) ||
+                String(a.seriesName).localeCompare(String(b.seriesName))
+            )
+            .map(
+              (item) => `${item.marker}${item.seriesName}: ${item.data} 小时`
+            )
             .join('<br/>')
           return `<div>${label}</div>${extra}${lines}`
         }
@@ -2958,7 +2979,8 @@ function drawAuthorTotalOvertimeTrends(commits, stats) {
 
     // 同步更新下面的排名列表
     try {
-      renderAuthorTotalOvertimeRankFromDs(ds, 10)
+      renderAuthorTotalOvertimeRankFromDs(ds, 0)
+      renderAuthorTotalOvertimeRank(ds, 0)
     } catch (e) {
       console.warn('更新累计加班排名失败', e)
     }
@@ -2982,7 +3004,9 @@ function drawAuthorTotalOvertimeTrends(commits, stats) {
       const label = p.axisValue || p.name
       const author = p.seriesName
       if (!label || !author) return
-      const type = document.querySelector('#tabsTotalOvertime button.active')?.dataset.type || 'daily'
+      const type =
+        document.querySelector('#tabsTotalOvertime button.active')?.dataset
+          .type || 'daily'
 
       const filteredCommits = commits.filter((c) => {
         const a = c.author || 'unknown'
@@ -2990,7 +3014,8 @@ function drawAuthorTotalOvertimeTrends(commits, stats) {
         const d = new Date(c.date)
         if (Number.isNaN(d.valueOf())) return false
         const h = d.getHours()
-        const isOT = (h >= endHour && h < 24) || (h >= 0 && h < cutoff && h < startHour)
+        const isOT =
+          (h >= endHour && h < 24) || (h >= 0 && h < cutoff && h < startHour)
         if (!isOT) return false
 
         if (type === 'daily') return d.toISOString().slice(0, 10) === label
@@ -3017,9 +3042,19 @@ function drawAuthorTotalOvertimeTrends(commits, stats) {
           outsideWorkCount: filteredCommits.length,
           outsideWorkRate: 0
         }
-        showSideBarForWeek({ period: label, weeklyItem, commits: filteredCommits, titleDrawer: `${author} 累计加班 本周详情` })
+        showSideBarForWeek({
+          period: label,
+          weeklyItem,
+          commits: filteredCommits,
+          titleDrawer: `${author} 累计加班 本周详情`
+        })
       } else {
-        showDayDetailSidebar({ date: label, count: filteredCommits.length, commits: filteredCommits, titleDrawer: `${author} 累计加班 ${type} 详情` })
+        showDayDetailSidebar({
+          date: label,
+          count: filteredCommits.length,
+          commits: filteredCommits,
+          titleDrawer: `${author} 累计加班 ${type} 详情`
+        })
       }
     } catch (err) {
       console.warn('Total overtime chart click handler error', err)
@@ -3029,41 +3064,132 @@ function drawAuthorTotalOvertimeTrends(commits, stats) {
   return chart
 }
 
-// 渲染累计加班排名（chart 下方）
-function renderAuthorTotalOvertimeRankFromDs(ds, topN = 10) {
-  const box = document.getElementById('authorTotalOvertimeRank')
-  if (!box) return
-  if (!ds || !Array.isArray(ds.authors) || !Array.isArray(ds.series)) {
-    box.innerHTML = '<div style="color:#777">暂无加班时长数据</div>'
-    return
+/**
+ * 渲染作者加班时长分布饼图
+ * @param {Object} ds - 数据源
+ * @param {Number} topN - 饼图展示的前N名，默认10，设为0则展示全部（不推荐在饼图中设为0）
+ */
+function renderAuthorTotalOvertimeRank(ds, topN = 10) {
+  if (!ds || !Array.isArray(ds.authors) || !Array.isArray(ds.series)) return;
+
+  // 1. 数据预处理：计算每个作者的总时长
+  const seriesMap = new Map(ds.series.map(s => [s.name, s.data]));
+
+  const totals = ds.authors.map(author => {
+    const data = seriesMap.get(author);
+    const total = Array.isArray(data)
+      ? data.reduce((sum, v) => sum + (Number(v) || 0), 0)
+      : 0;
+    return { name: author, value: Number(total.toFixed(2)) };
+  });
+
+  // 2. 排序：从高到低
+  totals.sort((a, b) => b.value - a.value);
+
+  // 3. 核心逻辑：处理 topN 和 “其他” 逻辑
+  let chartData = [];
+  if (topN > 0 && totals.length > topN) {
+    // 截取前 N 名
+    chartData = totals.slice(0, topN);
+    // 汇总剩余的为“其他”
+    const othersValue = totals.slice(topN).reduce((sum, item) => sum + item.value, 0);
+    chartData.push({
+      name: '其他',
+      value: Number(othersValue.toFixed(2))
+    });
+  } else {
+    // topN 为 0 时展示全部
+    chartData = totals;
   }
 
-  const totals = ds.authors.map((a) => {
-    const s = ds.series.find((ser) => ser.name === a)
-    const total = (s && Array.isArray(s.data) ? s.data.reduce((sum, v) => sum + (Number(v) || 0), 0) : 0)
-    return { author: a, total }
-  })
+  // 4. 自适应颜色生成
+  const generateColors = (count) => {
+    const presets = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
+    if (count <= presets.length) return presets.slice(0, count);
 
-  totals.sort((x, y) => y.total - x.total || String(x.author).localeCompare(String(y.author)))
+    return chartData.map((_, i) => {
+      if (i < presets.length) return presets[i];
+      // 超过预设后，动态生成 HSL 颜色
+      return `hsl(${(i * 137.5) % 360}, 60%, 65%)`; // 使用黄金角度 137.5 确保颜色分布均匀
+    });
+  };
 
-  const top = totals.slice(0, topN)
-  const colors = ['#1976d2','#00a76f','#fb8c00','#d32f2f','#6a1b9a','#00897b','#ef5350','#ffa000','#5c6bc0','#43a047']
+  // 5. 调用现有绘图方法
+  return drawPieWithTotal({
+    el: 'authorTotalOvertimeRankSummary',
+    title: '加班总时长排名分布',
+    unit: '小时',
+    totalLabel: '总时长',
+    data: chartData,
+    colors: generateColors(chartData.length)
+  });
+}
 
-  box.innerHTML = top.length
+// 渲染累计加班排名（chart 下方）
+function renderAuthorTotalOvertimeRankFromDs(ds, topN = 20) {
+  const box = document.getElementById('authorTotalOvertimeRank');
+  if (!box) return;
+
+  if (!ds || !Array.isArray(ds.authors) || !Array.isArray(ds.series)) {
+    box.innerHTML = '<div style="color:#777">暂无加班时长数据</div>';
+    return;
+  }
+
+  // 1. 建立索引映射 (O(n) 性能优化)
+  const seriesMap = new Map(ds.series.map(s => [s.name, s.data]));
+
+  const totals = ds.authors.map((author) => {
+    const data = seriesMap.get(author);
+    const total = Array.isArray(data)
+      ? data.reduce((sum, v) => sum + (Number(v) || 0), 0)
+      : 0;
+    return { author, total };
+  });
+
+  // 2. 排序
+  totals.sort((x, y) => y.total - x.total || String(x.author).localeCompare(String(y.author)));
+
+  // 3. 处理 topN 为 0 输出全部的逻辑
+  const top = (topN > 0) ? totals.slice(0, topN) : totals;
+  const count = top.length;
+
+  // 4. 动态生成颜色函数 (自适应任意长度)
+  const getColor = (index, totalCount) => {
+    // 预定义的高质量配色方案（前10个使用精选色，超过后使用动态生成的颜色）
+    const presetColors = [
+      '#1976d2', '#00a76f', '#fb8c00', '#d32f2f', '#6a1b9a',
+      '#00897b', '#ef5350', '#ffa000', '#5c6bc0', '#43a047'
+    ];
+
+    if (index < presetColors.length && totalCount <= presetColors.length) {
+      return presetColors[index];
+    }
+
+    // 动态计算：在 360 度色相环上均匀分布
+    // 增加 200 的偏移量是为了避开纯红色，让颜色看起来更柔和
+    const hue = (index * (360 / totalCount) + 200) % 360;
+    return `hsl(${hue}, 65%, 50%)`;
+  };
+
+  const safeEscape = (str) => typeof escapeHtml === 'function'
+    ? escapeHtml(str)
+    : String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]));
+
+  // 5. 渲染页面
+  box.innerHTML = count
     ? top
         .map(
           (t, i) => `
-    <div class="rank-item">
-      <span class="dot" style="background:${colors[i % colors.length]}"></span>
-      <span class="author">${i+1}.${escapeHtml(t.author)}</span>
-      <span class="hours">${Number(t.total).toFixed(2)} 小时</span>
+    <div class="rank-item" style="display: flex; align-items: center; margin-bottom: 8px;">
+      <span class="dot" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; background:${getColor(i, count)}"></span>
+      <span class="author" style="flex: 1;">${i + 1}. ${safeEscape(t.author)}</span>
+      <span class="hours" style="font-weight: bold;">${Number(t.total).toFixed(2)} 小时</span>
     </div>
   `
         )
         .join('')
-    : '<div style="color:#777">暂无加班时长数据</div>'
+    : '<div style="color:#777">暂无加班时长数据</div>';
 }
-
 
 // ========= 开发者 午休最晚提交（小时） =========
 function buildAuthorLunchDataset(

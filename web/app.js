@@ -61,6 +61,38 @@ function formatDateYMD(d) {
   return `${yyyy}-${mm}-${dd}`
 }
 
+// 将 CLI 传入或 RC 中的 author 筛选信息格式化为可读字符串
+function formatAuthorFilter(a) {
+  if (!a) return null
+
+  function toList(v) {
+    if (!v) return null
+    if (Array.isArray(v)) return v.map((s) => String(s).trim()).filter(Boolean)
+    return String(v)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  }
+
+  if (typeof a === 'string') {
+    const list = toList(a)
+    return list && list.length ? list.join(', ') : String(a)
+  }
+
+  if (Array.isArray(a)) return a.join(', ')
+
+  if (typeof a === 'object') {
+    const include = toList(a.include)
+    const exclude = toList(a.exclude)
+    const parts = []
+    if (include && include.length) parts.push(`包含：${include.join(', ')}`)
+    if (exclude && exclude.length) parts.push(`排除：${exclude.join(', ')}`)
+    return parts.length ? parts.join('；') : null
+  }
+
+  return String(a)
+}
+
 function getISOWeekRange(isoYear, isoWeek) {
   // 找到 ISO 年的第一个周一
   // ISO 年的第 1 周包含 1 月 4 日
@@ -1435,9 +1467,10 @@ function renderKpi(stats) {
     ? `<div>最后一次提交时间：${latest ? formatDate(latest.date) : '-'}${typeof latestHour === 'number' ? `（${String(latestHour).padStart(2, '0')}:00）` : ''} <div class="author">${latest?.author}</div> <div> ${latest?.message} <div></div>`
     : ``
 
-  // 采样区间展示（来自 config 或 serve 参数）
+  // 采样区间展示（来自 config 或 serve 参数），同时支持筛选条件（author）
   const samplingSince = window.__samplingSince || null
   const samplingUntil = window.__samplingUntil || null
+  const samplingAuthor = window.__samplingAuthor || null
   function formatSampling(dStr) {
     if (!dStr) return null
     const d = new Date(dStr)
@@ -1446,13 +1479,13 @@ function renderKpi(stats) {
   }
   let samplingHtml = ''
   if (samplingSince && samplingUntil) {
-    samplingHtml = `<div class="hr"></div><div class="sampling">采样区间：${formatSampling(samplingSince)} ~ ${formatSampling(samplingUntil)}</div>`
+    samplingHtml = `<div class="hr"></div><div class="sampling">采样区间：${formatSampling(samplingSince)} ~ ${formatSampling(samplingUntil)}${samplingAuthor ? ` （作者 ${escapeHtml(samplingAuthor)})` : ''}</div>`
   } else if (samplingSince) {
-    samplingHtml = `<div class="hr"></div><div class="sampling">采样起始：${formatSampling(samplingSince)}（起）</div>`
+    samplingHtml = `<div class="hr"></div><div class="sampling">采样起始：${formatSampling(samplingSince)}（起）${samplingAuthor ? ` （作者 ${escapeHtml(samplingAuthor)})` : ''}</div>`
   } else if (samplingUntil) {
-    samplingHtml = `<div class="hr"></div><div class="sampling">采样截止：${formatSampling(samplingUntil)}（止）</div>`
+    samplingHtml = `<div class="hr"></div><div class="sampling">采样截止：${formatSampling(samplingUntil)}（止）${samplingAuthor ? ` （作者 ${escapeHtml(samplingAuthor)})` : ''}</div>`
   } else {
-    samplingHtml = `<div class="hr"></div><div class="sampling">采样区间：全量提交</div>`
+    samplingHtml = `<div class="hr"></div><div class="sampling">采样区间：全量提交${samplingAuthor ? ` （作者 ${escapeHtml(samplingAuthor)})` : ''}</div>`
   }
 
   const html = [
@@ -1470,6 +1503,7 @@ function renderKpi(stats) {
   if (headerEl) {
     const sSince = formatSampling(samplingSince)
     const sUntil = formatSampling(samplingUntil)
+    const sAuthor = samplingAuthor ? ` （作者 ${escapeHtml(samplingAuthor)}）` : ''
     const sText =
       sSince && sUntil
         ? `采样：${sSince} ~ ${sUntil}`
@@ -1478,7 +1512,7 @@ function renderKpi(stats) {
         : sUntil
         ? `采样止：${sUntil}`
         : '采样：全量提交'
-    headerEl.textContent = sText
+    headerEl.textContent = sText + sAuthor
   }
 }
 
@@ -3714,6 +3748,8 @@ async function main() {
   const period = options?.period || {}
   window.__samplingSince = period?.since || null
   window.__samplingUntil = period?.until || null
+  // 格式化并保存采样的作者筛选信息（支持 string / { include:[], exclude:[] }）
+  window.__samplingAuthor = formatAuthorFilter(options?.author || null)
 
   // 前端计算 overtime 数据
   const startHour = config.startHour ?? 9

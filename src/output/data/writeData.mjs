@@ -30,7 +30,8 @@ function writeSchema(dir, files) {
       overtimeByWeek: {
         file: files.overtimeByWeek,
         required: false
-      }
+      },
+      options: { file: files.options, required: false }
     }
   }
 
@@ -80,11 +81,11 @@ export function writeServeDataMjs(result, config) {
     getEsmJs(config.worktimeOptions)
   )
 
-  // 保存 CLI 运行时的 period（since/until/groupBy 等），供前端展示采样范围
+  // 保存 CLI 运行时的 period（since/until/groupBy 等）和筛选条件（author），供前端展示采样信息
   files.options = writeTxtFile(
     baseDir,
     'options.mjs',
-    getEsmJs({ period: config.period || {} })
+    getEsmJs({ period: config.period || {}, author: config.author || null })
   )
 
   files.commits = writeTxtFile(baseDir, 'commits.mjs', getEsmJs(result.commits))

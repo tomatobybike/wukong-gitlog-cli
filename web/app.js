@@ -1433,14 +1433,52 @@ function renderKpi(stats) {
   const htmlLatest = latest
     ? `<div>最后一次提交时间：${latest ? formatDate(latest.date) : '-'}${typeof latestHour === 'number' ? `（${String(latestHour).padStart(2, '0')}:00）` : ''} <div class="author">${latest?.author}</div> <div> ${latest?.message} <div></div>`
     : ``
+
+  // 采样区间展示（来自 config 或 serve 参数）
+  const samplingSince = window.__samplingSince || null
+  const samplingUntil = window.__samplingUntil || null
+  function formatSampling(dStr) {
+    if (!dStr) return null
+    const d = new Date(dStr)
+    if (Number.isNaN(d.valueOf())) return escapeHtml(dStr)
+    return formatDateYMD(d)
+  }
+  let samplingHtml = ''
+  if (samplingSince && samplingUntil) {
+    samplingHtml = `<div class="hr"></div><div class="sampling">采样区间：${formatSampling(samplingSince)} ~ ${formatSampling(samplingUntil)}</div>`
+  } else if (samplingSince) {
+    samplingHtml = `<div class="hr"></div><div class="sampling">采样起始：${formatSampling(samplingSince)}（起）</div>`
+  } else if (samplingUntil) {
+    samplingHtml = `<div class="hr"></div><div class="sampling">采样截止：${formatSampling(samplingUntil)}（止）</div>`
+  } else {
+    samplingHtml = `<div class="hr"></div><div class="sampling">采样区间：全量提交</div>`
+  }
+
   const html = [
     htmlLatest,
     `<div class="hr"></div>`,
-    `<div>加班最晚一次提交时间：${latestOut ? formatDate(latestOut.date) : '-'}${typeof latestOutHour === 'number' ? `（${String(latestOutHour).padStart(2, '0')}:00）` : ''} <div class="author">${latestOut.author}</div> <div>${latestOut.message}</div> </div>`,
+    `<div>加班最晚一次提交时间：${latestOut ? formatDate(latestOut.date) : '-'}${typeof latestOutHour === 'number' ? `（${String(latestOutHour).padStart(2, '0')}:00）` : ''} <div class="author">${latestOut?.author || ''}</div> <div>${latestOut?.message || ''}</div> </div>`,
     `<div class="hr"></div>`,
-    `<div>次日归并窗口：凌晨 <b>${cutoff}</b> 点内归前一日</div>`
+    `<div>次日归并窗口：凌晨 <b>${cutoff}</b> 点内归前一日</div>`,
+    samplingHtml
   ].join('')
   el.innerHTML = html
+
+  // 同步显示在 header 侧边的采样信息（更醒目）
+  const headerEl = document.getElementById('samplingInfo')
+  if (headerEl) {
+    const sSince = formatSampling(samplingSince)
+    const sUntil = formatSampling(samplingUntil)
+    const sText =
+      sSince && sUntil
+        ? `采样：${sSince} ~ ${sUntil}`
+        : sSince
+        ? `采样起：${sSince}`
+        : sUntil
+        ? `采样止：${sUntil}`
+        : '采样：全量提交'
+    headerEl.textContent = sText
+  }
 }
 
 // 1) 按小时分组（例：commits 为原始提交数组）
@@ -3669,6 +3707,11 @@ async function main() {
 
   // 保存所有 commits 数据供小时分布图使用
   window.__allCommitsData = commits
+
+  // 保存采样起止（来自 config.mjs / serve 参数）供前端展示
+  // 可能的形式：--since YYYY-MM-DD --until YYYY-MM-DD
+  window.__samplingSince = config?.since || null
+  window.__samplingUntil = config?.until || null
 
   // 前端计算 overtime 数据
   const startHour = config.startHour ?? 9

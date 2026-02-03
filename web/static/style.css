@@ -28,6 +28,18 @@ header h1 {
   font-weight: 500;
 }
 
+/* 采样信息（显示在 header 旁边） */
+.sampling-info {
+  margin-left: 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 400;
+  opacity: 0.95;
+}
+.sampling{
+  color: #00a76f;
+}
+
 /* 主体布局 -------------------------------------------------- */
 main {
   display: flex;

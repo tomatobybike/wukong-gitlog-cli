@@ -2911,7 +2911,17 @@ function buildAuthorTotalOvertimeDataset(
     )
   }))
 
-  return { authors, allPeriods, series }
+  // 3. 计算每个作者的总时长/占用天数/日均占用，方便列表与 tooltip 使用
+  const totals = authors.map((a) => {
+    const periodObj = byAuthorPeriod.get(a) || {}
+    const totalHours = Object.values(periodObj).reduce((s, v) => s + (Number(v) || 0), 0)
+    // days 从 byAuthorDay（每日最大超时的 map）中获取
+    const days = byAuthorDay.get(a) ? byAuthorDay.get(a).size : 0
+    const avg = days > 0 ? Number((totalHours / days).toFixed(2)) : 0
+    return { author: a, totalHours: Number(totalHours.toFixed(2)), days, avg }
+  })
+
+  return { authors, allPeriods, series, totals }
 }
 
 function drawAuthorTotalOvertimeTrends(commits, stats) {
@@ -3214,16 +3224,37 @@ function renderAuthorTotalOvertimeRankFromDs(ds, topN = 20) {
   // 6. 奖牌与序号逻辑
   const medal = (i) => (i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : `${i + 1}. `);
 
-  // 7. 渲染页面（header + 列表）
+  // Prefer ds.totals if available
+  let totalsList = Array.isArray(ds.totals) ? ds.totals.map(t => ({ author: t.author, totalHours: t.totalHours, days: t.days, avg: t.avg })) : null;
+  if (!totalsList) {
+    const seriesMap = new Map(ds.series.map(s => [s.name, s.data]));
+    totalsList = ds.authors.map((author) => {
+      const data = seriesMap.get(author);
+      const total = Array.isArray(data) ? data.reduce((sum, v) => sum + (Number(v) || 0), 0) : 0;
+      return { author, totalHours: Number(total.toFixed(2)), days: 0, avg: 0 };
+    });
+  }
+
+  // 7. 渲染页面（header + 列表），并显示占用天数 & 平均小时，title hover 提示
   const listHtml = count
     ? top
-        .map((t, i) => `
-    <div class="rank-item" style="display: flex; align-items: center; margin-bottom: 8px;">
+        .map((t, i) => {
+          const info = totalsList.find(x => x.author === t.author) || {};
+          const total = Number((info.totalHours ?? t.total ?? 0).toFixed(2));
+          const days = info.days ?? 0;
+          const avg = info.avg ?? (days > 0 ? Number((total / days).toFixed(2)) : 0);
+          const title = `累计时长：${total} 小时\n占用天数：${days} 天\n平均每日：${avg} 小时`;
+          return `
+    <div class="rank-item" title="${title}" style="display: flex; align-items: center; margin-bottom: 8px;">
       <span class="dot" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; background:${getColor(i, count)}"></span>
-      <span class="author" style="flex: 1;">${medal(i)}${safeEscape(t.author)}</span>
-      <span class="hours" style="font-weight: bold;">${Number(t.total).toFixed(2)} 小时</span>
+      <span class="author" style="flex: 1;">
+        ${medal(i)}${safeEscape(t.author)}
+        <div style="font-size:12px;color:#666;margin-top:2px">占用天数: ${days} 天 · 平均: ${avg} 小时</div>
+      </span>
+      <span class="hours" style="font-weight: bold;">${Number(total).toFixed(2)} 小时</span>
     </div>
-  `)
+  `
+        })
         .join('')
     : '<div style="color:#777">暂无加班时长数据</div>';
 
@@ -3272,14 +3303,19 @@ function renderAuthorTotalLunchTimeRankFromDs(ds, topN = 20) {
     return;
   }
 
-  const seriesMap = new Map(ds.series.map((s) => [s.name, s.data]));
-  const totals = ds.authors.map((author) => {
-    const data = seriesMap.get(author);
-    const total = Array.isArray(data) ? data.reduce((sum, v) => sum + (Number(v) || 0), 0) : 0;
-    return { author, total };
-  });
+  // Prefer ds.totals (contains days/avg) if available, otherwise compute totals from series
+  let totals = Array.isArray(ds.totals) ? ds.totals.map(t => ({ author: t.author, totalHours: t.totalHours, days: t.days, avg: t.avg })) : null;
 
-  totals.sort((x, y) => y.total - x.total || String(x.author).localeCompare(String(y.author)));
+  if (!totals) {
+    const seriesMap = new Map(ds.series.map((s) => [s.name, s.data]));
+    totals = ds.authors.map((author) => {
+      const data = seriesMap.get(author) || [];
+      const total = Array.isArray(data) ? data.reduce((sum, v) => sum + (Number(v) || 0), 0) : 0;
+      return { author, totalHours: Number(total.toFixed(2)), days: 0, avg: 0 };
+    });
+  }
+
+  totals.sort((x, y) => (y.totalHours || y.total || 0) - (x.totalHours || x.total || 0) || String(x.author).localeCompare(String(y.author)));
 
   const top = topN > 0 ? totals.slice(0, topN) : totals;
   const count = top.length;
@@ -3334,13 +3370,22 @@ function renderAuthorTotalLunchTimeRankFromDs(ds, topN = 20) {
 
   const listHtml = count
     ? top
-        .map((t, i) => `
-    <div class="rank-item" style="display: flex; align-items: center; margin-bottom: 8px;">
+        .map((t, i) => {
+          const total = Number((t.totalHours ?? t.total ?? 0).toFixed(2));
+          const days = t.days ?? 0;
+          const avg = t.avg ?? (days > 0 ? Number((total / days).toFixed(2)) : 0);
+          const title = `累计时长：${total} 小时\n占用天数：${days} 天\n平均每日：${avg} 小时`;
+          return `
+    <div class="rank-item" title="${title}" style="display: flex; align-items: center; margin-bottom: 8px;">
       <span class="dot" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; background:${getColor(i, count)}"></span>
-      <span class="author" style="flex: 1;">${medal(i)}${safeEscape(t.author)}</span>
-      <span class="hours" style="font-weight: bold;">${Number(t.total).toFixed(2)} 小时</span>
+      <span class="author" style="flex: 1;">
+        ${medal(i)}${safeEscape(t.author)}
+        <div style="font-size:12px;color:#666;margin-top:2px">占用天数: ${days} 天 · 平均: ${avg} 小时</div>
+      </span>
+      <span class="hours" style="font-weight: bold;">${Number(total).toFixed(2)} 小时</span>
     </div>
-  `)
+  `
+        })
         .join('')
     : '<div style="color:#777">暂无午休累计时长数据</div>';
 
@@ -3602,7 +3647,16 @@ function buildAuthorTotalLunchTimeDataset(commits, type, lunchStart = 12, lunchE
     data: allPeriods.map((p) => Number((byAuthorPeriod.get(a)[p] || 0).toFixed(2)))
   }))
 
-  return { authors, allPeriods, series }
+  // 3. 计算每个作者的总时长/占用天数/日均占用，方便列表与 tooltip 使用
+  const totals = authors.map((a) => {
+    const periodObj = byAuthorPeriod.get(a) || {}
+    const totalHours = Object.values(periodObj).reduce((s, v) => s + (Number(v) || 0), 0)
+    const days = byAuthorDay.get(a) ? byAuthorDay.get(a).size : 0
+    const avg = days > 0 ? Number((totalHours / days).toFixed(2)) : 0
+    return { author: a, totalHours: Number(totalHours.toFixed(2)), days, avg }
+  })
+
+  return { authors, allPeriods, series, totals }
 }
 
 function drawAuthorTotalLunchTimeTrends(commits, stats) {

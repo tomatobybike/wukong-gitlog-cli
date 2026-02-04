@@ -517,6 +517,10 @@ td {
   justify-content: space-between;
   align-items: center;
 }
+.date{
+  display: flex;
+  width: 120px;
+}
 
 /* 底部 -------------------------------------------------- */
 footer {

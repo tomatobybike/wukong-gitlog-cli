@@ -3070,6 +3070,8 @@ function drawAuthorTotalOvertimeTrends(commits, stats) {
  * @param {Number} topN - 饼图展示的前N名，默认10，设为0则展示全部（不推荐在饼图中设为0）
  */
 function renderAuthorTotalOvertimeRank(ds, topN = 10) {
+  // FIXME: remove debug log before production
+  console.log('❌', 'ds', ds);
   if (!ds || !Array.isArray(ds.authors) || !Array.isArray(ds.series)) return;
 
   // 1. 数据预处理：计算每个作者的总时长
@@ -3155,7 +3157,6 @@ function renderAuthorTotalOvertimeRankFromDs(ds, topN = 20) {
 
   // 4. 动态生成颜色函数 (自适应任意长度)
   const getColor = (index, totalCount) => {
-    // 预定义的高质量配色方案（前10个使用精选色，超过后使用动态生成的颜色）
     const presetColors = [
       '#1976d2', '#00a76f', '#fb8c00', '#d32f2f', '#6a1b9a',
       '#00897b', '#ef5350', '#ffa000', '#5c6bc0', '#43a047'
@@ -3165,8 +3166,6 @@ function renderAuthorTotalOvertimeRankFromDs(ds, topN = 20) {
       return presetColors[index];
     }
 
-    // 动态计算：在 360 度色相环上均匀分布
-    // 增加 200 的偏移量是为了避开纯红色，让颜色看起来更柔和
     const hue = (index * (360 / totalCount) + 200) % 360;
     return `hsl(${hue}, 65%, 50%)`;
   };
@@ -3175,20 +3174,165 @@ function renderAuthorTotalOvertimeRankFromDs(ds, topN = 20) {
     ? escapeHtml(str)
     : String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]));
 
-  // 5. 渲染页面
-  box.innerHTML = count
+  // 5. 计算统计区间（显示总体覆盖范围）
+  let rangeStr = '';
+  if (Array.isArray(ds.allPeriods) && ds.allPeriods.length) {
+    const first = ds.allPeriods[0];
+    const last = ds.allPeriods[ds.allPeriods.length - 1];
+    const activeType = document.querySelector('#tabsTotalOvertime button.active')?.dataset.type || 'daily';
+
+    const periodToDate = (p, type) => {
+      if (type === 'daily') return p;
+      if (type === 'weekly' && p.includes('-W')) {
+        const [yy, ww] = p.split('-W');
+        const r = getISOWeekRange(Number(yy), Number(ww));
+        return `${r.start} ~ ${r.end}`;
+      }
+      if (type === 'monthly') {
+        const [y, m] = p.split('-');
+        const start = `${y}-${m}-01`;
+        const end = new Date(Number(y), Number(m), 0);
+        const endStr = formatDateYMD(end);
+        return `${start} ~ ${endStr}`;
+      }
+      if (type === 'yearly') return `${p}-01-01 ~ ${p}-12-31`;
+      return p;
+    };
+
+    try {
+      const firstRange = periodToDate(first, activeType);
+      const lastRange = periodToDate(last, activeType);
+      // If daily, show start ~ end concisely
+      if (activeType === 'daily') rangeStr = `统计区间：${firstRange} ~ ${lastRange}`;
+      else rangeStr = `统计区间：${firstRange} —— ${lastRange}`;
+      rangeStr = `<div style="color:#666;margin-bottom:6px;font-size:13px">${rangeStr}</div>`;
+    } catch (e) {
+      rangeStr = '';
+    }
+  }
+
+  // 6. 奖牌与序号逻辑
+  const medal = (i) => (i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : `${i + 1}. `);
+
+  // 7. 渲染页面（header + 列表）
+  const listHtml = count
     ? top
-        .map(
-          (t, i) => `
+        .map((t, i) => `
     <div class="rank-item" style="display: flex; align-items: center; margin-bottom: 8px;">
       <span class="dot" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; background:${getColor(i, count)}"></span>
-      <span class="author" style="flex: 1;">${i + 1}. ${safeEscape(t.author)}</span>
+      <span class="author" style="flex: 1;">${medal(i)}${safeEscape(t.author)}</span>
       <span class="hours" style="font-weight: bold;">${Number(t.total).toFixed(2)} 小时</span>
     </div>
-  `
-        )
+  `)
         .join('')
     : '<div style="color:#777">暂无加班时长数据</div>';
+
+  box.innerHTML = `${rangeStr}${listHtml}`;
+}
+
+// 渲染作者午休累计时长分布饼图
+function renderAuthorTotalLunchTimeRank(ds, topN = 10) {
+  if (!ds || !Array.isArray(ds.authors) || !Array.isArray(ds.series)) return;
+  const seriesMap = new Map(ds.series.map((s) => [s.name, s.data]));
+  const totals = ds.authors.map((author) => {
+    const data = seriesMap.get(author);
+    const total = Array.isArray(data) ? data.reduce((sum, v) => sum + (Number(v) || 0), 0) : 0;
+    return { name: author, value: Number(total.toFixed(2)) };
+  });
+
+  return drawPieWithTotal({
+    el: 'authorTotalLunchTimeRankSummary',
+    title: '午休累计时长排名分布',
+    unit: '小时',
+    totalLabel: '总时长',
+    data: totals,
+    colors: undefined
+  });
+}
+
+// 渲染午休累计排名（chart 下方），含序号/奖牌与统计区间
+function renderAuthorTotalLunchTimeRankFromDs(ds, topN = 20) {
+  const box = document.getElementById('authorTotalLunchTimeRank');
+  if (!box) return;
+
+  if (!ds || !Array.isArray(ds.authors) || !Array.isArray(ds.series)) {
+    box.innerHTML = '<div style="color:#777">暂无午休累计时长数据</div>';
+    return;
+  }
+
+  const seriesMap = new Map(ds.series.map((s) => [s.name, s.data]));
+  const totals = ds.authors.map((author) => {
+    const data = seriesMap.get(author);
+    const total = Array.isArray(data) ? data.reduce((sum, v) => sum + (Number(v) || 0), 0) : 0;
+    return { author, total };
+  });
+
+  totals.sort((x, y) => y.total - x.total || String(x.author).localeCompare(String(y.author)));
+
+  const top = topN > 0 ? totals.slice(0, topN) : totals;
+  const count = top.length;
+
+  const getColor = (index, totalCount) => {
+    const presetColors = ['#1976d2', '#00a76f', '#fb8c00', '#d32f2f', '#6a1b9a', '#00897b', '#ef5350', '#ffa000', '#5c6bc0', '#43a047'];
+    if (index < presetColors.length && totalCount <= presetColors.length) return presetColors[index];
+    const hue = (index * (360 / totalCount) + 200) % 360;
+    return `hsl(${hue}, 65%, 50%)`;
+  };
+
+  const safeEscape = (str) => typeof escapeHtml === 'function'
+    ? escapeHtml(str)
+    : String(str).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": "&#39;" }[m]));
+
+  let rangeStr = '';
+  if (Array.isArray(ds.allPeriods) && ds.allPeriods.length) {
+    const first = ds.allPeriods[0];
+    const last = ds.allPeriods[ds.allPeriods.length - 1];
+    const activeType = document.querySelector('#tabsTotalLunchTime button.active')?.dataset.type || 'daily';
+
+    const periodToDate = (p, type) => {
+      if (type === 'daily') return p;
+      if (type === 'weekly' && p.includes('-W')) {
+        const [yy, ww] = p.split('-W');
+        const r = getISOWeekRange(Number(yy), Number(ww));
+        return `${r.start} ~ ${r.end}`;
+      }
+      if (type === 'monthly') {
+        const [y, m] = p.split('-');
+        const start = `${y}-${m}-01`;
+        const end = new Date(Number(y), Number(m), 0);
+        const endStr = formatDateYMD(end);
+        return `${start} ~ ${endStr}`;
+      }
+      if (type === 'yearly') return `${p}-01-01 ~ ${p}-12-31`;
+      return p;
+    };
+
+    try {
+      const firstRange = periodToDate(first, activeType);
+      const lastRange = periodToDate(last, activeType);
+      if (activeType === 'daily') rangeStr = `统计区间：${firstRange} ~ ${lastRange}`;
+      else rangeStr = `统计区间：${firstRange} —— ${lastRange}`;
+      rangeStr = `<div style="color:#666;margin-bottom:6px;font-size:13px">${rangeStr}</div>`;
+    } catch (e) {
+      rangeStr = '';
+    }
+  }
+
+  const medal = (i) => (i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : `${i + 1}. `);
+
+  const listHtml = count
+    ? top
+        .map((t, i) => `
+    <div class="rank-item" style="display: flex; align-items: center; margin-bottom: 8px;">
+      <span class="dot" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; background:${getColor(i, count)}"></span>
+      <span class="author" style="flex: 1;">${medal(i)}${safeEscape(t.author)}</span>
+      <span class="hours" style="font-weight: bold;">${Number(t.total).toFixed(2)} 小时</span>
+    </div>
+  `)
+        .join('')
+    : '<div style="color:#777">暂无午休累计时长数据</div>';
+
+  box.innerHTML = `${rangeStr}${listHtml}`;
 }
 
 // ========= 开发者 午休最晚提交（小时） =========
@@ -3387,6 +3531,179 @@ function drawAuthorLunchTrends(commits, stats) {
       }
     } catch (err) {
       console.warn('Lunch chart click handler error', err)
+    }
+  })
+
+  return chart
+}
+
+// ========== 开发者 累计午休时长（按日/周/月/年累计每日午休占用时长求和） =========
+function buildAuthorTotalLunchTimeDataset(commits, type, lunchStart = 12, lunchEnd = 14) {
+  // 1. 先统计每位作者每天午休期间的最后一次提交时间（小时小数）
+  const byAuthorDay = new Map()
+  commits.forEach((c) => {
+    const d = new Date(c.date)
+    if (Number.isNaN(d.valueOf())) return
+    const h = d.getHours()
+    const m = d.getMinutes()
+    const hourDecimal = h + m / 60
+    // 仅关注午休时间段内的提交
+    if (!(hourDecimal >= lunchStart && hourDecimal < lunchEnd)) return
+
+    const author = c.author || 'unknown'
+    const day = d.toISOString().slice(0, 10)
+    if (!byAuthorDay.has(author)) byAuthorDay.set(author, new Map())
+    const dayMap = byAuthorDay.get(author)
+    const cur = dayMap.get(day) || 0
+    dayMap.set(day, Math.max(cur, hourDecimal))
+  })
+
+  // 2. 按周期（type）聚合，统计每一周期内的累计午休占用时长
+  const byAuthorPeriod = new Map()
+  const periods = new Set()
+
+  byAuthorDay.forEach((dayMap, author) => {
+    for (const [day, lastHour] of dayMap.entries()) {
+      let period
+      if (type === 'daily') period = day
+      else if (type === 'weekly') period = getIsoWeekKey(day)
+      else if (type === 'monthly') period = day.slice(0, 7)
+      else if (type === 'yearly') period = day.slice(0, 4)
+      else period = day
+      if (!period) continue
+      periods.add(period)
+      if (!byAuthorPeriod.has(author)) byAuthorPeriod.set(author, {})
+      const obj = byAuthorPeriod.get(author)
+      // 当天占用午休时长 = max(0, min(lastHour, lunchEnd) - lunchStart)
+      const capped = Math.min(lastHour, lunchEnd)
+      const duration = Math.max(0, capped - lunchStart)
+      obj[period] = (obj[period] || 0) + duration
+    }
+  })
+
+  const allPeriods = Array.from(periods).sort()
+  const authors = Array.from(byAuthorPeriod.keys()).sort()
+  const series = authors.map((a) => ({
+    name: a,
+    type: 'line',
+    smooth: true,
+    data: allPeriods.map((p) => Number((byAuthorPeriod.get(a)[p] || 0).toFixed(2)))
+  }))
+
+  return { authors, allPeriods, series }
+}
+
+function drawAuthorTotalLunchTimeTrends(commits, stats) {
+  const el = document.getElementById('chartAuthorTotalLunchTime')
+  if (!el) return null
+  const chart = echarts.init(el)
+
+  const lunchStart = typeof stats.lunchStart === 'number' ? stats.lunchStart : (window.__lunchStart ?? 12)
+  const lunchEnd = typeof stats.lunchEnd === 'number' ? stats.lunchEnd : (window.__lunchEnd ?? 14)
+
+  function render(type) {
+    const ds = buildAuthorTotalLunchTimeDataset(commits, type, lunchStart, lunchEnd)
+    ds.rangeMap = {}
+    for (const period of ds.allPeriods) {
+      if (period.includes('-W')) {
+        const [yy, ww] = period.split('-W')
+        ds.rangeMap[period] = getISOWeekRange(Number(yy), Number(ww))
+      }
+    }
+
+    chart.setOption({
+      tooltip: {
+        trigger: 'axis',
+        formatter(params) {
+          if (!params || !params.length) return ''
+          const label = params[0].axisValue
+          const isWeekly = type === 'weekly'
+
+          let extra = ''
+          if (isWeekly && ds.rangeMap && ds.rangeMap[label]) {
+            const { start, end } = ds.rangeMap[label]
+            extra = `<div style="margin-top:4px;color:#999;font-size:12px">周区间：${start} ~ ${end}</div>`
+          }
+
+          const lines = params
+            .filter((i) => i.data > 0)
+            .sort((a, b) => (b.data || 0) - (a.data || 0) || String(a.seriesName).localeCompare(String(b.seriesName)))
+            .map((item) => `${item.marker}${item.seriesName}: ${Number(item.data).toFixed(2)} 小时`)
+            .join('<br/>')
+
+          return `<div>${label}</div>${extra}${lines}`
+        }
+      },
+      legend: { data: ds.authors },
+      xAxis: { type: 'category', data: ds.allPeriods },
+      yAxis: { type: 'value', name: '累计午休工作时长 (小时)', min: 0 },
+      series: ds.series
+    })
+
+    // 更新排名与饼图
+    try {
+      renderAuthorTotalLunchTimeRankFromDs(ds, 0)
+      renderAuthorTotalLunchTimeRank(ds, 0)
+    } catch (e) {
+      console.warn('更新累计午休排名失败', e)
+    }
+  }
+
+  render('daily')
+
+  const tabs = document.querySelectorAll('#tabsTotalLunchTime button')
+  tabs.forEach((btnEl) => {
+    btnEl.addEventListener('click', () => {
+      tabs.forEach((b) => b.classList.remove('active'))
+      btnEl.classList.add('active')
+      render(btnEl.dataset.type)
+    })
+  })
+
+  chart.on('click', (p) => {
+    try {
+      if (!p || p.componentType !== 'series') return
+      const label = p.axisValue || p.name
+      const author = p.seriesName
+      if (!label || !author) return
+      const type = document.querySelector('#tabsTotalLunchTime button.active')?.dataset.type || 'daily'
+
+      const filteredCommits = commits.filter((c) => {
+        const a = c.author || 'unknown'
+        if (a !== author) return false
+        const d = new Date(c.date)
+        if (Number.isNaN(d.valueOf())) return false
+        const h = d.getHours()
+        const m = d.getMinutes()
+        const hourDecimal = h + m / 60
+        if (!(hourDecimal >= lunchStart && hourDecimal < lunchEnd)) return false
+
+        if (type === 'daily') return d.toISOString().slice(0, 10) === label
+        if (type === 'weekly') {
+          if (!label.includes('-W')) return false
+          const [yy, ww] = label.split('-W')
+          const range = getISOWeekRange(Number(yy), Number(ww))
+          const day = d.toISOString().slice(0, 10)
+          return day >= range.start && day <= range.end
+        }
+        if (type === 'monthly') {
+          const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+          return month === label
+        }
+        const year = String(d.getFullYear())
+        return year === label
+      })
+
+      filteredCommits.sort((a, b) => new Date(a.date) - new Date(b.date))
+
+      if (type === 'weekly') {
+        const weeklyItem = { outsideWorkCount: filteredCommits.length, outsideWorkRate: 0 }
+        showSideBarForWeek({ period: label, weeklyItem, commits: filteredCommits, titleDrawer: `${author} 午休本周详情` })
+      } else {
+        showDayDetailSidebar({ date: label, count: filteredCommits.length, commits: filteredCommits, titleDrawer: `${author} 午休 ${type} 详情` })
+      }
+    } catch (err) {
+      console.warn('Total lunch chart click handler error', err)
     }
   })
 
@@ -4093,6 +4410,8 @@ async function main() {
   drawAuthorOvertimeTrends(commits, stats)
   drawAuthorLatestOvertimeTrends(commits, stats)
   drawAuthorLunchTrends(commits, stats)
+  // 新增：开发者累计午休时长（按日/周/月/年）
+  drawAuthorTotalLunchTimeTrends(commits, stats)
   // 新增：开发者累计加班时长（按日/周/月/年）
   drawAuthorTotalOvertimeTrends(commits, stats)
   computeAndRenderLatestOvertime(latestByDay)

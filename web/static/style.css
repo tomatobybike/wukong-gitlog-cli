@@ -71,15 +71,21 @@ main {
 /* 图表网格 -------------------------------------------------- */
 #charts {
   display: grid;
-  grid-template-columns: 1fr; /* 手机端默认单列铺满 */
-  gap: 16px;
+  /* 移动端默认：单列，防止溢出 */
+  grid-template-columns: 1fr;
+  gap: 20px;
+  padding: 16px;
 }
 
-@media (min-width: 700px) {
+@media (min-width: 768px) {
   #charts {
-    /* 屏幕够大时，才允许并排，且设定 640px 的下限 */
+    /* 桌面端：最小宽度 640px，自动填充 */
     grid-template-columns: repeat(auto-fit, minmax(640px, 1fr));
   }
+}
+/* 让核心趋势图始终占据整行，无论分几列 */
+.full-width-chart {
+  grid-column: 1 / -1;
 }
 #chartsHalf,
 .chartsHalf {

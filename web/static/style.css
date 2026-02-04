@@ -46,7 +46,7 @@ main {
   flex-direction: column;
   gap: 20px;
   padding: 20px;
-  max-width: 1280px;
+  /* max-width: 1280px; */
   margin: 20px auto;
   overflow-x: hidden;
 }
@@ -71,10 +71,18 @@ main {
 /* 图表网格 -------------------------------------------------- */
 #charts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(640px, 1fr));
+  grid-template-columns: 1fr; /* 手机端默认单列铺满 */
   gap: 16px;
 }
-#chartsHalf,.chartsHalf {
+
+@media (min-width: 700px) {
+  #charts {
+    /* 屏幕够大时，才允许并排，且设定 640px 的下限 */
+    grid-template-columns: repeat(auto-fit, minmax(640px, 1fr));
+  }
+}
+#chartsHalf,
+.chartsHalf {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 16px;
@@ -91,7 +99,6 @@ main {
 }
 
 #authorTotalOvertimeRankSummary {
-
   height: 600px;
 }
 
@@ -113,6 +120,18 @@ th {
 td {
   padding: 10px 8px;
   border-bottom: 1px solid #eee;
+}
+
+@media screen and (max-width: 799px) {
+  .hash {
+    display: none;
+  }
+  .email {
+    display: none;
+  }
+  .cherryPick {
+    display: none;
+  }
 }
 
 /* 分页、搜索栏 -------------------------------------------------- */
@@ -517,7 +536,7 @@ td {
   justify-content: space-between;
   align-items: center;
 }
-.date{
+.date {
   display: flex;
   width: 120px;
 }

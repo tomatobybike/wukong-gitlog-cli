@@ -19,7 +19,7 @@ export function defineOptions(program) {
     .option('--limit <n>', '限制数量', parseInt)
     .option('--no-merges', '不包含 merge commit')
 
-    .option('--group-by <type>', '按日期分组: day | month | week')
+    .option('--group-by <type>', '按日期分组: day | month | week | all ')
     .option('--format <type>', '输出格式: text | excel | json', 'text')
 
     .option('--stats', '输出每日统计数据')

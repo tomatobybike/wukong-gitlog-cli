@@ -23,6 +23,7 @@ import {
   handleExportOvertimeTabTxt,
   handleExportOvertimeTxt
 } from '#src/domain/export/index.mjs'
+import { getProfileDirFile } from '#utils/getProfileDirFile.mjs'
 import { groupRecords } from '#utils/groupRecords.mjs'
 
 import { parseOptions } from '../cli/parseOptions.mjs'
@@ -41,12 +42,13 @@ import {
   getOvertimeByWeek,
   getWorkTimeConfig
 } from './helpers.mjs'
-import { getProfileDirFile } from '#utils/getProfileDirFile.mjs'
 
 export async function exportAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
   const traceFile = getProfileDirFile('trace.json', opts)
 
+  // FIXME: remove debug log before production
+  console.log('❌', 'opts', opts)
   const profiler = createProfiler({ ...opts.profile, traceFile }, opts)
 
   const mb = createMultiBar()
@@ -81,9 +83,15 @@ export async function exportAction(rawOpts = {}) {
       return getWorkOvertimeStats(enrichedRecords, worktimeOptions)
     })
 
-    bar.step(20, '正在生成周/月趋势数据...')
-    result.overtimeByWeek = await getOvertimeByWeek(enrichedRecords)
-    result.overtimeByMonth = await getOvertimeByMonth(enrichedRecords)
+    if (['all','week'].includes(opts.period.groupBy)) {
+      bar.step(20, '正在生成周趋势数据...')
+      result.overtimeByWeek = await getOvertimeByWeek(enrichedRecords)
+    }
+
+    if (['all','month'].includes(opts.period.groupBy)) {
+      bar.step(20, '正在生成月趋势数据...')
+      result.overtimeByMonth = await getOvertimeByMonth(enrichedRecords)
+    }
 
     bar.step(20, '正在标记每日最晚提交点...')
     result.overtimeLatestCommitByDay = await getLatestCommitByDay({
@@ -131,19 +139,23 @@ export async function exportAction(rawOpts = {}) {
       result: overtimeCsvResult
     })
 
-    // 导出 每月数据
-    handleExportByMonth({
-      opts,
-      records: commits,
-      worktimeOptions
-    })
+    if (['all','month'].includes(opts.period.groupBy)) {
+      // 导出 每月数据
+      handleExportByMonth({
+        opts,
+        records: commits,
+        worktimeOptions
+      })
+    }
 
-    // 导出 每周数据
-    handleExportByWeek({
-      opts,
-      records: commits,
-      worktimeOptions
-    })
+    if (['all','week'].includes(opts.period.groupBy)) {
+      // 导出 每周数据
+      handleExportByWeek({
+        opts,
+        records: commits,
+        worktimeOptions
+      })
+    }
 
     // 导出 commit logs
     handleExportCommits({
@@ -160,7 +172,10 @@ export async function exportAction(rawOpts = {}) {
     })
 
     // --- 分组 ---
-    const groups = opts.groupBy ? groupRecords(records, opts.groupBy) : null
+    const groups = opts.period.groupBy
+      ? groupRecords(records, opts.period.groupBy)
+      : null
+
 
     handleExportCommitsExcel({
       opts,
@@ -175,13 +190,13 @@ export async function exportAction(rawOpts = {}) {
       fileName: 'commits.json',
       groups
     })
+
     handleExportAuthorChangesJson({
       opts,
       records: commits,
       fileName: 'author-changes.json'
     })
     handleExportAuthor({ opts, records: authorMap, fileName: 'author.txt' })
-
   } catch (error) {
     // 异常处理：停止进度条并打印红色错误
     mb.stop()

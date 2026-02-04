@@ -3240,13 +3240,25 @@ function renderAuthorTotalLunchTimeRank(ds, topN = 10) {
     return { name: author, value: Number(total.toFixed(2)) };
   });
 
+    // 4. 自适应颜色生成
+  const generateColors = (count) => {
+    const presets = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc'];
+    if (count <= presets.length) return presets.slice(0, count);
+
+    return totals.map((_, i) => {
+      if (i < presets.length) return presets[i];
+      // 超过预设后，动态生成 HSL 颜色
+      return `hsl(${(i * 137.5) % 360}, 60%, 65%)`; // 使用黄金角度 137.5 确保颜色分布均匀
+    });
+  };
+
   return drawPieWithTotal({
     el: 'authorTotalLunchTimeRankSummary',
     title: '午休累计时长排名分布',
     unit: '小时',
     totalLabel: '总时长',
     data: totals,
-    colors: undefined
+    colors: generateColors(totals.length)
   });
 }
 

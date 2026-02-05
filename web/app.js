@@ -1396,16 +1396,16 @@ function drawDailyTrendSeverity(commits, weekly, onDayClick) {
     const count = params?.[0].value
     const details = dayCommitsDetail[date] || []
 
-    let html = `📅 <b>${date}</b><br/>提交次数：${count}<br/><br/>`
+    let html = `📅 <b>${date}</b><br/>提交次数：${count}<br/>`
 
     details.slice(0, 5).forEach((d) => {
-      html += `👤 ${d.author}<br/>🕒 ${d.time}<br/>💬 ${d.msg}<br/><br/>`
+      html += `👤 ${d.author}<br/>🕒 ${d.time}<br/> <div class="long-txt-break-all">💬${d.msg}</div>`
     })
 
     if (details.length > 5) {
       html += `（其余 ${details.length - 5} 条已省略）`
     }
-
+    html = `<div class="tooltip-box">${html}</div>`
     return html
   }
 
@@ -1558,7 +1558,7 @@ function renderKpi(stats) {
   }
 
   const htmlLatest = latest
-    ? `<div>最后一次提交时间：${latest ? formatDate(latest.date) : '-'}${typeof latestHour === 'number' ? `（${String(latestHour).padStart(2, '0')}:00）` : ''} <div class="author">${latest?.author}</div> <div> ${latest?.message} <div></div>`
+    ? `<div>最后一次提交时间：${latest ? formatDate(latest.date) : '-'}${typeof latestHour === 'number' ? `（${String(latestHour).padStart(2, '0')}:00）` : ''} <div class="author">${latest?.author}</div> <div class="long-txt"> ${latest?.message} </div></div>`
     : ``
 
   // 采样区间展示（来自 config 或 serve 参数），同时支持筛选条件（author）
@@ -1585,7 +1585,7 @@ function renderKpi(stats) {
   const html = [
     htmlLatest,
     `<div class="hr"></div>`,
-    `<div>加班最晚一次提交时间：${latestOut ? formatDate(latestOut.date) : '-'}${typeof latestOutHour === 'number' ? `（${String(latestOutHour).padStart(2, '0')}:00）` : ''} <div class="author">${latestOut?.author || ''}</div> <div>${latestOut?.message || ''}</div> </div>`,
+    `<div>加班最晚一次提交时间：${latestOut ? formatDate(latestOut.date) : '-'}${typeof latestOutHour === 'number' ? `（${String(latestOutHour).padStart(2, '0')}:00）` : ''} <div class="author">${latestOut?.author || ''}</div> <div  class="long-txt">999${latestOut?.message || ''}</div> </div>`,
     `<div class="hr"></div>`,
     `<div>次日归并窗口：凌晨 <b>${cutoff}</b> 点内归前一日</div>`,
     samplingHtml

@@ -546,7 +546,30 @@ td {
   display: flex;
   width: 120px;
 }
-
+.long-txt{
+  /* overflow: hidden;
+  text-overflow: ellipsis; */
+  word-break: break-all;
+  /* 或 */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+.tooltip-box{
+  width:500px;
+}
+.long-txt-break-all{
+  word-break: break-all;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 300px;
+}
+@media (min-width: 768px) {
+  .long-txt-break-all{
+    max-width: 500px;
+  }
+}
 /* 底部 -------------------------------------------------- */
 footer {
   text-align: center;

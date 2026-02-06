@@ -1,3 +1,4 @@
+/* eslint-disable no-shadow */
 /**
  * 高性能 git log + numstat 获取 commit（无 shell / 无 WSL 版本）
  *
@@ -91,6 +92,8 @@ export async function getGitLogsFast(opts = {}) {
   if (!merges) args.push(`--no-merges`)
   if (limit) args.push('-n', String(limit))
 
+
+
   let stdout
   try {
     /**
@@ -126,9 +129,26 @@ export async function getGitLogsFast(opts = {}) {
     // eslint-disable-next-line no-control-regex
     /([0-9a-f]+)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([^\x1f]*)\x1f([\s\S]*?)(?=(?:[0-9a-f]{7,40}\x1f)|\x1e$)/g
 
+  // --- 关键改进 2: 引入内容指纹去重集 ---
+  const fingerPrintSet = new Set()
+
   for (const match of raw.matchAll(commitRegex)) {
     const [_, hash, authorName, emailAddr, date, subject, bodyAndNumstat] =
       match
+
+      // 1. 统一作者名
+    const normalizedAuthor = normalizer.getAuthor(authorName, emailAddr);
+    // 2. 格式化日期（消除时刻差异，只看天）
+    const day = dayjs(date).format('YYYY-MM-DD');
+    // 3. 清理消息内容（去空格，取第一行）
+    const cleanMsg = subject.trim();
+
+    // 生成指纹：日期 + 统一后的作者 + 消息内容
+    // 这样即便 Hash 不同，分支不同，只要这三项一致，就视为同一项工作
+    const fingerPrint = `${day}_${normalizedAuthor}_${cleanMsg}`;
+
+    if (fingerPrintSet.has(fingerPrint)) continue;
+    fingerPrintSet.add(fingerPrint);
 
     const [, changeId] =
       bodyAndNumstat.match(/Change-Id:\s*(I[0-9a-fA-F]+)/) || []

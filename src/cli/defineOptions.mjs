@@ -12,7 +12,10 @@ export function defineOptions(program) {
     .name('wukong-gitlog')
     .version(pkg.version, '-v')
     .description('Advanced Git commit log exporter.')
-    .option('--author <name>', '指定 author')
+    .option(
+      '--author <name>',
+      '指定 author,注意如果用户Git的user.name和user.email不规范,例如配置过不同的邮箱和name，应该通过--author-aliases 进行别名映射，并且不传递 --author 参数，以免过滤掉不规范的提交记录'
+    )
     .option('--email <email>', '指定 email')
     .option('--since <date>', '起始日期')
     .option('--until <date>', '结束日期')
@@ -70,7 +73,6 @@ export function defineOptions(program) {
       6
     )
 
-
     .option('--out <file>', '输出文件名（不含路径）')
     .option(
       '--out-dir <dir>',
@@ -101,7 +103,6 @@ export function defineOptions(program) {
       3000
     )
     .option('--debug', 'enable debug logs')
-
 
     .option('--profile', '输出性能分析 JSON')
     .option('--verbose', '显示详细性能日志')

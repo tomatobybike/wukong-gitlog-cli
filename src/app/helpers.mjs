@@ -198,6 +198,16 @@ export const getGitLogsDayReport = async (records = [], opts = {}) => {
   }
 
   const authorFilter = opts?.author
+  function toList(v) {
+    if (!v) return null
+    if (Array.isArray(v)) return v.map((s) => String(s).trim()).filter(Boolean)
+    return String(v)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  }
+  const include = authorFilter && typeof authorFilter === 'object' ? toList(authorFilter.include) : (typeof authorFilter === 'string' ? toList(authorFilter) : null)
+  const exclude = authorFilter && typeof authorFilter === 'object' ? toList(authorFilter.exclude) : null
 
   /* ---------------- 1️⃣ Change-Id 级别去重（取最新） ---------------- */
 
@@ -228,9 +238,26 @@ export const getGitLogsDayReport = async (records = [], opts = {}) => {
       item.email ||
       'unknown'
 
-    // --author 过滤
-    if (authorFilter && author !== authorFilter) {
-      continue
+    // --author 过滤：支持字符串/数组 或 { include: [], exclude: [] }
+    if ((include && include.length) || (exclude && exclude.length)) {
+      const name = (item.author || item.originalAuthor || '').trim().toLowerCase()
+      const mail = (item.email || '').trim().toLowerCase()
+      const matches = (list) =>
+        list.some((it) => {
+          const v = String(it).trim().toLowerCase()
+          if (v.includes('@')) return v === mail
+          return v === name
+        })
+
+      if (include && include.length) {
+        if (!matches(include)) continue
+      }
+      if (exclude && exclude.length) {
+        if (matches(exclude)) continue
+      }
+    } else if (authorFilter && typeof authorFilter === 'string') {
+      // legacy: simple string match
+      if (author !== authorFilter) continue
     }
 
     const day = dayjs(item.date).format('YYYY-MM-DD')

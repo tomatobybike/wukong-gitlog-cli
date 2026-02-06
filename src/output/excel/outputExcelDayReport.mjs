@@ -18,6 +18,7 @@ export const outputExcelDayReport = async ({
   conf = {}
 } = {}) => {
   if (!Array.isArray(dayReports) || dayReports.length === 0) {
+    console.log('没有日报数据')
     return
   }
 

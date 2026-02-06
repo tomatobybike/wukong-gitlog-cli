@@ -46,7 +46,7 @@ export async function analyzeAction(rawOpts = {}) {
     )
     result.commits = commits
     result.authorMap = authorMap
-    bar.step(15, 'Git 记录提取完成')
+    bar.step(8, 'Git 记录提取完成')
 
     const records = result.commits
 
@@ -56,7 +56,7 @@ export async function analyzeAction(rawOpts = {}) {
       : records
 
     // 2️⃣ 分析作者变更
-    bar.step(10, '正在分析作者代码贡献...')
+    bar.step(9, '正在分析作者代码贡献...')
     const authorChanges = await profiler.stepAsync(
       'analyzeAuthorChanges',
       () => {
@@ -88,7 +88,7 @@ export async function analyzeAction(rawOpts = {}) {
     }
 
     // 4️⃣ 数据输出
-    bar.step(10, '正在持久化分析结果...')
+    bar.step(80, '正在持久化分析结果...')
     await profiler.stepAsync('output', async () => {
       const worktimeOptions = getWorkTimeConfig(opts)
 

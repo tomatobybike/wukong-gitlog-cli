@@ -507,8 +507,10 @@ export function drawPieWithTotal({
   const chart = echarts.init(dom)
   chartInstances.push(chart)
 
-  const total = data.reduce((sum, item) => sum + (item.value || 0), 0)
-
+  let total = data.reduce((sum, item) => sum + (item.value || 0), 0)
+  total = Math.round(total)
+  // FIXME: remove debug log before production
+  console.log('❌', 'total', total);
   const safeData = total === 0 ? [{ name: '暂无数据', value: 1 }] : data
 
   chart.setOption({
@@ -1586,7 +1588,7 @@ function renderKpi(stats) {
   const html = [
     htmlLatest,
     `<div class="hr"></div>`,
-    `<div>加班最晚一次提交时间：${latestOut ? formatDate(latestOut.date) : '-'}${typeof latestOutHour === 'number' ? `（${String(latestOutHour).padStart(2, '0')}:00）` : ''} <div class="author">${latestOut?.author || ''}</div> <div  class="long-txt">999${latestOut?.message || ''}</div> </div>`,
+    `<div>加班最晚一次提交时间：${latestOut ? formatDate(latestOut.date) : '-'}${typeof latestOutHour === 'number' ? `（${String(latestOutHour).padStart(2, '0')}:00）` : ''} <div class="author">${latestOut?.author || ''}</div> <div  class="long-txt">${latestOut?.message || ''}</div> </div>`,
     `<div class="hr"></div>`,
     `<div>次日归并窗口：凌晨 <b>${cutoff}</b> 点内归前一日</div>`,
     samplingHtml
@@ -3328,6 +3330,287 @@ function renderAuthorTotalOvertimeRankFromDs(ds, topN = 20) {
   box.innerHTML = `${rangeStr}${listHtml}`
 }
 
+// ====== 开发者 累计提交Changed（按日/周/月/年累计 Changed 行数） ======
+function buildAuthorTotalCommitsChangedDataset(commits, type) {
+  const byAuthorPeriod = new Map()
+  const periods = new Set()
+
+  commits.forEach((c) => {
+    const author = c.author || 'unknown'
+    const changed = Number(c.changed) || 0
+    const d = new Date(c.date)
+    if (Number.isNaN(d.valueOf())) return
+
+    let period
+    if (type === 'daily') period = d.toISOString().slice(0, 10)
+    else if (type === 'weekly') period = getIsoWeekKey(d.toISOString())
+    else if (type === 'monthly') period = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    else if (type === 'yearly') period = String(d.getFullYear())
+    else period = d.toISOString().slice(0, 10)
+
+    periods.add(period)
+    if (!byAuthorPeriod.has(author)) byAuthorPeriod.set(author, {})
+    const obj = byAuthorPeriod.get(author)
+    obj[period] = (obj[period] || 0) + changed
+  })
+
+  const allPeriods = Array.from(periods).sort()
+  const authors = Array.from(byAuthorPeriod.keys()).sort()
+  const series = authors.map((a) => ({
+    name: a,
+    type: 'line',
+    smooth: true,
+    data: allPeriods.map((p) => Number((byAuthorPeriod.get(a)[p] || 0).toFixed(2)))
+  }))
+
+  const totals = authors.map((a) => {
+    const periodObj = byAuthorPeriod.get(a) || {}
+    const totalChanged = Object.values(periodObj).reduce((s, v) => s + (Number(v) || 0), 0)
+    const days = Object.keys(periodObj).length
+    const avg = days > 0 ? Number((totalChanged / days).toFixed(2)) : 0
+    return { author: a, totalChanged: Number(totalChanged.toFixed(2)), days, avg }
+  })
+
+  return { authors, allPeriods, series, totals }
+}
+
+function drawAuthorTotalCommitsChangedTrends(commits) {
+  const el = document.getElementById('chartAuthorTotalCommitsChanged')
+  if (!el) return null
+  const chart = echarts.init(el)
+  chartInstances.push(chart)
+
+  function render(type) {
+    const ds = buildAuthorTotalCommitsChangedDataset(commits, type)
+    chart.setOption({
+      tooltip: {
+        trigger: 'axis',
+        formatter(params) {
+          if (!params || !params.length) return ''
+          const label = params[0].axisValue
+          const lines = params
+            .filter((i) => i.data > 0)
+            .sort((a, b) => (b.data || 0) - (a.data || 0))
+            .map((item) => `${item.marker}${item.seriesName}: ${item.data} 行`)
+            .join('<br/>')
+          return `<div>${label}</div>${lines}`
+        }
+      },
+      legend: { data: ds.authors },
+      xAxis: { type: 'category', data: ds.allPeriods },
+      yAxis: { type: 'value', name: 'Changed 行数' },
+      series: ds.series
+    })
+
+    try {
+      renderAuthorTotalCommitsChangedRankFromDs(ds, 0)
+      renderAuthorTotalCommitsChangedRank(ds, 0)
+    } catch (e) {
+      console.warn('更新累计提交Changed排名失败', e)
+    }
+  }
+
+  render('daily')
+
+  const tabs = document.querySelectorAll('#tabsTotalCommitsChanged button')
+  tabs.forEach((btnEl) => {
+    btnEl.addEventListener('click', () => {
+      tabs.forEach((b) => b.classList.remove('active'))
+      btnEl.classList.add('active')
+      render(btnEl.dataset.type)
+    })
+  })
+
+  chart.on('click', (p) => {
+    try {
+      if (!p || p.componentType !== 'series') return
+      const label = p.axisValue || p.name
+      const author = p.seriesName
+      if (!label || !author) return
+      const type = document.querySelector('#tabsTotalCommitsChanged button.active')?.dataset.type || 'daily'
+
+      const filteredCommits = commits.filter((c) => {
+        const a = c.author || 'unknown'
+        if (a !== author) return false
+        const d = new Date(c.date)
+        if (Number.isNaN(d.valueOf())) return false
+
+        if (type === 'daily') return d.toISOString().slice(0, 10) === label
+        if (type === 'weekly') {
+          if (!label.includes('-W')) return false
+          const [yy, ww] = label.split('-W')
+          const range = getISOWeekRange(Number(yy), Number(ww))
+          const day = d.toISOString().slice(0, 10)
+          return day >= range.start && day <= range.end
+        }
+        if (type === 'monthly') {
+          const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+          return month === label
+        }
+        const year = String(d.getFullYear())
+        return year === label
+      })
+
+      filteredCommits.sort((a, b) => new Date(a.date) - new Date(b.date))
+
+      if (type === 'weekly') {
+        const weeklyItem = { outsideWorkCount: filteredCommits.length, outsideWorkRate: 0 }
+        showSideBarForWeek({ period: label, weeklyItem, commits: filteredCommits, titleDrawer: `${author} Changed 本周详情` })
+      } else {
+        showDayDetailSidebar({ date: label, count: filteredCommits.length, commits: filteredCommits, titleDrawer: `${author} Changed ${type} 详情` })
+      }
+    } catch (err) {
+      console.warn('Total commits changed chart click handler error', err)
+    }
+  })
+
+  return chart
+}
+
+function renderAuthorTotalCommitsChangedRank(ds, topN = 10) {
+  if (!ds || !Array.isArray(ds.authors) || !Array.isArray(ds.series)) return
+  const seriesMap = new Map(ds.series.map((s) => [s.name, s.data]))
+  const totals = ds.authors.map((author) => {
+    const data = seriesMap.get(author)
+    const total = Array.isArray(data) ? data.reduce((sum, v) => sum + (Number(v) || 0), 0) : 0
+    return { name: author, value: Number(total.toFixed(2)) }
+  })
+  totals.sort((a, b) => b.value - a.value)
+
+  let chartData = []
+  if (topN > 0 && totals.length > topN) {
+    chartData = totals.slice(0, topN)
+    const othersValue = totals.slice(topN).reduce((sum, item) => sum + item.value, 0)
+    chartData.push({ name: '其他', value: Number(othersValue.toFixed(2)) })
+  } else chartData = totals
+
+      // 4. 自适应颜色生成
+  const generateColors = (count) => {
+    const presets = [
+      '#5470c6',
+      '#91cc75',
+      '#fac858',
+      '#ee6666',
+      '#73c0de',
+      '#3ba272',
+      '#fc8452',
+      '#9a60b4',
+      '#ea7ccc'
+    ]
+    if (count <= presets.length) return presets.slice(0, count)
+
+    return chartData.map((_, i) => {
+      if (i < presets.length) return presets[i]
+      // 超过预设后，动态生成 HSL 颜色
+      return `hsl(${(i * 137.5) % 360}, 60%, 65%)` // 使用黄金角度 137.5 确保颜色分布均匀
+    })
+  }
+
+  return drawPieWithTotal({
+    el: 'authorTotalCommitsChangedRankSummary',
+    title: '提交Changed排名分布',
+    unit: '行',
+    totalLabel: '总行数',
+    data: chartData,
+    colors: generateColors(chartData.length)
+  })
+}
+
+function renderAuthorTotalCommitsChangedRankFromDs(ds, topN = 20) {
+  const box = document.getElementById('authorTotalCommitsChangedRank')
+  if (!box) return
+  if (!ds || !Array.isArray(ds.authors) || !Array.isArray(ds.series)) {
+    box.innerHTML = '<div style="color:#777">暂无提交Changed数据</div>'
+    return
+  }
+
+  const seriesMap = new Map(ds.series.map((s) => [s.name, s.data]))
+  const totals = ds.authors.map((author) => {
+    const data = seriesMap.get(author) || []
+    const total = Array.isArray(data) ? data.reduce((sum, v) => sum + (Number(v) || 0), 0) : 0
+    return { author, total }
+  })
+
+  totals.sort((x, y) => y.total - x.total || String(x.author).localeCompare(String(y.author)))
+
+  const top = topN > 0 ? totals.slice(0, topN) : totals
+  const count = top.length
+
+  const getColor = (index, totalCount) => {
+    const presetColors = ['#1976d2','#00a76f','#fb8c00','#d32f2f','#6a1b9a','#00897b','#ef5350','#ffa000','#5c6bc0','#43a047']
+    if (index < presetColors.length && totalCount <= presetColors.length) return presetColors[index]
+    const hue = (index * (360 / totalCount) + 200) % 360
+    return `hsl(${hue}, 65%, 50%)`
+  }
+
+  const safeEscape = (str) => typeof escapeHtml === 'function' ? escapeHtml(str) : String(str)
+
+  let rangeStr = ''
+  if (Array.isArray(ds.allPeriods) && ds.allPeriods.length) {
+    const first = ds.allPeriods[0]
+    const last = ds.allPeriods[ds.allPeriods.length - 1]
+    const activeType = document.querySelector('#tabsTotalCommitsChanged button.active')?.dataset.type || 'daily'
+
+    const periodToDate = (p, type) => {
+      if (type === 'daily') return p
+      if (type === 'weekly' && p.includes('-W')) {
+        const [yy, ww] = p.split('-W')
+        const r = getISOWeekRange(Number(yy), Number(ww))
+        return `${r.start} ~ ${r.end}`
+      }
+      if (type === 'monthly') {
+        const [y, m] = p.split('-')
+        const start = `${y}-${m}-01`
+        const end = new Date(Number(y), Number(m), 0)
+        const endStr = formatDateYMD(end)
+        return `${start} ~ ${endStr}`
+      }
+      if (type === 'yearly') return `${p}-01-01 ~ ${p}-12-31`
+      return p
+    }
+
+    try {
+      const firstRange = periodToDate(first, activeType)
+      const lastRange = periodToDate(last, activeType)
+      if (activeType === 'daily') rangeStr = `统计区间：${firstRange} ~ ${lastRange}`
+      else rangeStr = `统计区间：${firstRange} —— ${lastRange}`
+      rangeStr = `<div style="color:#666;margin-bottom:6px;font-size:13px">${rangeStr}</div>`
+    } catch (e) {
+      rangeStr = ''
+    }
+  }
+
+  const medal = (i) => (i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : `${i + 1}. `)
+
+  let totalsList = Array.isArray(ds.totals) ? ds.totals.map((t) => ({ author: t.author, totalChanged: t.totalChanged, days: t.days, avg: t.avg })) : null
+  if (!totalsList) {
+    totalsList = totals.map((t) => ({ author: t.author, totalChanged: Number((t.total || 0).toFixed(2)), days: 0, avg: 0 }))
+  }
+
+  const listHtml = count
+    ? top.map((t, i) => {
+        const info = totalsList.find((x) => x.author === t.author) || {}
+        const total = Number((info.totalChanged ?? t.total ?? 0).toFixed(2))
+        const days = info.days ?? 0
+        const avg = info.avg ?? (days > 0 ? Number((total / days).toFixed(2)) : 0)
+        const title = `累计Changed：${total} 行\n占用天数：${days} 天\n平均每日：${avg} 行`
+        return `
+    <div class="rank-item" title="${title}" style="display: flex; align-items: center; margin-bottom: 8px;">
+      <span class="dot" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; background:${getColor(i, count)}"></span>
+      <span class="author" style="flex: 1;">
+        ${medal(i)}${safeEscape(t.author)}
+        <div style="font-size:12px;color:#666;margin-top:2px">占用天数: ${days} 天 · 平均: ${avg} 行</div>
+      </span>
+      <span class="hours" style="font-weight: bold;">${Number(total).toFixed(2)} 行</span>
+    </div>
+  `
+      }).join('')
+    : '<div style="color:#777">暂无提交Changed数据</div>'
+
+  box.innerHTML = `${rangeStr}${listHtml}`
+}
+
+
 // 渲染作者午休累计时长分布饼图
 function renderAuthorTotalLunchTimeRank(ds, topN = 10) {
   if (!ds || !Array.isArray(ds.authors) || !Array.isArray(ds.series)) return
@@ -3362,6 +3645,8 @@ function renderAuthorTotalLunchTimeRank(ds, topN = 10) {
     })
   }
 
+  // TODO: remove debug log before production
+  console.log('✅', 'totals', totals);
   return drawPieWithTotal({
     el: 'authorTotalLunchTimeRankSummary',
     title: '午休累计时长排名分布',
@@ -4928,6 +5213,8 @@ async function main() {
   drawChangeTrends(authorChanges)
   // 开发者 累计提交次数（按日/周/月/年）
   drawAuthorTotalCommitsTrends(commits)
+  // 开发者 累计提交Changed（按日/周/月/年）
+  drawAuthorTotalCommitsChangedTrends(commits)
   drawAuthorOvertimeTrends(commits, stats)
   drawAuthorLatestOvertimeTrends(commits, stats)
   drawAuthorLunchTrends(commits, stats)

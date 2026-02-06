@@ -1,6 +1,7 @@
 /**
  * 确保当前目录在 git 仓库内
  */
+import chalk from 'chalk'
 
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
@@ -31,8 +32,10 @@ export async function ensureGitRepo() {
 
     return true
   } catch {
-    throw new Error(
-      `❌ 当前目录不是 Git 仓库\n\n请在 Git 项目根目录下运行该命令`
-    )
+    // throw new Error(
+    //   `❌ 当前目录不是 Git 仓库\n\n请在 Git 项目根目录下运行该命令`
+    // )
+    console.log(`${chalk.red("❌")} 当前目录不是 Git 仓库\n\n请在 Git 项目根目录下运行该命令`)
+    process.exit(1)
   }
 }

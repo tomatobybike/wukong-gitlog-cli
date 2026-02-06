@@ -7,6 +7,7 @@
  * - 避免 zx / WSL / bash 相关问题
  * - 支持大仓库（超大 stdout buffer）
  */
+import dayjs from 'dayjs'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 
@@ -18,8 +19,6 @@ const execFileAsync = promisify(execFile)
  * 获取 git commit 列表（高性能版）
  */
 export async function getGitLogsFast(opts = {}) {
-
-
   /*
  git: { merges: true, limit: undefined },
   period: { groupBy: 'month', since: '2026-12-01', until: '2026-12-06' },
@@ -79,8 +78,16 @@ export async function getGitLogsFast(opts = {}) {
 
   if (authorIsString) args.push(`--author=${author}`)
   if (email && typeof email === 'string') args.push(`--author=${email}`)
-  if (since) args.push(`--since=${since}`)
-  if (until) args.push(`--until=${until}`)
+  // if (since) args.push(`--since=${until}`)
+  if (since) {
+    // 传给 git 绝对的 ISO 字符串，让 Git 自己去比对时间戳
+    args.push(`--since=${dayjs(since).startOf('day').toISOString()}`)
+  }
+  if (until) {
+    // 传给 git 绝对的 ISO 字符串，让 Git 自己去比对时间戳
+    args.push(`--until=${dayjs(until).endOf('day').toISOString()}`)
+  }
+  // if (until) args.push(`--until=${until}`)
   if (!merges) args.push(`--no-merges`)
   if (limit) args.push('-n', String(limit))
 
@@ -191,8 +198,16 @@ export async function getGitLogsFast(opts = {}) {
       .filter(Boolean)
   }
 
-  const include = authorCfg && typeof authorCfg === 'object' ? toList(authorCfg.include) : (typeof authorCfg === 'string' ? toList(authorCfg) : null)
-  const exclude = authorCfg && typeof authorCfg === 'object' ? toList(authorCfg.exclude) : null
+  const include =
+    authorCfg && typeof authorCfg === 'object'
+      ? toList(authorCfg.include)
+      : typeof authorCfg === 'string'
+        ? toList(authorCfg)
+        : null
+  const exclude =
+    authorCfg && typeof authorCfg === 'object'
+      ? toList(authorCfg.exclude)
+      : null
 
   let filteredCommits = commits
 
@@ -223,7 +238,9 @@ export async function getGitLogsFast(opts = {}) {
   }
 
   // 重新计算 authorMap / originalMap 以只包含筛选后的作者
-  const presentEmails = new Set(filteredCommits.map((c) => c.email).filter(Boolean))
+  const presentEmails = new Set(
+    filteredCommits.map((c) => c.email).filter(Boolean)
+  )
   const filteredMap = {}
   for (const [email, name] of Object.entries(finalMap)) {
     if (presentEmails.has(email)) filteredMap[email] = name

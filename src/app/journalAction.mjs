@@ -44,6 +44,9 @@ export async function journalAction(rawOpts = {}) {
       getGitLogsFast(opts)
     )
 
+
+    // FIXME: remove debug log before production 传入日期和不传入--no-merges 以及author仍然丢失数据
+    console.log('❌', 'commits', commits);
     //  去重 commit（基于 Change-Id），过滤掉 Gerrit 产生的重复提交例如cherry-pick
     const cleanCommits = dedupeCommits(commits, {
       by: 'changeId',
@@ -79,6 +82,7 @@ export async function journalAction(rawOpts = {}) {
         return getGitLogsDayReport(cleanCommits, opts)
       }
     )
+
 
     result.authorDayReport = authorDayReport
 

@@ -47,8 +47,7 @@ export async function exportAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
   const traceFile = getProfileDirFile('trace.json', opts)
 
-  // FIXME: remove debug log before production
-  console.log('❌', 'opts', opts)
+
   const profiler = createProfiler({ ...opts.profile, traceFile }, opts)
 
   const mb = createMultiBar()

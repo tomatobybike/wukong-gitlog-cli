@@ -278,6 +278,12 @@ export const getGitLogsDayReport = async (records = [], opts = {}) => {
     map[key].originalMsgs.push(originalMsg)
     map[key].msgSet.add(handledMsg)
   }
+  // FIXME: remove debug log before production
+  console.log('❌', 'map', map);
+  /* 
+  wukong-gitlog-cli journal  --since 2026-02-01 可以得到2026-02-02日数据
+  wukong-gitlog-cli journal  --since 2026-02-02 不能得到2026-02-02日数据
+  */
 
   /* ---------------- 3️⃣ 输出 + 稳定排序 ---------------- */
 

@@ -3340,6 +3340,11 @@ ora@9.0.0:
     string-width "^8.1.0"
     strip-ansi "^7.1.2"
 
+os-locale@^8.0.0:
+  version "8.0.0"
+  resolved "https://registry.npmjs.org/os-locale/-/os-locale-8.0.0.tgz#b22a286acf569f3c0aeac2c70505d60586e6e29c"
+  integrity sha512-0hdyXRn0wSKMTHCo2CkPJdTKzIhg1Wb7DxJtkeD8M8rRXSwP2ZFRu4UiWBnkjPdRbL5X+AnUVXBE2SZOmkm3dg==
+
 own-keys@^1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/own-keys/-/own-keys-1.0.1.tgz"

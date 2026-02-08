@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
+import osLocale from 'os-locale'
 
 import { runGitPreflight } from '#src/domain/git/index.mjs'
 
@@ -14,9 +15,11 @@ import { versionAction } from './app/versionAction.mjs'
 import { defineOptions } from './cli/defineOptions.mjs'
 import { loadRcConfig } from './infra/configStore.mjs'
 
+
 // 引入加载器
 
 const main = async () => {
+  console.log(osLocale())
   await runGitPreflight()
   // 【关键优化】在一切开始前，先异步加载 RC 配置
   // 这样后续 parseOptions 内部的 cachedConfig 就有值了

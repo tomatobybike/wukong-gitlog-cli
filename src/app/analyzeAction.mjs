@@ -96,7 +96,8 @@ export async function analyzeAction(rawOpts = {}) {
         dir: opts.output.dir || path.resolve('output-wukong'),
         worktimeOptions,
         period: opts.period || {},
-        author: opts.author || null
+        author: opts.author || null,
+        git: opts.git || {},
       })
     })
 

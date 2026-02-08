@@ -2,10 +2,10 @@ import fs from 'fs'
 
 import { outputExcelDayReport } from '#src/output/excel/outputExcelDayReport.mjs'
 import { outputTxtDayReport } from '#src/output/text/outputTxtDayReport.mjs'
+import { getCurrentTimestampSecond } from '#utils/index.mjs'
 
 import { getEsmJs } from '../utils/getEsmJs.mjs'
 import { writeJsonFile, writeTxtFile } from '../utils/index.mjs'
-import {getCurrentTimestampSecond} from "#utils/index.mjs";
 
 const pkg = JSON.parse(
   fs.readFileSync(new URL('../../../package.json', import.meta.url), 'utf-8')
@@ -73,12 +73,14 @@ export function writeServeData(result, config) {
 export function writeServeDataMjs(result, config) {
   const baseDir = `${config.dir}/data`
 
+  // FIXME: remove debug log before production
+  console.log('❌', 'config', config)
   const files = {}
 
   files.config = writeTxtFile(
     baseDir,
     'config.mjs',
-    getEsmJs(config.worktimeOptions)
+    getEsmJs({ ...config.worktimeOptions, git: config.git || {} })
   )
 
   // 保存 CLI 运行时的 period（since/until/groupBy 等）和筛选条件（author），供前端展示采样信息

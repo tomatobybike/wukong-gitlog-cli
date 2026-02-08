@@ -58,6 +58,8 @@ export async function outputAll(result, config) {
 }
 
 export async function outputData(result, config) {
+  // FIXME: remove debug log before production
+  console.log('❌', 'config', config);
   const dir = resolveOutDir(config.dir)
 
   /* ---------- serve data（永远写） ---------- */

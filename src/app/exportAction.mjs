@@ -103,7 +103,8 @@ export async function exportAction(rawOpts = {}) {
     await profiler.stepAsync('output', async () => {
       await outputData(result, {
         dir: opts.output.dir || path.resolve('output-wukong'),
-        worktimeOptions
+        worktimeOptions,
+        git: opts.git || {},
       })
     })
 

@@ -71,7 +71,8 @@ export async function overtimeAction(rawOpts = {}) {
     await profiler.stepAsync('output', async () => {
       await outputData(result, {
         dir: opts.output.dir || path.resolve('output-wukong'),
-        worktimeOptions
+        worktimeOptions,
+        git: opts.git || {},
       })
     })
 

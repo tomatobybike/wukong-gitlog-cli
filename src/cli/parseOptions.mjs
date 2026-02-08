@@ -43,7 +43,8 @@ export async function parseOptions(cliOpts) {
     email: cliOpts.email,
     git: {
       merges: cliOpts.merges,
-      limit: cliOpts.limit
+      limit: cliOpts.limit,
+      numstat: cliOpts.numstat
     },
     period: {
       groupBy: cliOpts.groupBy,

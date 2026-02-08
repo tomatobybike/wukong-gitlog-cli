@@ -24,7 +24,7 @@ let cache = null
  * 内部：真正执行 git 检测
  */
 async function detectGit() {
-  const platform = process.platform
+  const {platform} = process
 
   const { stdout } = await execFileAsync('git', ['--version'], {
     windowsHide: true,

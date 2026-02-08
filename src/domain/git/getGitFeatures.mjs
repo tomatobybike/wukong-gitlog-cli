@@ -36,7 +36,7 @@ export async function getGitFeatures() {
         maxBuffer: 1024 * 1024
       }
     )
-    features.numstat = true
+    features.numstat = false
   } catch { /* empty */ }
 
   /**

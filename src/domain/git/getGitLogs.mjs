@@ -20,6 +20,8 @@ const execFileAsync = promisify(execFile)
  * 获取 git commit 列表（高性能版）
  */
 export async function getGitLogsFast(opts = {}) {
+  // FIXME: remove debug log before production
+  console.log('❌', 'opts', opts);
   /*
  git: { merges: true, limit: undefined },
   period: { groupBy: 'month', since: '2026-12-01', until: '2026-12-06' },
@@ -54,7 +56,7 @@ export async function getGitLogsFast(opts = {}) {
   // 在运行时根据传入的 opts.authorAliases（或用户配置）创建 normalizer
   const normalizer = createAuthorNormalizer(opts.authorAliases || {})
   const { since, until } = period
-  const { limit, merges } = git
+  const { limit, merges, numstat } = git
 
   // 对于 CLI 传入的 author，只有当它是字符串时才传给 git
   // 如果是对象（包含 include/exclude），我们在前端做更精细的过滤
@@ -73,7 +75,7 @@ export async function getGitLogsFast(opts = {}) {
     'log',
     `--pretty=format:${pretty}`,
     '--date=iso-local',
-    '--numstat',
+    // '--numstat',
     '--all'
   ]
 
@@ -88,11 +90,13 @@ export async function getGitLogsFast(opts = {}) {
     // 传给 git 绝对的 ISO 字符串，让 Git 自己去比对时间戳
     args.push(`--until=${dayjs(until).endOf('day').toISOString()}`)
   }
+  // numstat 是个性能杀手，默认不开启，除非用户明确要求,显示每次提交中更改的文件以及增删的行数统计
+  if (numstat) {
+    args.push('--numstat')
+  }
   // if (until) args.push(`--until=${until}`)
   if (!merges) args.push(`--no-merges`)
   if (limit) args.push('-n', String(limit))
-
-
 
   let stdout
   try {
@@ -136,19 +140,19 @@ export async function getGitLogsFast(opts = {}) {
     const [_, hash, authorName, emailAddr, date, subject, bodyAndNumstat] =
       match
 
-      // 1. 统一作者名
-    const normalizedAuthor = normalizer.getAuthor(authorName, emailAddr);
+    // 1. 统一作者名
+    const normalizedAuthor = normalizer.getAuthor(authorName, emailAddr)
     // 2. 格式化日期（消除时刻差异，只看天）
-    const day = dayjs(date).format('YYYY-MM-DD');
+    const day = dayjs(date).format('YYYY-MM-DD')
     // 3. 清理消息内容（去空格，取第一行）
-    const cleanMsg = subject.trim();
+    const cleanMsg = subject.trim()
 
     // 生成指纹：日期 + 统一后的作者 + 消息内容
     // 这样即便 Hash 不同，分支不同，只要这三项一致，就视为同一项工作
-    const fingerPrint = `${day}_${normalizedAuthor}_${cleanMsg}`;
+    const fingerPrint = `${day}_${normalizedAuthor}_${cleanMsg}`
 
-    if (fingerPrintSet.has(fingerPrint)) continue;
-    fingerPrintSet.add(fingerPrint);
+    if (fingerPrintSet.has(fingerPrint)) continue
+    fingerPrintSet.add(fingerPrint)
 
     const [, changeId] =
       bodyAndNumstat.match(/Change-Id:\s*(I[0-9a-fA-F]+)/) || []

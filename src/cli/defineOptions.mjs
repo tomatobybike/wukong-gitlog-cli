@@ -21,6 +21,7 @@ export function defineOptions(program) {
     .option('--until <date>', '结束日期')
     .option('--limit <n>', '限制数量', parseInt)
     .option('--no-merges', '不包含 merge commit')
+    .option('--numstat', '显示每次提交中更改的文件以及增删的行数统计')
 
     .option('--group-by <type>', '按日期分组: day | month | week | all ')
     .option('--format <type>', '输出格式: text | excel | json', 'text')

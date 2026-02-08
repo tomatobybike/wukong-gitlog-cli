@@ -29,6 +29,16 @@ function hideElementByObj({ el, objectName }) {
   return isEmpty
 }
 
+function hideElementByEl({ el }) {
+  if (!el) return true
+  const chartCard = el.closest('.chart-card')
+  if (chartCard) {
+    chartCard.style.display = 'none'
+    return true
+  }
+  return false
+}
+
 function filterByDate(commits) {
   const start = document.getElementById('startDate')?.value
   const end = document.getElementById('endDate')?.value
@@ -152,9 +162,13 @@ function renderCommitsTablePage() {
   tbody.innerHTML = ''
   const start = (page - 1) * pageSize
   const end = start + pageSize
+  if(!window.__config.git.numstat) {
+    document.getElementById('thChanged').style.display = 'none'
+  }
   filtered.slice(start, end).forEach((c) => {
     const tr = document.createElement('tr')
-    tr.innerHTML = `<td class="hash">${c.hash.slice(0, 8)}</td><td>${c.author}</td><td class="email">${c.email}</td><td><div class="date">${formatDate(c.date)}</div></td><td>${c.message}</td><td class="cherryPick">${c.isCherryPick}</td><td>${c.changed}</td>`
+    const changedTd = window.__config.git.numstat ? `<td>${c.changed}</td>` : ''
+    tr.innerHTML = `<td class="hash">${c.hash.slice(0, 8)}</td><td>${c.author}</td><td class="email">${c.email}</td><td><div class="date">${formatDate(c.date)}</div></td><td>${c.message}</td><td class="cherryPick">${c.isCherryPick}</td>${changedTd}`
     tbody.appendChild(tr)
   })
   document.getElementById('commitsTotal').textContent =
@@ -510,7 +524,7 @@ export function drawPieWithTotal({
   let total = data.reduce((sum, item) => sum + (item.value || 0), 0)
   total = Math.round(total)
   // FIXME: remove debug log before production
-  console.log('❌', 'total', total);
+  console.log('❌', 'total', total)
   const safeData = total === 0 ? [{ name: '暂无数据', value: 1 }] : data
 
   chart.setOption({
@@ -597,6 +611,8 @@ function drawOutsideVsInside(stats) {
 }
 
 function drawDailyTrend(commits, onDayClick) {
+  const el = document.getElementById('dailyTrendChart')
+
   if (!Array.isArray(commits) || commits.length === 0) return null
 
   // 聚合每日提交数量
@@ -609,7 +625,6 @@ function drawDailyTrend(commits, onDayClick) {
   const labels = Array.from(map.keys()).sort()
   const data = labels.map((l) => map.get(l))
 
-  const el = document.getElementById('dailyTrendChart')
   const titleDrawer = el.getAttribute('data-title') || ''
 
   // eslint-disable-next-line no-undef
@@ -1738,6 +1753,12 @@ function buildDataset(stats, type) {
 
 const drawChangeTrends = (stats) => {
   const el = document.getElementById('chartAuthorChanges')
+  // FIXME: remove debug log before production
+  console.log('❌', 'window.__config', window.__config)
+  if (!window.__config.git.numstat) {
+    hideElementByEl({ el })
+    return null
+  }
   if (!el) return null
   const chart = echarts.init(el)
   chartInstances.push(chart)
@@ -3344,7 +3365,8 @@ function buildAuthorTotalCommitsChangedDataset(commits, type) {
     let period
     if (type === 'daily') period = d.toISOString().slice(0, 10)
     else if (type === 'weekly') period = getIsoWeekKey(d.toISOString())
-    else if (type === 'monthly') period = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    else if (type === 'monthly')
+      period = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     else if (type === 'yearly') period = String(d.getFullYear())
     else period = d.toISOString().slice(0, 10)
 
@@ -3360,15 +3382,25 @@ function buildAuthorTotalCommitsChangedDataset(commits, type) {
     name: a,
     type: 'line',
     smooth: true,
-    data: allPeriods.map((p) => Number((byAuthorPeriod.get(a)[p] || 0).toFixed(2)))
+    data: allPeriods.map((p) =>
+      Number((byAuthorPeriod.get(a)[p] || 0).toFixed(2))
+    )
   }))
 
   const totals = authors.map((a) => {
     const periodObj = byAuthorPeriod.get(a) || {}
-    const totalChanged = Object.values(periodObj).reduce((s, v) => s + (Number(v) || 0), 0)
+    const totalChanged = Object.values(periodObj).reduce(
+      (s, v) => s + (Number(v) || 0),
+      0
+    )
     const days = Object.keys(periodObj).length
     const avg = days > 0 ? Number((totalChanged / days).toFixed(2)) : 0
-    return { author: a, totalChanged: Number(totalChanged.toFixed(2)), days, avg }
+    return {
+      author: a,
+      totalChanged: Number(totalChanged.toFixed(2)),
+      days,
+      avg
+    }
   })
 
   return { authors, allPeriods, series, totals }
@@ -3377,6 +3409,14 @@ function buildAuthorTotalCommitsChangedDataset(commits, type) {
 function drawAuthorTotalCommitsChangedTrends(commits) {
   const el = document.getElementById('chartAuthorTotalCommitsChanged')
   if (!el) return null
+  // FIXME: remove debug log before production
+  console.log('❌', 'window.__config', window.__config)
+  if (!window.__config.git.numstat) {
+
+    document.getElementById('totalCommitsChangedCard').style.display = 'none'
+    document.getElementById('totalCommitsChangedRankSection').style.display = 'none'
+    return null
+  }
   const chart = echarts.init(el)
   chartInstances.push(chart)
 
@@ -3427,7 +3467,9 @@ function drawAuthorTotalCommitsChangedTrends(commits) {
       const label = p.axisValue || p.name
       const author = p.seriesName
       if (!label || !author) return
-      const type = document.querySelector('#tabsTotalCommitsChanged button.active')?.dataset.type || 'daily'
+      const type =
+        document.querySelector('#tabsTotalCommitsChanged button.active')
+          ?.dataset.type || 'daily'
 
       const filteredCommits = commits.filter((c) => {
         const a = c.author || 'unknown'
@@ -3454,10 +3496,23 @@ function drawAuthorTotalCommitsChangedTrends(commits) {
       filteredCommits.sort((a, b) => new Date(a.date) - new Date(b.date))
 
       if (type === 'weekly') {
-        const weeklyItem = { outsideWorkCount: filteredCommits.length, outsideWorkRate: 0 }
-        showSideBarForWeek({ period: label, weeklyItem, commits: filteredCommits, titleDrawer: `${author} Changed 本周详情` })
+        const weeklyItem = {
+          outsideWorkCount: filteredCommits.length,
+          outsideWorkRate: 0
+        }
+        showSideBarForWeek({
+          period: label,
+          weeklyItem,
+          commits: filteredCommits,
+          titleDrawer: `${author} Changed 本周详情`
+        })
       } else {
-        showDayDetailSidebar({ date: label, count: filteredCommits.length, commits: filteredCommits, titleDrawer: `${author} Changed ${type} 详情` })
+        showDayDetailSidebar({
+          date: label,
+          count: filteredCommits.length,
+          commits: filteredCommits,
+          titleDrawer: `${author} Changed ${type} 详情`
+        })
       }
     } catch (err) {
       console.warn('Total commits changed chart click handler error', err)
@@ -3468,11 +3523,15 @@ function drawAuthorTotalCommitsChangedTrends(commits) {
 }
 
 function renderAuthorTotalCommitsChangedRank(ds, topN = 10) {
+  const el = document.getElementById('authorTotalCommitsChangedRankSummary')
+
   if (!ds || !Array.isArray(ds.authors) || !Array.isArray(ds.series)) return
   const seriesMap = new Map(ds.series.map((s) => [s.name, s.data]))
   const totals = ds.authors.map((author) => {
     const data = seriesMap.get(author)
-    const total = Array.isArray(data) ? data.reduce((sum, v) => sum + (Number(v) || 0), 0) : 0
+    const total = Array.isArray(data)
+      ? data.reduce((sum, v) => sum + (Number(v) || 0), 0)
+      : 0
     return { name: author, value: Number(total.toFixed(2)) }
   })
   totals.sort((a, b) => b.value - a.value)
@@ -3480,11 +3539,13 @@ function renderAuthorTotalCommitsChangedRank(ds, topN = 10) {
   let chartData = []
   if (topN > 0 && totals.length > topN) {
     chartData = totals.slice(0, topN)
-    const othersValue = totals.slice(topN).reduce((sum, item) => sum + item.value, 0)
+    const othersValue = totals
+      .slice(topN)
+      .reduce((sum, item) => sum + item.value, 0)
     chartData.push({ name: '其他', value: Number(othersValue.toFixed(2)) })
   } else chartData = totals
 
-      // 4. 自适应颜色生成
+  // 4. 自适应颜色生成
   const generateColors = (count) => {
     const presets = [
       '#5470c6',
@@ -3507,7 +3568,7 @@ function renderAuthorTotalCommitsChangedRank(ds, topN = 10) {
   }
 
   return drawPieWithTotal({
-    el: 'authorTotalCommitsChangedRankSummary',
+    el,
     title: '提交Changed排名分布',
     unit: '行',
     totalLabel: '总行数',
@@ -3527,29 +3588,49 @@ function renderAuthorTotalCommitsChangedRankFromDs(ds, topN = 20) {
   const seriesMap = new Map(ds.series.map((s) => [s.name, s.data]))
   const totals = ds.authors.map((author) => {
     const data = seriesMap.get(author) || []
-    const total = Array.isArray(data) ? data.reduce((sum, v) => sum + (Number(v) || 0), 0) : 0
+    const total = Array.isArray(data)
+      ? data.reduce((sum, v) => sum + (Number(v) || 0), 0)
+      : 0
     return { author, total }
   })
 
-  totals.sort((x, y) => y.total - x.total || String(x.author).localeCompare(String(y.author)))
+  totals.sort(
+    (x, y) =>
+      y.total - x.total || String(x.author).localeCompare(String(y.author))
+  )
 
   const top = topN > 0 ? totals.slice(0, topN) : totals
   const count = top.length
 
   const getColor = (index, totalCount) => {
-    const presetColors = ['#1976d2','#00a76f','#fb8c00','#d32f2f','#6a1b9a','#00897b','#ef5350','#ffa000','#5c6bc0','#43a047']
-    if (index < presetColors.length && totalCount <= presetColors.length) return presetColors[index]
+    const presetColors = [
+      '#1976d2',
+      '#00a76f',
+      '#fb8c00',
+      '#d32f2f',
+      '#6a1b9a',
+      '#00897b',
+      '#ef5350',
+      '#ffa000',
+      '#5c6bc0',
+      '#43a047'
+    ]
+    if (index < presetColors.length && totalCount <= presetColors.length)
+      return presetColors[index]
     const hue = (index * (360 / totalCount) + 200) % 360
     return `hsl(${hue}, 65%, 50%)`
   }
 
-  const safeEscape = (str) => typeof escapeHtml === 'function' ? escapeHtml(str) : String(str)
+  const safeEscape = (str) =>
+    typeof escapeHtml === 'function' ? escapeHtml(str) : String(str)
 
   let rangeStr = ''
   if (Array.isArray(ds.allPeriods) && ds.allPeriods.length) {
     const first = ds.allPeriods[0]
     const last = ds.allPeriods[ds.allPeriods.length - 1]
-    const activeType = document.querySelector('#tabsTotalCommitsChanged button.active')?.dataset.type || 'daily'
+    const activeType =
+      document.querySelector('#tabsTotalCommitsChanged button.active')?.dataset
+        .type || 'daily'
 
     const periodToDate = (p, type) => {
       if (type === 'daily') return p
@@ -3572,7 +3653,8 @@ function renderAuthorTotalCommitsChangedRankFromDs(ds, topN = 20) {
     try {
       const firstRange = periodToDate(first, activeType)
       const lastRange = periodToDate(last, activeType)
-      if (activeType === 'daily') rangeStr = `统计区间：${firstRange} ~ ${lastRange}`
+      if (activeType === 'daily')
+        rangeStr = `统计区间：${firstRange} ~ ${lastRange}`
       else rangeStr = `统计区间：${firstRange} —— ${lastRange}`
       rangeStr = `<div style="color:#666;margin-bottom:6px;font-size:13px">${rangeStr}</div>`
     } catch (e) {
@@ -3580,21 +3662,36 @@ function renderAuthorTotalCommitsChangedRankFromDs(ds, topN = 20) {
     }
   }
 
-  const medal = (i) => (i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : `${i + 1}. `)
+  const medal = (i) =>
+    i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : `${i + 1}. `
 
-  let totalsList = Array.isArray(ds.totals) ? ds.totals.map((t) => ({ author: t.author, totalChanged: t.totalChanged, days: t.days, avg: t.avg })) : null
+  let totalsList = Array.isArray(ds.totals)
+    ? ds.totals.map((t) => ({
+        author: t.author,
+        totalChanged: t.totalChanged,
+        days: t.days,
+        avg: t.avg
+      }))
+    : null
   if (!totalsList) {
-    totalsList = totals.map((t) => ({ author: t.author, totalChanged: Number((t.total || 0).toFixed(2)), days: 0, avg: 0 }))
+    totalsList = totals.map((t) => ({
+      author: t.author,
+      totalChanged: Number((t.total || 0).toFixed(2)),
+      days: 0,
+      avg: 0
+    }))
   }
 
   const listHtml = count
-    ? top.map((t, i) => {
-        const info = totalsList.find((x) => x.author === t.author) || {}
-        const total = Number((info.totalChanged ?? t.total ?? 0).toFixed(2))
-        const days = info.days ?? 0
-        const avg = info.avg ?? (days > 0 ? Number((total / days).toFixed(2)) : 0)
-        const title = `累计Changed：${total} 行\n占用天数：${days} 天\n平均每日：${avg} 行`
-        return `
+    ? top
+        .map((t, i) => {
+          const info = totalsList.find((x) => x.author === t.author) || {}
+          const total = Number((info.totalChanged ?? t.total ?? 0).toFixed(2))
+          const days = info.days ?? 0
+          const avg =
+            info.avg ?? (days > 0 ? Number((total / days).toFixed(2)) : 0)
+          const title = `累计Changed：${total} 行\n占用天数：${days} 天\n平均每日：${avg} 行`
+          return `
     <div class="rank-item" title="${title}" style="display: flex; align-items: center; margin-bottom: 8px;">
       <span class="dot" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; background:${getColor(i, count)}"></span>
       <span class="author" style="flex: 1;">
@@ -3604,12 +3701,12 @@ function renderAuthorTotalCommitsChangedRankFromDs(ds, topN = 20) {
       <span class="hours" style="font-weight: bold;">${Number(total).toFixed(2)} 行</span>
     </div>
   `
-      }).join('')
+        })
+        .join('')
     : '<div style="color:#777">暂无提交Changed数据</div>'
 
   box.innerHTML = `${rangeStr}${listHtml}`
 }
-
 
 // 渲染作者午休累计时长分布饼图
 function renderAuthorTotalLunchTimeRank(ds, topN = 10) {
@@ -3646,7 +3743,7 @@ function renderAuthorTotalLunchTimeRank(ds, topN = 10) {
   }
 
   // TODO: remove debug log before production
-  console.log('✅', 'totals', totals);
+  console.log('✅', 'totals', totals)
   return drawPieWithTotal({
     el: 'authorTotalLunchTimeRankSummary',
     title: '午休累计时长排名分布',
@@ -3898,7 +3995,9 @@ function drawAuthorTotalCommitsTrends(commits) {
       const label = p.axisValue || p.name
       const author = p.seriesName
       if (!label || !author) return
-      const type = document.querySelector('#tabsTotalCommits button.active')?.dataset.type || 'daily'
+      const type =
+        document.querySelector('#tabsTotalCommits button.active')?.dataset
+          .type || 'daily'
 
       const filteredCommits = commits.filter((c) => {
         const a = c.author || 'unknown'
@@ -3925,10 +4024,23 @@ function drawAuthorTotalCommitsTrends(commits) {
       filteredCommits.sort((a, b) => new Date(a.date) - new Date(b.date))
 
       if (type === 'weekly') {
-        const weeklyItem = { outsideWorkCount: filteredCommits.length, outsideWorkRate: 0 }
-        showSideBarForWeek({ period: label, weeklyItem, commits: filteredCommits, titleDrawer: `${author} 提交 本周详情` })
+        const weeklyItem = {
+          outsideWorkCount: filteredCommits.length,
+          outsideWorkRate: 0
+        }
+        showSideBarForWeek({
+          period: label,
+          weeklyItem,
+          commits: filteredCommits,
+          titleDrawer: `${author} 提交 本周详情`
+        })
       } else {
-        showDayDetailSidebar({ date: label, count: filteredCommits.length, commits: filteredCommits, titleDrawer: `${author} 提交 ${type} 详情` })
+        showDayDetailSidebar({
+          date: label,
+          count: filteredCommits.length,
+          commits: filteredCommits,
+          titleDrawer: `${author} 提交 ${type} 详情`
+        })
       }
     } catch (err) {
       console.warn('Total commits chart click handler error', err)
@@ -3943,7 +4055,9 @@ function renderAuthorTotalCommitsRank(ds, topN = 10) {
   const seriesMap = new Map(ds.series.map((s) => [s.name, s.data]))
   const totals = ds.authors.map((author) => {
     const data = seriesMap.get(author)
-    const total = Array.isArray(data) ? data.reduce((sum, v) => sum + (Number(v) || 0), 0) : 0
+    const total = Array.isArray(data)
+      ? data.reduce((sum, v) => sum + (Number(v) || 0), 0)
+      : 0
     return { name: author, value: Number(total.toFixed(0)) }
   })
   totals.sort((a, b) => b.value - a.value)
@@ -3951,11 +4065,13 @@ function renderAuthorTotalCommitsRank(ds, topN = 10) {
   let chartData = []
   if (topN > 0 && totals.length > topN) {
     chartData = totals.slice(0, topN)
-    const othersValue = totals.slice(topN).reduce((sum, item) => sum + item.value, 0)
+    const othersValue = totals
+      .slice(topN)
+      .reduce((sum, item) => sum + item.value, 0)
     chartData.push({ name: '其他', value: Number(othersValue.toFixed(0)) })
   } else chartData = totals
 
-    // 4. 自适应颜色生成
+  // 4. 自适应颜色生成
   const generateColors = (count) => {
     const presets = [
       '#5470c6',
@@ -3978,7 +4094,7 @@ function renderAuthorTotalCommitsRank(ds, topN = 10) {
   }
 
   // FIXME: remove debug log before production
-  console.log('❌', 'chartData', chartData);
+  console.log('❌', 'chartData', chartData)
   return drawPieWithTotal({
     el: 'authorTotalCommitsRankSummary',
     title: '提交次数排名分布',
@@ -3986,7 +4102,6 @@ function renderAuthorTotalCommitsRank(ds, topN = 10) {
     totalLabel: '总提交',
     data: chartData,
     colors: generateColors(totals.length)
-
   })
 }
 
@@ -4001,29 +4116,49 @@ function renderAuthorTotalCommitsRankFromDs(ds, topN = 20) {
   const seriesMap = new Map(ds.series.map((s) => [s.name, s.data]))
   const totals = ds.authors.map((author) => {
     const data = seriesMap.get(author) || []
-    const total = Array.isArray(data) ? data.reduce((sum, v) => sum + (Number(v) || 0), 0) : 0
+    const total = Array.isArray(data)
+      ? data.reduce((sum, v) => sum + (Number(v) || 0), 0)
+      : 0
     return { author, total }
   })
 
-  totals.sort((x, y) => y.total - x.total || String(x.author).localeCompare(String(y.author)))
+  totals.sort(
+    (x, y) =>
+      y.total - x.total || String(x.author).localeCompare(String(y.author))
+  )
 
   const top = topN > 0 ? totals.slice(0, topN) : totals
   const count = top.length
 
   const getColor = (index, totalCount) => {
-    const presetColors = ['#1976d2','#00a76f','#fb8c00','#d32f2f','#6a1b9a','#00897b','#ef5350','#ffa000','#5c6bc0','#43a047']
-    if (index < presetColors.length && totalCount <= presetColors.length) return presetColors[index]
+    const presetColors = [
+      '#1976d2',
+      '#00a76f',
+      '#fb8c00',
+      '#d32f2f',
+      '#6a1b9a',
+      '#00897b',
+      '#ef5350',
+      '#ffa000',
+      '#5c6bc0',
+      '#43a047'
+    ]
+    if (index < presetColors.length && totalCount <= presetColors.length)
+      return presetColors[index]
     const hue = (index * (360 / totalCount) + 200) % 360
     return `hsl(${hue}, 65%, 50%)`
   }
 
-  const safeEscape = (str) => typeof escapeHtml === 'function' ? escapeHtml(str) : String(str)
+  const safeEscape = (str) =>
+    typeof escapeHtml === 'function' ? escapeHtml(str) : String(str)
 
   let rangeStr = ''
   if (Array.isArray(ds.allPeriods) && ds.allPeriods.length) {
     const first = ds.allPeriods[0]
     const last = ds.allPeriods[ds.allPeriods.length - 1]
-    const activeType = document.querySelector('#tabsTotalCommits button.active')?.dataset.type || 'daily'
+    const activeType =
+      document.querySelector('#tabsTotalCommits button.active')?.dataset.type ||
+      'daily'
 
     const periodToDate = (p, type) => {
       if (type === 'daily') return p
@@ -4046,7 +4181,8 @@ function renderAuthorTotalCommitsRankFromDs(ds, topN = 20) {
     try {
       const firstRange = periodToDate(first, activeType)
       const lastRange = periodToDate(last, activeType)
-      if (activeType === 'daily') rangeStr = `统计区间：${firstRange} ~ ${lastRange}`
+      if (activeType === 'daily')
+        rangeStr = `统计区间：${firstRange} ~ ${lastRange}`
       else rangeStr = `统计区间：${firstRange} —— ${lastRange}`
       rangeStr = `<div style="color:#666;margin-bottom:6px;font-size:13px">${rangeStr}</div>`
     } catch (e) {
@@ -4054,21 +4190,36 @@ function renderAuthorTotalCommitsRankFromDs(ds, topN = 20) {
     }
   }
 
-  const medal = (i) => (i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : `${i + 1}. `)
+  const medal = (i) =>
+    i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : `${i + 1}. `
 
-  let totalsList = Array.isArray(ds.totals) ? ds.totals.map((t) => ({ author: t.author, totalCommits: t.totalCommits, days: t.days, avg: t.avg })) : null
+  let totalsList = Array.isArray(ds.totals)
+    ? ds.totals.map((t) => ({
+        author: t.author,
+        totalCommits: t.totalCommits,
+        days: t.days,
+        avg: t.avg
+      }))
+    : null
   if (!totalsList) {
-    totalsList = totals.map((t) => ({ author: t.author, totalCommits: Number((t.total || 0).toFixed(0)), days: 0, avg: 0 }))
+    totalsList = totals.map((t) => ({
+      author: t.author,
+      totalCommits: Number((t.total || 0).toFixed(0)),
+      days: 0,
+      avg: 0
+    }))
   }
 
   const listHtml = count
-    ? top.map((t, i) => {
-        const info = totalsList.find((x) => x.author === t.author) || {}
-        const total = Number((info.totalCommits ?? t.total ?? 0).toFixed(0))
-        const days = info.days ?? 0
-        const avg = info.avg ?? (days > 0 ? Number((total / days).toFixed(2)) : 0)
-        const title = `累计提交：${total} 次\n占用天数：${days} 天\n平均每日：${avg} 次`
-        return `
+    ? top
+        .map((t, i) => {
+          const info = totalsList.find((x) => x.author === t.author) || {}
+          const total = Number((info.totalCommits ?? t.total ?? 0).toFixed(0))
+          const days = info.days ?? 0
+          const avg =
+            info.avg ?? (days > 0 ? Number((total / days).toFixed(2)) : 0)
+          const title = `累计提交：${total} 次\n占用天数：${days} 天\n平均每日：${avg} 次`
+          return `
     <div class="rank-item" title="${title}" style="display: flex; align-items: center; margin-bottom: 8px;">
       <span class="dot" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; background:${getColor(i, count)}"></span>
       <span class="author" style="flex: 1;">
@@ -4078,12 +4229,12 @@ function renderAuthorTotalCommitsRankFromDs(ds, topN = 20) {
       <span class="hours" style="font-weight: bold;">${Number(total).toFixed(0)} 次</span>
     </div>
   `
-      }).join('')
+        })
+        .join('')
     : '<div style="color:#777">暂无提交次数数据</div>'
 
   box.innerHTML = `${rangeStr}${listHtml}`
 }
-
 
 // ========= 开发者 午休最晚提交（小时） =========
 function buildAuthorLunchDataset(
@@ -5130,6 +5281,7 @@ async function main() {
   window.__samplingUntil = period?.until || null
   // 格式化并保存采样的作者筛选信息（支持 string / { include:[], exclude:[] }）
   window.__samplingAuthor = formatAuthorFilter(options?.author || null)
+  window.__config = config
 
   // 前端计算 overtime 数据
   const startHour = config.startHour ?? 9

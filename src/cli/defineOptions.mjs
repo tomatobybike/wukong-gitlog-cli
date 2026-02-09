@@ -148,9 +148,10 @@ export function addGitSourceOptions(cmd) {
     .option('--limit <n>', t('options.limit'), toInt)
     .option('--no-merges', t('options.no_merges'))
     .option('--numstat', t('options.numstat'))
-    .option('--gerrit <prefix>', t('options.gerrit_prefix'))
-    .option('--gerrit-api <url>', t('options.gerrit_api'))
-    .option('--gerrit-auth <token>', t('options.gerrit_auth'))
+    // FIXME: 暂时没有Gerrit需求，先注释掉相关参数，等需要了再放开
+    // .option('--gerrit <prefix>', t('options.gerrit_prefix'))
+    // .option('--gerrit-api <url>', t('options.gerrit_api'))
+    // .option('--gerrit-auth <token>', t('options.gerrit_auth'))
 }
 
 /**

@@ -23,9 +23,12 @@ import { getProfileDirFile } from '#utils/getProfileDirFile.mjs'
 export async function journalAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
 
+  // FIXME: remove debug log before production
+  console.log('❌', 'opts', opts);
+
   const traceFile = getProfileDirFile('trace.json', opts)
 
-  const profiler = createProfiler({ ...opts.profile, traceFile }, opts)
+  const profiler = createProfiler({ ...opts.profile, traceFile ,enabled:false}, opts)
 
   // 未来 可考虑将 MultiBar 抽离到更高层，支持所有 action 共用，wukong-progress 需要支持自定义子任务占位符
   // 初始化 MultiBar

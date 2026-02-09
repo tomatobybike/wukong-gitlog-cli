@@ -93,6 +93,7 @@ export async function parseOptions(cliOpts) {
     },
     profile: {
       enabled: cliOpts.profile,
+      verbose: cliOpts.verbose ,
       flame: cliOpts.flame || true,
       traceFile: cliOpts.traceFile || 'trace.json',
       hotThreshold: cliOpts.hotThreshold || 0.8,

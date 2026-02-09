@@ -129,7 +129,9 @@ const main = async () => {
     })
 
   addGitSourceOptions(journalCmd)
-  addOutputOptions(journalCmd)
+
+  addPerformanceOptions(journalCmd)
+
 
   // === 命令: Serve (Web服务) ===
   const serveCmd = program

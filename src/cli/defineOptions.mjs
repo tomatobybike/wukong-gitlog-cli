@@ -4,7 +4,12 @@
  * @author: King Monkey
  * @created: 2025-12-31 17:30
  */
+import { t } from '../i18n/index.mjs'
 import { getPackage } from '../utils/getPackage.mjs'
+
+// 辅助函数：统一 Int 解析
+const toInt = (v, def) => (v ? parseInt(v, 10) : def)
+const toFloat = (v) => parseFloat(v)
 
 export function defineOptions(program) {
   const pkg = getPackage()
@@ -115,4 +120,88 @@ export function defineOptions(program) {
     .option('--diff-threshold <n>', '回归阈值', parseFloat)
 
     .option('--version', 'show version information')
+}
+
+
+/**
+ * 1. 基础程序信息（全局通用）
+ */
+export function setupBaseProgram(program) {
+  const pkg = getPackage()
+  program
+    .name('wukong-gitlog')
+    .version(pkg.version, '-v')
+    .description(t('cli.desc'))
+    .option('-l, --lang <type>', t('options.lang')) // 放在这里，让所有命令都能看到 help
+    .option('--debug', t('options.debug'))
+}
+
+/**
+ * 2. Git 数据源过滤参数 (Analyze, Export, Journal, Overtime 通用)
+ */
+export function addGitSourceOptions(cmd) {
+  return cmd
+    .option('--author <name>', t('options.author'))
+    .option('--email <email>', t('options.email'))
+    .option('--since <date>', t('options.since'))
+    .option('--until <date>', t('options.until'))
+    .option('--limit <n>', t('options.limit'), toInt)
+    .option('--no-merges', t('options.no_merges'))
+    .option('--numstat', t('options.numstat'))
+    .option('--gerrit <prefix>', t('options.gerrit_prefix'))
+    .option('--gerrit-api <url>', t('options.gerrit_api'))
+    .option('--gerrit-auth <token>', t('options.gerrit_auth'))
+}
+
+/**
+ * 3. 核心算法与统计参数 (Analyze, Overtime 通用)
+ */
+export function addAnalysisOptions(cmd) {
+  return cmd
+    .option('--country <code>', t('options.country'), 'CN')
+    .option('--work-start <hour>', t('options.work_start'), toInt, 9)
+    .option('--work-end <hour>', t('options.work_end'), toInt, 18)
+    .option('--lunch-start <hour>', t('options.lunch_start'), toInt, 12)
+    .option('--lunch-end <hour>', t('options.lunch_end'), toInt, 14)
+    .option('--overnight-cutoff <hour>', t('options.overnight_cutoff'), toInt, 6)
+    .option('--group-by <type>', t('options.group_by'), 'day') // 默认 day
+    .option('--stats', t('options.stats'))
+    .option('--overtime', t('options.overtime_mode'))
+}
+
+/**
+ * 4. 文件导出与格式参数 (Export, Journal, Analyze)
+ */
+export function addOutputOptions(cmd) {
+  return cmd
+    .option('--format <type>', t('options.format'), 'text')
+    .option('--out <file>', t('options.out_file'))
+    .option('--out-dir <dir>', t('options.out_dir'))
+    .option('--out-parent', t('options.out_parent'))
+    .option('--per-period-formats <formats>', t('options.per_period_formats'), '')
+    .option('--per-period-excel-mode <mode>', t('options.per_period_mode'), 'sheets')
+    .option('--per-period-only', t('options.per_period_only'))
+}
+
+/**
+ * 5. Web 服务专用参数
+ */
+export function addServeOptions(cmd) {
+  return cmd
+    .option('--port <n>', t('options.port'), toInt, 3000)
+}
+
+/**
+ * 6. 性能追踪与调试 (通常用于 analyze)
+ */
+export function addPerformanceOptions(cmd) {
+  return cmd
+    .option('--profile', t('options.profile'))
+    .option('--verbose', t('options.verbose'))
+    .option('--flame', t('options.flame'))
+    .option('--trace <file>', t('options.trace'))
+    .option('--hot-threshold <n>', t('options.hot_threshold'), toFloat)
+    .option('--fail-on-hot', t('options.fail_on_hot'))
+    .option('--diff-base <file>', t('options.diff_base'))
+    .option('--diff-threshold <n>', t('options.diff_threshold'), toFloat)
 }

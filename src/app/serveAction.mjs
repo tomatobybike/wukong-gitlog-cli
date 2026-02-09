@@ -8,6 +8,9 @@ import { analyzeAction } from './analyzeAction.mjs'
 export async function serveAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
 
+  // FIXME: remove debug log before production
+  console.log('❌', 'opts', opts);
+
   const dir = opts.output.dir || 'output-wukong'
 
   // 🚀 在启动服务前，自动运行 analyze 以更新基础数据
@@ -37,7 +40,7 @@ export async function serveAction(rawOpts = {}) {
     process.exit(1)
   }
 
-  const initialPort = Number(opts.port || 3000)
+  const initialPort = Number(opts.serve.port || 3000)
   let port = initialPort
   let server = null
   const maxTries = 50 // 尝试的端口数量上限

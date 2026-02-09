@@ -72,7 +72,6 @@ export async function parseOptions(cliOpts) {
           : undefined
     },
     output: {
-      out: cliOpts.out, // export 导出文件名
       dir: cliOpts.outParent ? '../output-wukong' : cliOpts.outDir,
       formats: cliOpts.format ? cliOpts.format : undefined,
       perPeriod: {

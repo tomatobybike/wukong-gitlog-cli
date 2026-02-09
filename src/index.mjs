@@ -17,7 +17,6 @@ import {
   addOutputOptions,
   addPerformanceOptions,
   addServeOptions,
-  defineOptions,
   setupBaseProgram
 } from './cli/defineOptions.mjs'
 import { initI18n, t } from './i18n/index.mjs'

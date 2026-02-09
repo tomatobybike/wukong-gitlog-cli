@@ -79,7 +79,7 @@ export function defineOptions(program) {
       6
     )
 
-    .option('--out <file>', '输出文件名（不含路径）')
+
     .option(
       '--out-dir <dir>',
       '自定义输出目录，支持相对路径或绝对路径，例如 `--out-dir ../output-wukong`'
@@ -175,7 +175,6 @@ export function addAnalysisOptions(cmd) {
 export function addOutputOptions(cmd) {
   return cmd
     .option('--format <type>', t('options.format'), 'text')
-    .option('--out <file>', t('options.out_file'))
     .option('--out-dir <dir>', t('options.out_dir'))
     .option('--out-parent', t('options.out_parent'))
     .option('--per-period-formats <formats>', t('options.per_period_formats'), '')
@@ -200,8 +199,8 @@ export function addPerformanceOptions(cmd) {
     .option('--verbose', t('options.verbose'))
     .option('--flame', t('options.flame'))
     .option('--trace <file>', t('options.trace'))
-    .option('--hot-threshold <n>', t('options.hot_threshold'), toFloat)
-    .option('--fail-on-hot', t('options.fail_on_hot'))
-    .option('--diff-base <file>', t('options.diff_base'))
-    .option('--diff-threshold <n>', t('options.diff_threshold'), toFloat)
+    // .option('--hot-threshold <n>', t('options.hot_threshold'), toFloat)
+    // .option('--fail-on-hot', t('options.fail_on_hot'))
+    // .option('--diff-base <file>', t('options.diff_base'))
+    // .option('--diff-threshold <n>', t('options.diff_threshold'), toFloat)
 }

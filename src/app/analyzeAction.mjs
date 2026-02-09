@@ -23,10 +23,16 @@ import {
 export async function analyzeAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
 
+  // FIXME: remove debug log before production
+  console.log('❌', 'opts', opts.profile)
   const traceFile = getProfileDirFile('trace.json', opts)
   const profileFile = getProfileDirFile('profile.json', opts)
 
-  const profiler = createProfiler({ ...opts.profile,traceFile, profileFile })
+  const profiler = createProfiler({
+    ...opts.profile,
+    traceFile,
+    profileFile
+  })
 
   // 未来 可考虑将 MultiBar 抽离到更高层，支持所有 action 共用，wukong-progress 需要支持自定义子任务占位符
   // 初始化 MultiBar
@@ -97,7 +103,7 @@ export async function analyzeAction(rawOpts = {}) {
         worktimeOptions,
         period: opts.period || {},
         author: opts.author || null,
-        git: opts.git || {},
+        git: opts.git || {}
       })
     })
 

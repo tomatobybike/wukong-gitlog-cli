@@ -189,6 +189,7 @@ export function addOutputOptions(cmd) {
 export function addServeOptions(cmd) {
   return cmd
     .option('--port <n>', t('options.port'), toInt, 3000)
+    .option('--numstat', t('options.numstat'))
 }
 
 /**

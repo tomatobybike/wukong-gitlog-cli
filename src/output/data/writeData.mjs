@@ -73,8 +73,6 @@ export function writeServeData(result, config) {
 export function writeServeDataMjs(result, config) {
   const baseDir = `${config.dir}/data`
 
-  // FIXME: remove debug log before production
-  console.log('❌', 'config', config)
   const files = {}
 
   files.config = writeTxtFile(

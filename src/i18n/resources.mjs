@@ -68,6 +68,7 @@ export const resources = {
       // Init
       force: '强制覆盖已存在的配置文件（慎用）'
     },
+    overtime: { prefix: '加班分析', complete: '加班分析完成！' },
     analyze: {
       prefix: '分析', // 进度条前缀
       step_git_fetch: '正在提取 Git 提交记录...',
@@ -75,7 +76,7 @@ export const resources = {
       step_author_stats: '正在分析作者代码贡献...',
       step_overtime_calc: '正在计算加班概况...',
       step_trends: '正在生成周/月趋势数据...',
-      step_latest_mark: '正在标记每日最晚提交点...',
+      step_latest_mark: '正在标记每日最晚提交...',
       step_skip_overtime: '跳过加班数据分析',
       step_output: '正在持久化分析结果...',
       step_complete: '分析任务全部完成！'
@@ -184,6 +185,7 @@ export const resources = {
 
       force: 'Force overwrite existing config'
     },
+    overtime: { prefix: 'Overtime', complete: 'Overtime analysis complete!' },
     analyze: {
       prefix: 'Analyze',
       step_git_fetch: 'Extracting Git commit logs...',

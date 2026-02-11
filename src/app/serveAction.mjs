@@ -8,9 +8,6 @@ import { analyzeAction } from './analyzeAction.mjs'
 export async function serveAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
 
-  // FIXME: remove debug log before production
-  console.log('❌', 'opts', opts);
-
   const dir = opts.output.dir || 'output-wukong'
 
   // 🚀 在启动服务前，自动运行 analyze 以更新基础数据
@@ -19,7 +16,10 @@ export async function serveAction(rawOpts = {}) {
     await analyzeAction(rawOpts)
     logger.info('✅ Data refreshed successfully')
   } catch (error) {
-    logger.warn('⚠️  Auto-analyze failed, but continuing with cached data:', error.message)
+    logger.warn(
+      '⚠️  Auto-analyze failed, but continuing with cached data:',
+      error.message
+    )
   }
 
   let data = null

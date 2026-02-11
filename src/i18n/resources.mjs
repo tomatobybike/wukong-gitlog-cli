@@ -67,6 +67,18 @@ export const resources = {
 
       // Init
       force: '强制覆盖已存在的配置文件（慎用）'
+    },
+    analyze: {
+      prefix: '分析', // 进度条前缀
+      step_git_fetch: '正在提取 Git 提交记录...',
+      step_git_done: 'Git 记录提取完成',
+      step_author_stats: '正在分析作者代码贡献...',
+      step_overtime_calc: '正在计算加班概况...',
+      step_trends: '正在生成周/月趋势数据...',
+      step_latest_mark: '正在标记每日最晚提交点...',
+      step_skip_overtime: '跳过加班数据分析',
+      step_output: '正在持久化分析结果...',
+      step_complete: '分析任务全部完成！'
     }
   },
   en: {
@@ -126,6 +138,18 @@ export const resources = {
       diff_threshold: 'Regression threshold',
 
       force: 'Force overwrite existing config'
+    },
+    analyze: {
+      prefix: 'Analyze',
+      step_git_fetch: 'Extracting Git commit logs...',
+      step_git_done: 'Git logs extraction completed',
+      step_author_stats: 'Analyzing author code contributions...',
+      step_overtime_calc: 'Calculating overtime overview...',
+      step_trends: 'Generating weekly/monthly trends...',
+      step_latest_mark: 'Marking latest daily commits...',
+      step_skip_overtime: 'Skipping overtime analysis',
+      step_output: 'Persisting analysis results...',
+      step_complete: 'Analysis task completed!'
     }
   }
 }

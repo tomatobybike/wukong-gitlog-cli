@@ -4,83 +4,83 @@
  * @author: King Monkey
  */
 import { confirm, select } from '@inquirer/prompts'
+import chalk from 'chalk'
 import fs from 'fs'
 import path from 'path'
 
+import { t } from '../i18n/index.mjs'
 import { DEFAULT_CONFIG, RC_NAMES } from '../infra/configStore.mjs'
 
-
-
-
-// 定义带注释的 YAML 模板，提升用户体验
-const YAML_TEMPLATE = `# ---------------------------------------------------------
-# Wukong GitLog 配置文件 (.wukonggitlogrc.yml)
-# 生成时间: ${new Date().toLocaleString()}
+// 动态生成 YAML 模板
+const getYamlTemplate =
+  () => `# ---------------------------------------------------------
+# Wukong GitLog Config (.wukonggitlogrc.yml)
+# ${t('template.generated_at')}: ${new Date().toLocaleString()}
 # ---------------------------------------------------------
 
-# 作者统计配置
+# ${t('template.author_config')}
 author:
-  include: []    # [数组] 只统计这些作者，留空表示全部。示例: ["King Monkey", "Wukong"]
-  exclude: []    # [数组] 排除这些作者
+  include: []    # ${t('template.author_include')}
+  exclude: []    # ${t('template.author_exclude')}
 
-# Git 提取配置
+# ${t('template.git_config')}
 git:
-  merges: true     # [布尔] 是否排除 merge commit
-  limit: 5000        # [数字] 最大拉取提交数，防止大仓拉取过慢
+  merges: true     # ${t('template.git_merges')}
+  limit: 5000      # ${t('template.git_limit')}
 
-# 统计周期配置
+# ${t('template.period_config')}
 period:
-  groupBy: month     # [枚举] 统计周期: day (天) | week (周) | month (月)
-  since: ""          # [字符串] 起始日期 (YYYY-MM-DD)，留空则不限制
-  until: ""          # [字符串] 截止日期 (YYYY-MM-DD)，留空则不限制
+  groupBy: month   # ${t('template.period_group')}
+  since: ""        # ${t('template.period_since')}
+  until: ""        # ${t('template.period_until')}
 
-# Gerrit 链接转换 (可选)
+# ${t('template.gerrit_config')}
 gerrit:
-  prefix: ""         # 示例: https://gerrit.xxx.com/c/{{changeNumber}}
-  api: ""            # Gerrit API 地址
-  auth: ""           # 格式: "user:pass" 或 "TOKEN"
+  prefix: ""       # Example: https://gerrit.xxx.com/c/{{changeNumber}}
+  api: ""          # Gerrit API URL
+  auth: ""         # "user:pass" or "TOKEN"
 
-# 工作时间与加班计算配置
+# ${t('template.worktime_config')}
 worktime:
-  country: CN        # [字符串] 国家代码 (CN/US)，用于识别法定节假日
-  start: 9           # [数字] 工作日开始时间 (0-23)
-  end: 18            # [数字] 工作日结束时间 (0-23)
+  country: CN        # ${t('template.worktime_country')}
+  start: 9           # ${t('template.worktime_start')} (0-23)
+  end: 18            # ${t('template.worktime_end')} (0-23)
   lunch:
-    start: 12        # [数字] 午休开始时间
-    end: 14          # [数字] 午休结束时间
-  overnightCutoff: 6 # [数字] 凌晨截止点。例如 6 表示凌晨 0-6 点的提交归属于前一天
+    start: 12        # ${t('template.worktime_lunch')} start
+    end: 14          # ${t('template.worktime_lunch')} end
+  overnightCutoff: 6 # ${t('template.worktime_cutoff')}
 
-# 输出与报告配置
+# ${t('template.output_config')}
 output:
-  dir: "output-wukong"   # [字符串] 报告输出目录名
-  formats: ["text", "excel"] # [数组] 输出格式: text, json, excel
+  dir: "output-wukong"         # ${t('template.output_dir')}
+  formats: ["text", "excel"]   # ${t('template.output_formats')}
   perPeriod:
-    enabled: true        # [布尔] 是否按周期 (月/周) 生成单独的明细文件
-    excelMode: "sheets"  # [枚举] sheets (一文件多页) | files (一周期一个独立文件)
+    enabled: true              # ${t('template.output_per_period')}
+    excelMode: "sheets"        # sheets | files
 
-# 作者别名映射：将邮箱或原始显示名映射为规范化作者名
+# ${t('template.author_aliases')}
 authorAliases: {}
 `
 
-// JS 模板 (支持逻辑，适合高级用户)
-const JS_TEMPLATE = `/**
- * Wukong GitLog 配置文件 (.wukonggitlogrc.js)
- * 生成时间: ${new Date().toLocaleString()}
+// 动态生成 JS 模板
+const getJsTemplate = () => `/**
+ * Wukong GitLog Config (.wukonggitlogrc.js)
+ * ${t('template.generated_at')}: ${new Date().toLocaleString()}
  */
 export default {
-  // 作者统计配置
+  // ${t('template.author_config')}
   author: {
-    include: [],    // 只统计这些作者
-    exclude: []     // 排除这些作者
+    include: [],    // ${t('template.author_include')}
+    exclude: []     // ${t('template.author_exclude')}
   },
 
-  // Git 提取配置
+  // ${t('template.git_config')}
   git: {
     merges: true,
     limit: 5000
   },
 
-  // 工作时间与加班计算
+  // ${t('template.worktime_config')}
   worktime: {
     country: 'CN',
     start: 9,
@@ -89,10 +89,10 @@ export default {
     overnightCutoff: 6
   },
 
-  // 用户自定义的作者别名映射（key 可以是邮箱或原始作者名）
+  // ${t('template.author_aliases')}
   authorAliases: {},
 
-  // 输出与报告
+  // ${t('template.output_config')}
   output: {
     dir: 'output-wukong',
     formats: ['text', 'excel'],
@@ -100,7 +100,6 @@ export default {
   }
 };
 `
-
 async function manageGitignore(outputDir) {
   const gitignorePath = path.join(process.cwd(), '.gitignore')
   if (!fs.existsSync(gitignorePath)) return
@@ -112,11 +111,12 @@ async function manageGitignore(outputDir) {
     const configFiles = Array.isArray(RC_NAMES) ? RC_NAMES : []
 
     const hasOutput = content.includes(outputDir)
-    const hasAllConfigs = configFiles.length && configFiles.every((f) => content.includes(f))
+    const hasAllConfigs =
+      configFiles.length && configFiles.every((f) => content.includes(f))
     if (hasOutput && hasAllConfigs) return
 
     const shouldAdd = await confirm({
-      message: `是否自动将报告目录 "${outputDir}/" 以及配置文件名添加到 .gitignore?`,
+      message: t('init.gitignore_ask'), // `是否自动将报告目录 "${outputDir}/" 以及配置文件名添加到 .gitignore?`,
       default: true
     })
 
@@ -127,33 +127,31 @@ async function manageGitignore(outputDir) {
 
       const missingConfigs = configFiles.filter((f) => !content.includes(f))
       if (missingConfigs.length) {
-        entry += `\n# Wukong GitLog Config\n${  missingConfigs.map((f) => `${f}\n`).join('')}`
+        entry += `\n# Wukong GitLog Config\n${missingConfigs.map((f) => `${f}\n`).join('')}`
       }
 
       fs.appendFileSync(gitignorePath, entry, 'utf8')
-      console.log(`✅ 已更新 .gitignore`)
+      console.log(`✅ ${t('init.gitignore_updated')}`)
     }
   } catch (err) {
     if (err.name !== 'ExitPromptError') {
-      console.warn(`⚠️ 无法更新 .gitignore: ${err.message}`)
+      console.warn(`⚠️ ${t('init.gitignore_warn')} ${err.message}`)
     }
   }
 }
 
-
-
 export async function initActionWithTemp(options) {
-  console.log(`\n🚀 ${'Wukong GitLog'} 配置文件初始化\n`)
+  console.log(`\n🚀 Wukong GitLog ${t('init.title')}\n`)
 
   try {
     const format = await select({
-      message: '请选择要生成的配置文件格式:',
+      message: t('init.select_format'),
       choices: [
-        { name: 'ES Module (.mjs)', value: 'mjs' },
-        { name: 'JavaScript (灵活，支持逻辑)', value: 'js' },
-        { name: 'YAML (推荐，带详细中文注释)', value: 'yaml' },
-        { name: 'JSON (标准格式)', value: 'json' },
-        { name: 'YAML 无后缀 (.wukonggitlogrc)', value: 'plain' }
+        { name: t('init.formats.mjs'), value: 'mjs' },
+        { name: t('init.formats.js'), value: 'js' },
+        { name: t('init.formats.yaml'), value: 'yaml' },
+        { name: t('init.formats.json'), value: 'json' },
+        { name: t('init.formats.plain'), value: 'plain' }
       ]
     })
 
@@ -169,23 +167,26 @@ export async function initActionWithTemp(options) {
     const targetPath = path.join(process.cwd(), fileName)
 
     if (fs.existsSync(targetPath) && !options.force) {
-      console.error(`\n❌ 错误: 当前目录已存在 ${fileName}`)
+      console.error(`\n❌ ${t('init.error_exists')} (${fileName})`)
       return
     }
 
     let content = ''
-    if (format === 'js' || format === 'mjs') content = JS_TEMPLATE
-    else if (format === 'yaml' || format === 'plain') content = YAML_TEMPLATE
+    if (format === 'js' || format === 'mjs') content = getJsTemplate()
+    else if (format === 'yaml' || format === 'plain')
+      content = getYamlTemplate()
     else content = JSON.stringify(DEFAULT_CONFIG, null, 2)
 
     fs.writeFileSync(targetPath, content, 'utf8')
-    console.log(`✅ 成功生成配置: ${fileName}`)
+    console.log(`✅ ${t('init.success_created')} ${chalk.green(fileName)}`)
 
     await manageGitignore(DEFAULT_CONFIG.output.dir)
-    console.log(`\n✨ 初始化完成！\n`)
+    console.log(`\n✨ ${t('init.complete')}\n`)
   } catch (err) {
-    if (err.name === 'ExitPromptError') console.log('\n👋 已取消初始化')
-    else console.error(`\n❌ 初始化失败: ${err.message}`)
+    if (err.name === 'ExitPromptError') {
+      console.log(`\n👋 ${t('init.cancel')}`)
+    } else {
+      console.error(`\n❌ ${t('init.fail')} ${err.message}`)
+    }
   }
 }
-

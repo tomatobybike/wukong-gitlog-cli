@@ -79,6 +79,51 @@ export const resources = {
       step_skip_overtime: '跳过加班数据分析',
       step_output: '正在持久化分析结果...',
       step_complete: '分析任务全部完成！'
+    },
+    init: {
+      title: '配置文件初始化',
+      select_format: '请选择要生成的配置文件格式:',
+      formats: {
+        mjs: 'ES Module (.mjs)',
+        js: 'JavaScript (灵活，支持逻辑)',
+        yaml: 'YAML (推荐，带详细注释)',
+        json: 'JSON (标准格式)',
+        plain: 'YAML 无后缀 (.wukonggitlogrc)'
+      },
+      error_exists: '错误: 当前目录已存在配置文件',
+      success_created: '成功生成配置:',
+      gitignore_ask: '是否自动将报告目录及配置文件添加到 .gitignore?',
+      gitignore_updated: '已更新 .gitignore',
+      gitignore_warn: '无法更新 .gitignore:',
+      complete: '初始化完成！',
+      cancel: '已取消初始化',
+      fail: '初始化失败:'
+    },
+    // 模板注释内容 (用于生成文件)
+    template: {
+      generated_at: '生成时间',
+      author_config: '作者统计配置',
+      author_include: '[数组] 只统计这些作者，留空表示全部',
+      author_exclude: '[数组] 排除这些作者',
+      git_config: 'Git 提取配置',
+      git_merges: '[布尔] 是否包含 merge commit',
+      git_limit: '[数字] 最大拉取提交数，防止大仓拉取过慢',
+      period_config: '统计周期配置',
+      period_group: '[枚举] 统计周期: day (天) | week (周) | month (月)',
+      period_since: '[字符串] 起始日期 (YYYY-MM-DD)',
+      period_until: '[字符串] 截止日期 (YYYY-MM-DD)',
+      gerrit_config: 'Gerrit 链接转换 (可选)',
+      worktime_config: '工作时间与加班计算配置',
+      worktime_country: '[字符串] 国家代码 (CN/US)',
+      worktime_start: '[数字] 工作日开始时间',
+      worktime_end: '[数字] 工作日结束时间',
+      worktime_lunch: '午休时间',
+      worktime_cutoff: '[数字] 凌晨截止点',
+      output_config: '输出与报告配置',
+      output_dir: '[字符串] 报告输出目录名',
+      output_formats: '[数组] 输出格式',
+      output_per_period: '[布尔] 是否按周期生成单独文件',
+      author_aliases: '作者别名映射'
     }
   },
   en: {
@@ -150,6 +195,50 @@ export const resources = {
       step_skip_overtime: 'Skipping overtime analysis',
       step_output: 'Persisting analysis results...',
       step_complete: 'Analysis task completed!'
+    },
+    init: {
+      title: 'Config Initialization',
+      select_format: 'Select config file format:',
+      formats: {
+        mjs: 'ES Module (.mjs)',
+        js: 'JavaScript (Flexible, supports logic)',
+        yaml: 'YAML (Recommended, with comments)',
+        json: 'JSON (Standard)',
+        plain: 'YAML no extension (.wukonggitlogrc)'
+      },
+      error_exists: 'Error: Config file already exists in current directory',
+      success_created: 'Config created:',
+      gitignore_ask: 'Add report dir and config to .gitignore automatically?',
+      gitignore_updated: '.gitignore updated',
+      gitignore_warn: 'Failed to update .gitignore:',
+      complete: 'Initialization complete!',
+      cancel: 'Initialization cancelled',
+      fail: 'Initialization failed:'
+    },
+    template: {
+      generated_at: 'Generated at',
+      author_config: 'Author Statistics Config',
+      author_include: '[Array] Include only these authors, empty for all',
+      author_exclude: '[Array] Exclude these authors',
+      git_config: 'Git Extraction Config',
+      git_merges: '[Boolean] Include merge commits',
+      git_limit: '[Number] Max commits to fetch',
+      period_config: 'Period Statistics Config',
+      period_group: '[Enum] Group by: day | week | month',
+      period_since: '[String] Start date (YYYY-MM-DD)',
+      period_until: '[String] End date (YYYY-MM-DD)',
+      gerrit_config: 'Gerrit Link Conversion (Optional)',
+      worktime_config: 'Worktime & Overtime Config',
+      worktime_country: '[String] Country code (CN/US)',
+      worktime_start: '[Number] Work start hour',
+      worktime_end: '[Number] Work end hour',
+      worktime_lunch: 'Lunch break',
+      worktime_cutoff: '[Number] Overnight cutoff hour',
+      output_config: 'Output & Report Config',
+      output_dir: '[String] Report output directory',
+      output_formats: '[Array] Output formats',
+      output_per_period: '[Boolean] Generate separate files per period',
+      author_aliases: 'Author Alias Mapping'
     }
   }
 }

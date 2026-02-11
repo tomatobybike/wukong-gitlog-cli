@@ -42,6 +42,8 @@ import {
   getOvertimeByWeek,
   getWorkTimeConfig
 } from './helpers.mjs'
+import { t } from '../i18n/index.mjs'
+
 
 export async function exportAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
@@ -59,13 +61,13 @@ export async function exportAction(rawOpts = {}) {
   const result = {}
   try {
     // 1️⃣ 拉取 Git 记录
-    bar.step(5, '正在提取 Git 提交记录...')
+    bar.step(5, t('analyze.step_git_fetch'))
     const { commits, authorMap } = await profiler.stepAsync('getGitLogs', () =>
       getGitLogsFast(opts)
     )
     result.commits = commits
 
-    bar.step(15, 'Git 记录提取完成')
+    bar.step(15, t('analyze.step_git_done'))
 
     const records = result.commits
 
@@ -77,29 +79,28 @@ export async function exportAction(rawOpts = {}) {
     // 3️⃣ 加班分析（根据配置可选）
     const worktimeOptions = getWorkTimeConfig(opts)
 
-    bar.step(10, '正在计算加班概况...')
+    bar.step(10,  t('analyze.step_overtime_calc'))
     result.overtime = await profiler.stepAsync('overtime', () => {
       return getWorkOvertimeStats(enrichedRecords, worktimeOptions)
     })
 
     if (['all','week'].includes(opts.period.groupBy)) {
-      bar.step(20, '正在生成周趋势数据...')
+      bar.step(20, t('analyze.step_trends'))
       result.overtimeByWeek = await getOvertimeByWeek(enrichedRecords)
     }
 
     if (['all','month'].includes(opts.period.groupBy)) {
-      bar.step(20, '正在生成月趋势数据...')
       result.overtimeByMonth = await getOvertimeByMonth(enrichedRecords)
     }
 
-    bar.step(20, '正在标记每日最晚提交点...')
+    bar.step(20, t('analyze.step_latest_mark'))
     result.overtimeLatestCommitByDay = await getLatestCommitByDay({
       commits: enrichedRecords,
       opts: worktimeOptions
     })
 
     // 4️⃣ 数据输出
-    bar.step(10, '正在持久化分析结果...')
+    bar.step(10, t('analyze.step_output'))
     await profiler.stepAsync('output', async () => {
       await outputData(result, {
         dir: opts.output.dir || path.resolve('output-wukong'),
@@ -108,7 +109,7 @@ export async function exportAction(rawOpts = {}) {
       })
     })
 
-    bar.step(100, '分析任务全部完成！')
+    bar.step(100, t('analyze.step_complete'))
     handleExportOvertimeMain({
       fileName: 'overtime.json',
       opts,

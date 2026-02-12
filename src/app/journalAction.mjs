@@ -3,6 +3,8 @@ import path from 'path'
 import { createProfiler } from 'wukong-profiler'
 import { createMultiBar } from 'wukong-progress'
 
+import { getProfileDirFile } from '#utils/getProfileDirFile.mjs'
+
 import { parseOptions } from '../cli/parseOptions.mjs'
 import { getAuthorChangeStats } from '../domain/author/analyze.mjs'
 import { dedupeCommits, getGitLogsFast } from '../domain/git/getGitLogs.mjs'
@@ -16,25 +18,27 @@ import {
   getOvertimeByWeek,
   getWorkTimeConfig
 } from './helpers.mjs'
-import { getProfileDirFile } from '#utils/getProfileDirFile.mjs'
+import { t } from '../i18n/index.mjs'
+
 
 // 日报，把每天提交记录合并后，按天输出
 
 export async function journalAction(rawOpts = {}) {
   const opts = await parseOptions(rawOpts)
 
-  // FIXME: remove debug log before production
-  console.log('❌', 'opts', opts);
-
   const traceFile = getProfileDirFile('trace.json', opts)
+  const profileFile = getProfileDirFile('profile.json', opts)
 
-  const profiler = createProfiler({ ...opts.profile, traceFile ,enabled:false}, opts)
+  const profiler = createProfiler(
+    { ...opts.profile, traceFile, profileFile },
+    opts
+  )
 
   // 未来 可考虑将 MultiBar 抽离到更高层，支持所有 action 共用，wukong-progress 需要支持自定义子任务占位符
   // 初始化 MultiBar
   const mb = createMultiBar()
   const bar = mb.create(100, {
-    prefix: chalk.cyan('Analyze'),
+    prefix: chalk.cyan(t('journal.prefix')),
     format: ' [:bar] :percent :payload'
   })
 
@@ -42,12 +46,10 @@ export async function journalAction(rawOpts = {}) {
 
   try {
     // 1️⃣ 拉取 Git 记录
-    bar.step(5, '正在提取 Git 提交记录...')
+    bar.step(5, t('analyze.step_git_fetch'))
     const { commits, authorMap } = await profiler.stepAsync('getGitLogs', () =>
       getGitLogsFast(opts)
     )
-
-
 
     //  去重 commit（基于 Change-Id），过滤掉 Gerrit 产生的重复提交例如cherry-pick
     const cleanCommits = dedupeCommits(commits, {
@@ -59,7 +61,7 @@ export async function journalAction(rawOpts = {}) {
 
     result.commits = commits
     result.authorMap = authorMap
-    bar.step(15, 'Git 记录提取完成')
+    bar.step(15, t('analyze.step_git_done')) // 'Git 记录提取完成'
 
     const records = result.commits
 
@@ -69,7 +71,7 @@ export async function journalAction(rawOpts = {}) {
       : records
 
     // 2️⃣ 分析作者变更
-    bar.step(10, '正在分析作者代码贡献...')
+    bar.step(10, t('analyze.step_author_stats')) // '正在分析作者代码贡献...'
     const authorChanges = await profiler.stepAsync(
       'analyzeAuthorChanges',
       () => {
@@ -85,11 +87,10 @@ export async function journalAction(rawOpts = {}) {
       }
     )
 
-
     result.authorDayReport = authorDayReport
 
     // 4️⃣ 数据输出
-    bar.step(10, '正在持久化分析结果...')
+    bar.step(10, t('analyze.step_output')) // '正在持久化分析结果...'
     await profiler.stepAsync('output', async () => {
       const worktimeOptions = getWorkTimeConfig(opts)
       await outputJournalAnalysis(result, {
@@ -98,7 +99,7 @@ export async function journalAction(rawOpts = {}) {
       })
     })
 
-    bar.step(100, '分析任务全部完成！')
+    bar.step(100, t('journal.complete')) // '分析任务全部完成！'
   } catch (error) {
     // 异常处理：停止进度条并打印红色错误
     mb.stop()

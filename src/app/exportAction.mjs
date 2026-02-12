@@ -54,7 +54,7 @@ export async function exportAction(rawOpts = {}) {
 
   const mb = createMultiBar()
   const bar = mb.create(100, {
-    prefix: chalk.cyan('Export'),
+    prefix: chalk.cyan(t('export.prefix')),
     format: ' [:bar] :percent :payload'
   })
 

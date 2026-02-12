@@ -27,11 +27,7 @@ export async function analyzeAction(rawOpts = {}) {
   const traceFile = getProfileDirFile('trace.json', opts)
   const profileFile = getProfileDirFile('profile.json', opts)
 
-  const profiler = createProfiler({
-    ...opts.profile,
-    traceFile,
-    profileFile
-  })
+  const profiler = createProfiler({ ...opts.profile, traceFile ,profileFile}, opts)
 
   // 未来 可考虑将 MultiBar 抽离到更高层，支持所有 action 共用，wukong-progress 需要支持自定义子任务占位符
   // 初始化 MultiBar

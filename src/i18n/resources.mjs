@@ -70,6 +70,8 @@ export const resources = {
       force: '强制覆盖已存在的配置文件（慎用）'
     },
     overtime: { prefix: '加班分析', complete: '加班分析完成！' },
+    journal: { prefix: '日报', complete: '日报任务完成' },
+    export: { prefix: '导出', complete: '导出任务完成' },
     analyze: {
       prefix: '分析', // 进度条前缀
       step_git_fetch: '正在提取 Git 提交记录...',
@@ -188,6 +190,8 @@ export const resources = {
       force: 'Force overwrite existing config'
     },
     overtime: { prefix: 'Overtime', complete: 'Overtime analysis complete!' },
+    journal: { prefix: 'Journal', complete: 'Journal analysis complete!' },
+    export: { prefix: 'Export', complete: 'Export analysis complete!' },
     analyze: {
       prefix: 'Analyze',
       step_git_fetch: 'Extracting Git commit logs...',

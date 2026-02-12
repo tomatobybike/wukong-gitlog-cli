@@ -55,3 +55,11 @@ trace.json
 
 # Miscellaneous
 *.tgz
+
+# Wukong GitLog Reports
+
+# Wukong GitLog Config
+.wukonggitlogrc.mjs
+.wukonggitlogrc.yml
+.wukonggitlogrc.yaml
+.wukonggitlogrc.json

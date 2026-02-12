@@ -124,8 +124,11 @@ wukong-gitlog-cli serve [--port <n>]
 启动服务以查看交互式图表：
 
 ```bash
-wukong-gitlog-cli serve --overtime --port 3000
+wukong-gitlog-cli serve
 ```
+<p align="center">
+  <img src="https://raw.githubusercontent.com/tomatobybike/wukong-gitlog-cli/main/images/web/overtime.jpg" width="400" alt="wukong-dev Logo" />
+</p>
 
 访问 `http://localhost:3000` 查看：
 - 按天/月的提交分布。

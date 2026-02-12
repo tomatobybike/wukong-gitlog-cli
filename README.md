@@ -124,8 +124,13 @@ wukong-gitlog-cli serve [--port <n>]
 Start the server to view interactive charts:
 
 ```bash
-wukong-gitlog-cli serve --overtime --port 3000
+wukong-gitlog-cli serve
 ```
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/tomatobybike/wukong-gitlog-cli/main/images/web/overtime.jpg" width="400" alt="wukong-dev Logo" />
+</p>
+
 
 Visit `http://localhost:3000` to see:
 - Commit distribution by day/month.

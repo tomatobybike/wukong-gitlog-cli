@@ -1,5 +1,5 @@
 import { groupRecords } from '../../utils/groupRecords.mjs'
-import { analyzeOvertime } from './analyze.mjs'
+import { analyzeOvertime3 } from './analyze.mjs'
 
 export function analyzeOvertimePerPeriod(records, worktime, period) {
   const groups = groupRecords(records, period)
@@ -8,7 +8,7 @@ export function analyzeOvertimePerPeriod(records, worktime, period) {
   Object.keys(groups)
     .sort()
     .forEach((key) => {
-      result[key] = analyzeOvertime(groups[key], worktime)
+      result[key] = analyzeOvertime3(groups[key], worktime)
     })
 
   return result

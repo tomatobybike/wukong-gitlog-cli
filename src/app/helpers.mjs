@@ -1,17 +1,7 @@
-import chalk from 'chalk'
 import dayjs from 'dayjs'
-import ora from 'ora'
-import path from 'path'
-import { createProfiler } from 'wukong-profiler'
-import { createMultiBar } from 'wukong-progress'
 
-import { wait } from '#src/utils/wait.mjs'
 
-import { parseOptions } from '../cli/parseOptions.mjs'
-import { getAuthorChangeStats } from '../domain/author/analyze.mjs'
-import { getGitLogsFast } from '../domain/git/getGitLogs.mjs'
 import { getWorkOvertimeStats } from '../domain/overtime/analyze.mjs'
-import { outputAll, outputData } from '../output/index.mjs'
 import { getWeekRange } from '../utils/getWeekRange.mjs'
 import { groupRecords } from '../utils/groupRecords.mjs'
 

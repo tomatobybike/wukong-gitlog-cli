@@ -58,7 +58,7 @@ export async function exportExcel(records, groups, options = {}) {
 }
 
 export async function exportExcelPerPeriodSheets(groups, file, options = {}) {
-  const { stats, gerrit } = options
+  const {  gerrit } = options
 
   const wb = new ExcelJS.Workbook()
 

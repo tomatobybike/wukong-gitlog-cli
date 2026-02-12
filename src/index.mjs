@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
 
-import { runGitPreflight } from '#src/domain/git/index.mjs'
+import { runGitPreflight, showGitInfo } from '#src/domain/git/index.mjs'
 
 import { analyzeAction } from './app/analyzeAction.mjs'
 import { exportAction } from './app/exportAction.mjs'
@@ -37,12 +37,14 @@ const main = async () => {
   // 这一步必须在定义子命令描述之前完成！
   const finalLang = await initI18n(userLang)
 
-  console.log(`[i18n] Language: ${finalLang}`)
-
   // ---------------------------------------------------------
   // 2. 环境准备
   // ---------------------------------------------------------
-  await runGitPreflight()
+  const gitPreflightResult = await runGitPreflight()
+  if (args.includes('--info') || args.includes('-i')) {
+    console.log(`✔ Language: ${finalLang}`)
+    await showGitInfo(gitPreflightResult)
+  }
   // 【关键优化】在一切开始前，先异步加载 RC 配置
   // 这样后续 parseOptions 内部的 cachedConfig 就有值了
   await loadRcConfig()
@@ -131,7 +133,6 @@ const main = async () => {
   addGitSourceOptions(journalCmd)
 
   addPerformanceOptions(journalCmd)
-
 
   // === 命令: Serve (Web服务) ===
   const serveCmd = program

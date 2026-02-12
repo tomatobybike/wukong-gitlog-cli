@@ -133,6 +133,7 @@ export function setupBaseProgram(program) {
     .version(pkg.version, '-v')
     .description(t('cli.desc'))
     .option('-l, --lang <type>', t('options.lang')) // 放在这里，让所有命令都能看到 help
+    .option('-i,--info', t('options.info'))
     .option('--debug', t('options.debug'))
 }
 

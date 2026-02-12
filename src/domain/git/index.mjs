@@ -72,14 +72,25 @@ export const runGitPreflight = async () => {
   }
 
   // 可选：打印
-  console.log(`✔ Git detected: ${result.git.version}`)
-  console.log(`✔ platform: ${result.git.platform}`)
+  // console.log(`✔ Git detected: ${result.git.version}`)
+  // console.log(`✔ platform: ${result.git.platform}`)
 
-  console.log('✔ root', result.repo.root)
-  console.log('✔ user', result.user.name)
-  console.log('✔ email', result.user.email)
-  console.log('✔ features', result.features)
-  console.log(`-`.repeat(50), '\n')
+  // console.log('✔ root', result.repo.root)
+  // console.log('✔ user', result.user.name)
+  // console.log('✔ email', result.user.email)
+  // console.log('✔ features', result.features)
+  // console.log(`-`.repeat(50), '\n')
 
   return result
+}
+
+export const showGitInfo = async (gitInfo) => {
+  console.log(`✔ Git detected: ${gitInfo.git.version}`)
+  console.log(`✔ platform: ${gitInfo.git.platform}`)
+
+  console.log('✔ root', gitInfo.repo.root)
+  console.log('✔ user', gitInfo.user.name)
+  console.log('✔ email', gitInfo.user.email)
+  console.log('✔ features', gitInfo.features)
+  console.log(`-`.repeat(50), '\n')
 }

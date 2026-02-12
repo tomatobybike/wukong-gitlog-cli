@@ -19,6 +19,7 @@ export const resources = {
       // 全局
       lang: '指定语言 (zh/en)',
       debug: '启用调试日志',
+      info: '显示Git 环境信息',
 
       // Git 过滤相关
       author: '指定 author (建议配合别名映射使用)',
@@ -142,6 +143,7 @@ export const resources = {
     options: {
       lang: 'Specify language (zh/en)',
       debug: 'Enable debug logs',
+      info: 'Show Git environment information',
 
       author: 'Specify author name (alias mapping recommended)',
       email: 'Specify email',

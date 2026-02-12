@@ -105,6 +105,7 @@
     "dayjs": "1.11.19",
     "dotenv": "17.2.2",
     "exceljs": "4.4.0",
+    "fs-extra": "^11.3.3",
     "ora": "9.0.0",
     "os-locale": "^8.0.0",
     "string-width": "5.1.2",

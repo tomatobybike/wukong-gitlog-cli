@@ -4,7 +4,7 @@
 
 An enhanced Git commit log analysis and export tool. Supports **Excel / JSON / TXT** output, grouped statistics, overtime culture analysis, Gerrit link integration, and a visual Web Dashboard.
 
-## [中文](./README.zh-CN.md) | English
+## English | [简体中文](./README.zh-CN.md)
 
 ---
 

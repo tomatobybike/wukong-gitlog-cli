@@ -42,7 +42,7 @@ wukong-gitlog-cli --help
 wukong-gitlog-cli init
 
 # 执行分析并启动 Web Dashboard
-wukong-gitlog-cli serve --overtime
+wukong-gitlog-cli serve 
 ```
 
 ---

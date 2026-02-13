@@ -50,7 +50,7 @@ const autoCheckUpdate = async () => {
   //   },
   //   // force:true
   // })
-  
+
   // 放到下一个 tick
   setTimeout(() => {
     checkUpdateWithPatch({ pkg }).catch(() => {})
@@ -69,6 +69,9 @@ const main = async () => {
   // 2. 初始化 i18n（如果有 --lang 用 --lang，没有则内部调 osLocale）
   // 这一步必须在定义子命令描述之前完成！
   const finalLang = await initI18n(userLang)
+
+  // TODO: remove debug log before production
+  console.log('finalLang', finalLang);
 
   // ---------------------------------------------------------
   // 2. 环境准备
@@ -168,7 +171,8 @@ const main = async () => {
       addServeOptions(cmd)
     },
     handler: serveAction,
-    autoUpdate: autoCheckUpdate
+    autoUpdate: autoCheckUpdate,
+    lang:finalLang
   })
 
   await program.parseAsync(process.argv)

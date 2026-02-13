@@ -3,6 +3,45 @@
 /* eslint-disable no-restricted-globals */
 /* global echarts */
 
+/* ---------------------- 动态加载语言 */
+
+import zh from './static/i18n/zh.js'
+import en from './static/i18n/en.js'
+
+function resolveLang() {
+  // CLI 注入优先
+  if (window.__LANG__) return window.__LANG__
+
+  // 浏览器语言
+  if (navigator.language.startsWith('zh')) return 'zh'
+
+  return 'en'
+}
+
+const lang = resolveLang()
+
+const messages = {
+  zh,
+  en
+}[lang] || zh
+
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n
+    // eslint-disable-next-line no-param-reassign
+    el.textContent = messages[key] || key
+  })
+
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.dataset.i18nPlaceholder
+    // eslint-disable-next-line no-param-reassign
+    el.placeholder = messages[key] || key
+  })
+}
+
+applyI18n()
+
+/* ---------------------- */
 // 1. 定义一个存储所有实例的数组
 const chartInstances = []
 const formatDate = (d) => new Date(d).toLocaleString()

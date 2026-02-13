@@ -1,0 +1,23 @@
+export default {
+  dashboardTitle: 'Wukong Gitlog Overtime Dashboard',
+  outsideVsInside: 'After-hours vs Working-hours Commit Ratio',
+  kpi: 'Key Metrics',
+  hourlyOvertime: 'Hourly Overtime Distribution (Hours → Commits)',
+  dailyTrend: 'Daily Commit Trend (Times)',
+  latestHourDaily: 'Latest Commit Hour Per Day',
+  dailySeverity: 'Hours Exceeding Off-work Time Per Day',
+  weeklyTrend: 'Weekly Trend (Overtime Ratio)',
+  monthlyTrend: 'Monthly Trend (Overtime Ratio)',
+  authorChanges: 'Developer Changed Workload Trend (Lines)',
+  authorLatestOvertime: 'Developer Latest Overtime Trend (Hour)',
+  authorOvertime: 'Developer Overtime Trend (Times)',
+  authorLunch: 'Developer Latest Lunch Commit (Hour)',
+  totalLunchTime: 'Developer Total Lunch Working Time',
+  totalOvertime: 'Developer Total Overtime',
+  totalCommits: 'Developer Total Commits',
+  totalCommitsChanged: 'Developer Total Commits Changed',
+  commitsList: 'Commit List',
+  searchPlaceholder: 'Author/Message/Hash/Date',
+  prevPage: 'Previous',
+  nextPage: 'Next'
+}

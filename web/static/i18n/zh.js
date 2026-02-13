@@ -1,0 +1,23 @@
+export default {
+  dashboardTitle: "Wukong Gitlog 加班分析看板",
+  outsideVsInside: "下班时间 vs 工作时间提交占比",
+  kpi: "关键指标",
+  hourlyOvertime: "每小时加班分布 (小时 → 提交数)",
+  dailyTrend: "按日提交趋势（次数）",
+  latestHourDaily: "每日最晚提交时间（小时）",
+  dailySeverity: "每日超过下班的小时数",
+  weeklyTrend: "每周趋势（加班占比）",
+  monthlyTrend: "每月趋势（加班占比）",
+  authorChanges: "开发者 Changed 工作量趋势（行数）",
+  authorLatestOvertime: "开发者 加班最晚趋势（小时）",
+  authorOvertime: "开发者 加班趋势（次数）",
+  authorLunch: "开发者 午休最晚提交（小时）",
+  totalLunchTime: "开发者 累计午休工作时长",
+  totalOvertime: "开发者 累计加班时长",
+  totalCommits: "开发者 累计提交次数",
+  totalCommitsChanged: "开发者 累计提交Changed",
+  commitsList: "提交清单",
+  searchPlaceholder: "搜索作者/信息/Hash/Date",
+  prevPage: "上一页",
+  nextPage: "下一页"
+}

@@ -48,7 +48,12 @@ export async function serveAction(rawOpts = {}) {
   for (let i = 0; i < maxTries; i++) {
     try {
       // eslint-disable-next-line no-await-in-loop
-      server = await startServer(port, dir, data)
+      server = await startServer({
+        port,
+        outputDir: dir,
+        data,
+        lang: rawOpts.lang
+      })
       break
     } catch (err) {
       // 端口被占用，尝试下一个端口；其它错误抛出

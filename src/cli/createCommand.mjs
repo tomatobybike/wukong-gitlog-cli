@@ -3,7 +3,8 @@ export function createCommand(program, {
   description,
   optionsBuilder,
   handler,
-  autoUpdate
+  autoUpdate,
+  lang
 }) {
   const cmd = program.command(name).description(description)
 
@@ -14,7 +15,7 @@ export function createCommand(program, {
 
   cmd.action(async (cmdOpts, command) => {
     const globalOpts = command.parent?.opts?.() || {}
-    const finalOpts = { ...globalOpts, ...cmdOpts }
+    const finalOpts = { ...globalOpts, ...cmdOpts,lang }
 
     try {
       await handler(finalOpts)

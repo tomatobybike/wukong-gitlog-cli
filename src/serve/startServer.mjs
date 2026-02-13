@@ -51,7 +51,7 @@ function findPkgRoot(currentDir) {
 }
 
 // eslint-disable-next-line default-param-last
-export function startServer(port = 3000, outputDir) {
+export function startServer({ port = 3000, outputDir, data,lang }) {
   // 解析包根目录，确保 web 资源在全局安装后也能找到
   const __filename = fileURLToPath(import.meta.url)
   const __dirname = path.dirname(__filename)
@@ -63,7 +63,6 @@ export function startServer(port = 3000, outputDir) {
   const dataRoot = outputDir
     ? path.resolve(outputDir)
     : path.resolve(process.cwd(), 'output-wukong')
-
 
   // warn if web directory or data directory doesn't exist
   if (!fs.existsSync(webRoot)) {
@@ -113,6 +112,23 @@ export function startServer(port = 3000, outputDir) {
           'Content-Type',
           mime.get(ext) || 'application/octet-stream'
         )
+
+        // 👇 只对 index.html 注入
+        if (pathname === '/index.html') {
+          // FIXME: remove debug log before production
+          console.log('❌', 'lang', lang);
+          let html = fs.readFileSync(fileLocal, 'utf8')
+
+          html = html.replace(
+            `window.__LANG__ = '__LANG__'`,
+            `window.__LANG__ = "${lang}"`
+          )
+
+          res.setHeader('Content-Type', 'text/html; charset=utf-8')
+          res.end(html)
+          return
+        }
+
         const stream = fs.createReadStream(fileLocal)
         stream.pipe(res)
         return

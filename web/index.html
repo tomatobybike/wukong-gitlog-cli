@@ -5,27 +5,32 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>wukong-gitlog-cli — Overtime Dashboard</title>
     <link rel="stylesheet" href="./static/style.css" />
+    <script>
+      window.__LANG__ = '__LANG__'
+    </script>
     <script src="./static/echarts.min.js"></script>
   </head>
   <body>
     <header>
-      <h1>Wukong Gitlog Overtime Dashboard</h1>
+      <h1 data-i18n="dashboardTitle"></h1>
       <div id="samplingInfo" class="sampling-info"></div>
     </header>
     <main id="main">
       <section id="chartsHalf">
         <div class="chart-card">
-          <h2>下班时间 vs 工作时间提交占比</h2>
+          <!-- <h2>下班时间 vs 工作时间提交占比</h2> -->
+          <h2 data-i18n="outsideVsInside"></h2>
+
           <div id="outsideVsInsideChart" class="echart"></div>
         </div>
         <div class="chart-card" id="kpiCard">
-          <h2>关键指标</h2>
+          <h2 data-i18n="kpi">关键指标</h2>
           <div id="kpiContent"></div>
         </div>
       </section>
       <section id="charts">
         <div class="chart-card">
-          <h2>每小时加班分布 (小时 -> 提交数)</h2>
+          <h2 data-i18n="hourlyOvertime">每小时加班分布(小时 -> 提交数)</h2>
           <div
             id="hourlyOvertimeChart"
             data-title="每小时加班分布"
@@ -34,7 +39,7 @@
         </div>
 
         <div class="chart-card">
-          <h2>按日提交趋势（次数）</h2>
+          <h2 data-i18n="dailyTrend">按日提交趋势（次数）</h2>
           <div
             id="dailyTrendChart"
             data-title="按日提交趋势（次数）"
@@ -42,7 +47,7 @@
           ></div>
         </div>
         <div class="chart-card">
-          <h2>按日提交趋势（次数）</h2>
+          <h2 data-i18n="dailyTrend">按日提交趋势（次数）</h2>
           <div
             id="dailyTrendChartDog"
             data-title="按日提交趋势"
@@ -50,7 +55,7 @@
           ></div>
         </div>
         <div class="chart-card">
-          <h2>每日最晚提交时间（小时）</h2>
+          <h2 data-i18n="latestHourDaily">每日最晚提交时间（小时）</h2>
           <div
             id="latestHourDailyChart"
             data-title="每日最晚提交时间（小时）"
@@ -92,8 +97,6 @@
           <div id="latestOvertimeMonth"></div>
         </div>
       </section>
-
-
 
       <div class="chart-card">
         <h2>开发者 Changed 工作量趋势（行数）</h2>
@@ -217,9 +220,9 @@
       </section>
       <!-- 开发者 累计提交次数 End -->
 
-            <!-- 开发者 累计提交Changed -->
+      <!-- 开发者 累计提交Changed -->
       <div class="chart-card" id="totalCommitsChangedCard">
-        <h2>开发者 累计提交Changed </h2>
+        <h2>开发者 累计提交Changed</h2>
         <div class="tabs" id="tabsTotalCommitsChanged">
           <button data-type="daily" class="active">按日</button>
           <button data-type="weekly">按周</button>
@@ -236,7 +239,10 @@
         </div>
         <div class="chart-card">
           <h2>开发者 提交Changed 总次数</h2>
-          <div id="authorTotalCommitsChangedRankSummary" style="height: 600px"></div>
+          <div
+            id="authorTotalCommitsChangedRankSummary"
+            style="height: 600px"
+          ></div>
         </div>
       </section>
       <!-- 开发者 累计提交Changed End -->
@@ -250,12 +256,14 @@
       </div> -->
 
       <section class="table-card">
-        <h2>提交清单</h2>
+        <h2 data-i18n="commitsList">提交清单</h2>
         <div id="tableControls">
           <input
             id="searchInput"
             type="search"
             placeholder="搜索作者/信息/Hash/Date"
+            data-i18n-placeholder="searchPlaceholder"
+
           />
           <input type="date" id="startDate" />
           <span>~</span>
@@ -270,9 +278,9 @@
           </select>
           <label id="commitsTotal"></label>
           <div class="pager">
-            <button id="prevPage">上一页</button>
+            <button id="prevPage" data-i18n="prevPage">上一页</button>
             <span id="pageInfo"></span>
-            <button id="nextPage">下一页</button>
+            <button id="nextPage" data-i18n="nextPage">下一页</button>
           </div>
         </div>
         <table id="commitsTable">

@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 import { runGitPreflight, showGitInfo } from '#src/domain/git/index.mjs'
 
@@ -11,6 +14,7 @@ import { journalAction } from './app/journalAction.mjs'
 import { overtimeAction } from './app/overtimeAction.mjs'
 import { serveAction } from './app/serveAction.mjs'
 import { versionAction } from './app/versionAction.mjs'
+import { createCommand } from './cli/createCommand.mjs'
 import {
   addAnalysisOptions,
   addGitSourceOptions,
@@ -21,8 +25,26 @@ import {
 } from './cli/defineOptions.mjs'
 import { initI18n, t } from './i18n/index.mjs'
 import { loadRcConfig } from './infra/configStore.mjs'
+import { checkUpdateWithPatch } from './utils/checkUpdate.mjs'
 
 // 引入加载器
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+const pkgPath = path.resolve(__dirname, '../package.json')
+const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
+
+const autoCheckUpdate = async () => {
+  // === CLI 主逻辑完成后提示更新 ===
+  await checkUpdateWithPatch({
+    pkg: {
+      name: pkg.name,
+      version: pkg.version
+    },
+    // force:true
+  })
+}
 
 const main = async () => {
   // --- 第一步：参数预检 (Pre-flight) ---
@@ -67,85 +89,78 @@ const main = async () => {
 
   // === 命令: Init ===
 
-  program
-    .command('init')
-    .description(t('cmds.init'))
-    .option('-f, --force', t('options.force'))
-    .action(async (options) => {
-      // 如果你不想抽离到 app 层，也可以直接写这里
-      // 但推荐抽离以保持架构一致性
-      await initAction(options)
-    })
+  createCommand(program, {
+    name: 'init',
+    description: t('cmds.init'),
+    optionsBuilder: (cmd) => {
+      cmd.option('-f, --force', t('options.force'))
+    },
+    handler: initAction,
+    autoUpdate: autoCheckUpdate
+  })
 
   // # 命令: Analyze 核心分析（默认） 分析 git 提交记录 (最全参数)
-  const analyzeCmd = program
-    .command('analyze')
-    .description(t('cmds.analyze'))
-    .action((cmdOpts) => {
-      const globalOpts = program.opts()
-      const finalOpts = { ...globalOpts, ...cmdOpts }
-      analyzeAction(finalOpts)
-    })
-
-  // 挂载 analyze 需要的参数组
-  addGitSourceOptions(analyzeCmd)
-  addAnalysisOptions(analyzeCmd)
-  addOutputOptions(analyzeCmd)
-  addPerformanceOptions(analyzeCmd)
+  createCommand(program, {
+    name: 'analyze',
+    description: t('cmds.analyze'),
+    optionsBuilder: (cmd) => {
+      addGitSourceOptions(cmd)
+      addAnalysisOptions(cmd)
+      addOutputOptions(cmd)
+      addPerformanceOptions(cmd)
+    },
+    handler: analyzeAction,
+    autoUpdate: autoCheckUpdate
+  })
 
   // # 命令: Overtime 加班文化分析
-  const overtimeCmd = program
-    .command('overtime')
-    .description(t('cmds.overtime'))
-    .action((cmdOpts) => {
-      const globalOpts = program.opts()
-      const finalOpts = { ...globalOpts, ...cmdOpts }
-      overtimeAction(finalOpts)
-    })
-  addGitSourceOptions(overtimeCmd)
-  addAnalysisOptions(overtimeCmd) // 加班分析肯定需要上班时间配置
+  createCommand(program, {
+    name: 'overtime',
+    description: t('cmds.overtime'),
+    optionsBuilder: (cmd) => {
+      addGitSourceOptions(cmd)
+      addAnalysisOptions(cmd)
+    },
+    handler: overtimeAction,
+    autoUpdate: autoCheckUpdate
+  })
 
   // # 命令: Export (专注导出) 导出（excel / csv / json）
-  const exportCmd = program
-    .command('export')
-    .description(t('cmds.export'))
-    // .option('-f, --format <type>', '导出格式') // 局部参数
-    .action((cmdOpts, command) => {
-      // globalOpts 拿到 author, since 等
-      const globalOpts = command.parent.opts()
-      // 合并全局和局部参数
-      const finalOpts = { ...globalOpts, ...cmdOpts }
-      exportAction(finalOpts)
-    })
-  addGitSourceOptions(exportCmd)
-  addOutputOptions(exportCmd)
+  createCommand(program, {
+    name: 'export',
+    description: t('cmds.export'),
+    optionsBuilder: (cmd) => {
+      addGitSourceOptions(cmd)
+      addOutputOptions(cmd)
+    },
+    handler: exportAction,
+    autoUpdate: autoCheckUpdate
+  })
 
   // === 命令: Journal (日报) ===
-  const journalCmd = program
-    .command('journal')
-    .description(t('cmds.journal'))
-    .action((cmdOpts) => {
-      const globalOpts = program.opts()
-      const finalOpts = { ...globalOpts, ...cmdOpts }
-      journalAction(finalOpts)
-    })
-
-  addGitSourceOptions(journalCmd)
-
-  addPerformanceOptions(journalCmd)
+  createCommand(program, {
+    name: 'journal',
+    description: t('cmds.journal'),
+    optionsBuilder: (cmd) => {
+      addGitSourceOptions(cmd)
+      addPerformanceOptions(cmd)
+    },
+    handler: journalAction,
+    autoUpdate: autoCheckUpdate
+  })
 
   // === 命令: Serve (Web服务) ===
-  const serveCmd = program
-    .command('serve')
-    .description('Start web server')
-    .action((cmdOpts) => {
-      const globalOpts = program.opts()
-      const finalOpts = { ...globalOpts, ...cmdOpts }
-      serveAction(finalOpts)
-    })
-  // Serve 命令只需要端口，不需要 Git 作者之类的参数
-  addServeOptions(serveCmd)
-  program.parse(process.argv)
+  createCommand(program, {
+    name: 'serve',
+    description: 'Start web server',
+    optionsBuilder: (cmd) => {
+      addServeOptions(cmd)
+    },
+    handler: serveAction,
+    autoUpdate: autoCheckUpdate
+  })
+
+  await program.parseAsync(process.argv)
 
   // const opts = program.opts()
   // console.log('✅ Cli Opts:', opts)

@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.43](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.42...v1.0.43) (2026-02-13)
+
+
+### Features
+
+* 🎸 autoCheckUpdate ([d377012](https://github.com/tomatobybike/wukong-gitlog-cli/commit/d3770123f10c574f0f5ea592ef58e71bfdd8edc1))
+
+
+### Bug Fixes
+
+* 🐛 update version ([840216d](https://github.com/tomatobybike/wukong-gitlog-cli/commit/840216d4f553e5d78f84e42f76386056553d1282))
+
 ### [1.0.42](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.41...v1.0.42) (2026-02-13)
 
 ### [1.0.41](https://github.com/tomatobybike/wukong-gitlog-cli/compare/v1.0.40...v1.0.41) (2026-02-12)

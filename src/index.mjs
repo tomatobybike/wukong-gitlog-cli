@@ -36,14 +36,25 @@ const pkgPath = path.resolve(__dirname, '../package.json')
 const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
 
 const autoCheckUpdate = async () => {
+  // 避免 CI 打印更新提示
+  if (process.env.CI) return
+  // CLI 更新提示只在 global 安装时出现
+  if (process.env.npm_config_global !== 'true') return
+  if (!process.stdout.isTTY) return
+
   // === CLI 主逻辑完成后提示更新 ===
-  await checkUpdateWithPatch({
-    pkg: {
-      name: pkg.name,
-      version: pkg.version
-    },
-    // force:true
-  })
+  // await checkUpdateWithPatch({
+  //   pkg: {
+  //     name: pkg.name,
+  //     version: pkg.version
+  //   },
+  //   // force:true
+  // })
+  
+  // 放到下一个 tick
+  setTimeout(() => {
+    checkUpdateWithPatch({ pkg }).catch(() => {})
+  }, 0)
 }
 
 const main = async () => {

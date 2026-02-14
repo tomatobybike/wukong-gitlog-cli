@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title data-i18n="dashboardTitle">Wukong Gitlog 加班分析看板</title>
+</head>
+
+<body>
+  <h1 data-i18n="dashboardTitle">
+    Wukong Gitlog 加班分析看板
+  </h1>
+
+  <!-- KPI -->
+  <section>
+    <h2 data-i18n="kpi">关键指标</h2>
+    <div id="kpi-container"></div>
+  </section>
+
+  <!-- 下班时间 vs 工作时间 -->
+  <section>
+    <h2 data-i18n="outsideVsInside">
+      下班时间 vs 工作时间提交占比
+    </h2>
+    <div id="ratio-chart"></div>
+  </section>
+
+  <!-- 每小时加班 -->
+  <section>
+    <h2 data-i18n="hourlyOvertime">
+      每小时加班分布 (小时 → 提交数)
+    </h2>
+    <div id="hourly-chart"></div>
+  </section>
+
+  <!-- 每日趋势 -->
+  <section>
+    <h2 data-i18n="dailyTrend">
+      按日提交趋势（次数）
+    </h2>
+    <div id="daily-chart"></div>
+  </section>
+
+  <!-- 最晚提交时间 -->
+  <section>
+    <h2 data-i18n="latestHourDaily">
+      每日最晚提交时间（小时）
+    </h2>
+    <div id="latest-hour-chart"></div>
+  </section>
+
+  <!-- 每日加班严重度 -->
+  <section>
+    <h2 data-i18n="dailySeverity">
+      每日超过下班的小时数
+    </h2>
+    <div id="severity-chart"></div>
+  </section>
+
+  <!-- 每周趋势 -->
+  <section>
+    <h2 data-i18n="weeklyTrend">
+      每周趋势（加班占比）
+    </h2>
+    <div id="weekly-chart"></div>
+  </section>
+
+  <!-- 每月趋势 -->
+  <section>
+    <h2 data-i18n="monthlyTrend">
+      每月趋势（加班占比）
+    </h2>
+    <div id="monthly-chart"></div>
+  </section>
+
+  <!-- 作者工作量 -->
+  <section>
+    <h2 data-i18n="authorChanges">
+      开发者 Changed 工作量趋势（行数）
+    </h2>
+    <div id="author-changes-chart"></div>
+  </section>
+
+  <!-- 作者最晚加班 -->
+  <section>
+    <h2 data-i18n="authorLatestOvertime">
+      开发者 加班最晚趋势（小时）
+    </h2>
+    <div id="author-latest-hour-chart"></div>
+  </section>
+
+  <!-- 作者加班次数 -->
+  <section>
+    <h2 data-i18n="authorOvertime">
+      开发者 加班趋势（次数）
+    </h2>
+    <div id="author-overtime-chart"></div>
+  </section>
+
+  <!-- 作者午休 -->
+  <section>
+    <h2 data-i18n="authorLunch">
+      开发者 午休最晚提交（小时）
+    </h2>
+    <div id="author-lunch-chart"></div>
+  </section>
+
+  <!-- 累计统计 -->
+  <section>
+    <h2 data-i18n="totalLunchTime">
+      开发者 累计午休工作时长
+    </h2>
+    <div id="total-lunch"></div>
+  </section>
+
+  <section>
+    <h2 data-i18n="totalOvertime">
+      开发者 累计加班时长
+    </h2>
+    <div id="total-overtime"></div>
+  </section>
+
+  <section>
+    <h2 data-i18n="totalCommits">
+      开发者 累计提交次数
+    </h2>
+    <div id="total-commits"></div>
+  </section>
+
+  <section>
+    <h2 data-i18n="totalCommitsChanged">
+      开发者 累计提交Changed
+    </h2>
+    <div id="total-changed"></div>
+  </section>
+
+  <!-- 提交清单 -->
+  <section>
+    <h2 data-i18n="commitsList">提交清单</h2>
+
+    <input
+      type="text"
+      data-i18n-placeholder="searchPlaceholder"
+      placeholder="搜索作者/信息/Hash/Date"
+    />
+
+    <div id="commit-table"></div>
+
+    <div class="pagination">
+      <button data-i18n="prevPage">上一页</button>
+      <button data-i18n="nextPage">下一页</button>
+    </div>
+  </section>
+
+  <script>
+    window.__LANG__ = "__LANG__"
+  </script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

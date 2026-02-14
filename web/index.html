@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>wukong-gitlog-cli — Overtime Dashboard</title>
+    <title data-i18n="dashboardTitle">Wukong Gitlog 加班分析看板</title>
     <link rel="stylesheet" href="./static/style.css" />
     <script>
       window.__LANG__ = '__LANG__'
@@ -63,7 +63,7 @@
           ></div>
         </div>
         <div class="chart-card">
-          <h2>每日超过下班的小时数</h2>
+          <h2 data-i18n="dailySeverity">每日超过下班的小时数</h2>
           <div
             id="dailySeverityChart"
             data-title="每日超过下班的小时数"
@@ -72,7 +72,7 @@
         </div>
 
         <div class="chart-card">
-          <h2>每周趋势（加班占比）</h2>
+          <h2 data-i18n="weeklyTrend">每周趋势（加班占比）</h2>
           <div
             id="weeklyTrendChart"
             data-title="每周趋势（加班占比）"
@@ -80,7 +80,7 @@
           ></div>
         </div>
         <div class="chart-card">
-          <h2>每月趋势（加班占比）</h2>
+          <h2 data-i18n="monthlyTrend">每月趋势（加班占比）</h2>
           <div
             id="monthlyTrendChart"
             data-title="每月趋势（加班占比）"
@@ -99,7 +99,7 @@
       </section>
 
       <div class="chart-card">
-        <h2>开发者 Changed 工作量趋势（行数）</h2>
+        <h2 data-i18n="authorChanges">开发者 Changed 工作量趋势（行数）</h2>
 
         <div id="tabs" class="tabs">
           <button data-type="daily" class="active">按日</button>
@@ -110,7 +110,7 @@
       </div>
 
       <div class="chart-card">
-        <h2>开发者 加班最晚趋势（小时）</h2>
+        <h2 data-i18n="authorLatestOvertime">开发者 加班最晚趋势（小时）</h2>
         <div class="tabs" id="tabsLatestOvertime">
           <button data-type="daily" class="active">按日</button>
           <button data-type="weekly">按周</button>
@@ -120,7 +120,7 @@
       </div>
 
       <div class="chart-card">
-        <h2>开发者 加班趋势（次数）</h2>
+        <h2 data-i18n="authorOvertime">开发者 加班趋势（次数）</h2>
         <div class="tabs" id="tabsOvertime">
           <button data-type="daily" class="active">按日</button>
           <button data-type="weekly">按周</button>
@@ -137,7 +137,7 @@
       </div>
 
       <div class="chart-card">
-        <h2>开发者 午休最晚提交（小时）</h2>
+        <h2 data-i18n="authorLunch">开发者 午休最晚提交（小时）</h2>
         <div class="tabs" id="tabsLunch">
           <button data-type="daily" class="active">按日</button>
           <button data-type="weekly">按周</button>
@@ -152,7 +152,7 @@
 
       <!-- 午休 分析 -->
       <div class="chart-card">
-        <h2>开发者 累计午休工作时长</h2>
+        <h2 data-i18n="totalLunchTime">开发者 累计午休工作时长</h2>
         <div class="tabs" id="tabsTotalLunchTime">
           <button data-type="daily" class="active">按日</button>
           <button data-type="weekly">按周</button>
@@ -164,18 +164,18 @@
 
       <section class="chartsHalf">
         <div class="chart-card">
-          <h2>开发者 午休工作总时长</h2>
+          <h2 data-i18n="totalLunchTime">开发者 午休工作总时长</h2>
           <div id="authorTotalLunchTimeRank" class="rank-list"></div>
         </div>
         <div class="chart-card">
-          <h2>开发者 午休工作总时长</h2>
+          <h2 data-i18n="totalLunchTimeAll">开发者 午休工作总时长</h2>
           <div id="authorTotalLunchTimeRankSummary" style="height: 600px"></div>
         </div>
       </section>
       <!-- 午休 分析 End -->
 
       <div class="chart-card">
-        <h2>开发者 累计加班时长</h2>
+        <h2 data-i18n="totalOvertime">开发者 累计加班时长</h2>
         <div class="tabs" id="tabsTotalOvertime">
           <button data-type="daily" class="active">按日</button>
           <button data-type="weekly">按周</button>
@@ -187,18 +187,18 @@
 
       <section class="chartsHalf">
         <div class="chart-card">
-          <h2>开发者 加班总时长</h2>
+          <h2 data-i18n="totalOvertimeAll">开发者 加班总时长</h2>
           <div id="authorTotalOvertimeRank" class="rank-list"></div>
         </div>
         <div class="chart-card">
-          <h2>开发者 加班总时长</h2>
+          <h2 data-i18n="totalOvertimeAll">开发者 加班总时长</h2>
           <div id="authorTotalOvertimeRankSummary" style="height: 600px"></div>
         </div>
       </section>
 
       <!-- 开发者 累计提交次数 -->
       <div class="chart-card">
-        <h2>开发者 累计提交次数</h2>
+        <h2 data-i18n="totalCommits">开发者 累计提交次数</h2>
         <div class="tabs" id="tabsTotalCommits">
           <button data-type="daily" class="active">按日</button>
           <button data-type="weekly">按周</button>
@@ -210,11 +210,11 @@
 
       <section class="chartsHalf">
         <div class="chart-card">
-          <h2>开发者 提交总次数</h2>
+          <h2 data-i18n="totalCommitsCount">开发者 提交总次数</h2>
           <div id="authorTotalCommitsRank" class="rank-list"></div>
         </div>
         <div class="chart-card">
-          <h2>开发者 提交总次数</h2>
+          <h2 data-i18n="totalCommitsCount">开发者 提交总次数</h2>
           <div id="authorTotalCommitsRankSummary" style="height: 600px"></div>
         </div>
       </section>
@@ -222,7 +222,7 @@
 
       <!-- 开发者 累计提交Changed -->
       <div class="chart-card" id="totalCommitsChangedCard">
-        <h2>开发者 累计提交Changed</h2>
+        <h2 data-i18n="totalCommitsChanged">开发者 累计提交Changed</h2>
         <div class="tabs" id="tabsTotalCommitsChanged">
           <button data-type="daily" class="active">按日</button>
           <button data-type="weekly">按周</button>
@@ -234,11 +234,11 @@
 
       <section class="chartsHalf" id="totalCommitsChangedRankSection">
         <div class="chart-card">
-          <h2>开发者 提交Changed 总次数</h2>
+          <h2 data-i18n="totalCommitsChangedAll">开发者 提交Changed 总次数</h2>
           <div id="authorTotalCommitsChangedRank" class="rank-list"></div>
         </div>
         <div class="chart-card">
-          <h2>开发者 提交Changed 总次数</h2>
+          <h2 data-i18n="totalCommitsChangedAll">开发者 提交Changed 总次数</h2>
           <div
             id="authorTotalCommitsChangedRankSummary"
             style="height: 600px"
@@ -268,8 +268,8 @@
           <input type="date" id="startDate" />
           <span>~</span>
           <input type="date" id="endDate" />
-          <button id="clearDate">清除</button>
-          <label for="pageSize">每页显示</label>
+          <button id="clearDate" data-i18n="clear">清除</button>
+          <label for="pageSize" data-i18n="per">每页显示</label>
           <select id="pageSize">
             <option value="10">10</option>
             <option value="20">20</option>

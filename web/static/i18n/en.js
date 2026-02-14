@@ -13,11 +13,17 @@ export default {
   authorOvertime: 'Developer Overtime Trend (Times)',
   authorLunch: 'Developer Latest Lunch Commit (Hour)',
   totalLunchTime: 'Developer Total Lunch Working Time',
+  totalLunchTimeAll: "Total All Lunch Working Time",
   totalOvertime: 'Developer Total Overtime',
+  totalOvertimeAll: "Total All Overtime",
   totalCommits: 'Developer Total Commits',
+  totalCommitsCount: 'Total All Commits',
   totalCommitsChanged: 'Developer Total Commits Changed',
+  totalCommitsChangedAll: 'Total Commits Changed All',
   commitsList: 'Commit List',
   searchPlaceholder: 'Author/Message/Hash/Date',
+  per: ' ',
+  clear: 'Clear',
   prevPage: 'Previous',
   nextPage: 'Next'
 }

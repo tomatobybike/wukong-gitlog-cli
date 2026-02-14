@@ -115,8 +115,6 @@ export function startServer({ port = 3000, outputDir, data,lang }) {
 
         // 👇 只对 index.html 注入
         if (pathname === '/index.html') {
-          // FIXME: remove debug log before production
-          console.log('❌', 'lang', lang);
           let html = fs.readFileSync(fileLocal, 'utf8')
 
           html = html.replace(

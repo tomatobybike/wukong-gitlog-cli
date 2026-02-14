@@ -13,11 +13,17 @@ export default {
   authorOvertime: "开发者 加班趋势（次数）",
   authorLunch: "开发者 午休最晚提交（小时）",
   totalLunchTime: "开发者 累计午休工作时长",
+  totalLunchTimeAll: "开发者 午休工作总时长",
   totalOvertime: "开发者 累计加班时长",
+  totalOvertimeAll: "开发者 加班总时长",
   totalCommits: "开发者 累计提交次数",
+  totalCommitsCount: "开发者 提交总次数",
   totalCommitsChanged: "开发者 累计提交Changed",
+  totalCommitsChangedAll: '开发者 提交Changed 总次数',
   commitsList: "提交清单",
   searchPlaceholder: "搜索作者/信息/Hash/Date",
+  per: '每页显示',
+  clear: '清除',
   prevPage: "上一页",
   nextPage: "下一页"
 }

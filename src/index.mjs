@@ -70,8 +70,7 @@ const main = async () => {
   // 这一步必须在定义子命令描述之前完成！
   const finalLang = await initI18n(userLang)
 
-  // TODO: remove debug log before production
-  console.log('finalLang', finalLang);
+
 
   // ---------------------------------------------------------
   // 2. 环境准备

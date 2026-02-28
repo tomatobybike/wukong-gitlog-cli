@@ -167,6 +167,7 @@ const main = async () => {
     name: 'serve',
     description: 'Start web server',
     optionsBuilder: (cmd) => {
+      addGitSourceOptions(cmd)
       addServeOptions(cmd)
     },
     handler: serveAction,
